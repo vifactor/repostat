@@ -1,0 +1,11 @@
+# virtual environment
+venv/
+
+# compiled python
+*.pyc
+
+# generated files
+output/
+
+# pycharm project
+.idea
