@@ -11,6 +11,11 @@ is_linux_tty = (platform.system() == 'Linux' and os.isatty(1))
 external_execution_time = 0.0
 
 
+def get_external_execution_time():
+    global external_execution_time
+    return external_execution_time
+
+
 def get_pipe_output(cmds, quiet=False):
     """
     Helper function to launch shell commands. Additionally measures the execution time
