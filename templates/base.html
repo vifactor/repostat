@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>Repostat: git repository statistics.</title>
+	<link rel="stylesheet" href="gitstats.css" type="text/css">
+	<script type="text/javascript" src="sortable.js"></script>
+    <meta name="author" content="Viktor Kopp">
+    <meta name="generator" content="Repostat {{version}}">
+</head>
+<body>
+    <h1>{{page_title}}</h1>
+    <div class="nav">
+        <ul>
+            <li><a href="general.html">General</a></li>
+            <li><a href="activity.html">Activity</a></li>
+            <li><a href="authors.html">Authors</a></li>
+            <li><a href="files.html">Files</a></li>
+            <li><a href="lines.html">Lines</a></li>
+            <li><a href="tags.html">Tags</a></li>
+        </ul>
+    </div>
+    {% block content %}{% endblock %}
+</body>
+</html>
