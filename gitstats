@@ -1039,23 +1039,11 @@ class HTMLReportCreator(ReportCreator):
 
         ###
         # Files
-        f = open(path + '/files.html', 'w')
-        self.printHeader(f)
-        f.write('<h1>Files</h1>')
-        self.printNav(f)
+        files_html = self.render_files_page(data)
+        with open(os.path.join(path, "files.html"), 'w') as f:
+            f.write(files_html)
 
-        f.write('<dl>\n')
-        f.write('<dt>Total files</dt><dd>%d</dd>' % data.getTotalFiles())
-        f.write('<dt>Total lines</dt><dd>%d</dd>' % data.getTotalLOC())
-        try:
-            f.write('<dt>Average file size</dt><dd>%.2f bytes</dd>' % (float(data.getTotalSize()) / data.getTotalFiles()))
-        except ZeroDivisionError:
-            pass
-        f.write('</dl>\n')
-
-        # Files :: File count by date
-        f.write(html_header(2, 'File count by date'))
-
+        # FIXME: check if this is still needed
         # use set to get rid of duplicate/unnecessary entries
         files_by_date = set()
         for stamp in sorted(data.files_by_stamp.keys()):
@@ -1067,26 +1055,6 @@ class HTMLReportCreator(ReportCreator):
         #for stamp in sorted(data.files_by_stamp.keys()):
         #	fg.write('%s %d\n' % (datetime.datetime.fromtimestamp(stamp).strftime('%Y-%m-%d'), data.files_by_stamp[stamp]))
         fg.close()
-
-        f.write('<img src="files_by_date.png" alt="Files by Date">')
-
-        #f.write('<h2>Average file size by date</h2>')
-
-        # Files :: Extensions
-        f.write(html_header(2, 'Extensions'))
-        f.write('<table class="sortable" id="ext"><tr><th>Extension</th><th>Files (%)</th><th>Lines (%)</th><th>Lines/file</th></tr>')
-        for ext in sorted(data.extensions.keys()):
-            files = data.extensions[ext]['files']
-            lines = data.extensions[ext]['lines']
-            try:
-                loc_percentage = (100.0 * lines) / data.getTotalLOC()
-            except ZeroDivisionError:
-                loc_percentage = 0
-            f.write('<tr><td>%s</td><td>%d (%.2f%%)</td><td>%d (%.2f%%)</td><td>%d</td></tr>' % (ext, files, (100.0 * files) / data.getTotalFiles(), lines, loc_percentage, lines / files))
-        f.write('</table>')
-
-        f.write('</body></html>')
-        f.close()
 
         ###
         # Lines
@@ -1180,6 +1148,44 @@ class HTMLReportCreator(ReportCreator):
             project=project_data,
             generation=generation_data,
             page_title="General"
+        )
+        return template_rendered
+
+    def render_files_page(self, data):
+        from jinja2 import Environment, FileSystemLoader
+
+        # TODO: this conversion from old 'data' to new 'project data' should perhaps be removed in future
+        project_data = {
+            'files_count': data.getTotalFiles(),
+            'size': data.getTotalSize(),
+            'average_file_size': "{0:.2f}".format(float(data.getTotalSize()) / data.getTotalFiles()),
+            'files': []
+        }
+
+        for ext in sorted(data.extensions.keys()):
+            files = data.extensions[ext]['files']
+            lines = data.extensions[ext]['lines']
+            try:
+                loc_percentage = (100.0 * lines) / data.getTotalLOC()
+            except ZeroDivisionError:
+                loc_percentage = 0
+            file_type_dict = {"extension": ext,
+                              "count": files,
+                              "relative_count": "{0:.2f}".format((100.0 * files) / data.getTotalFiles()),
+                              "lines_count": lines,
+                              "relative_lines_count": "{0:.2f}".format(loc_percentage),
+                              "lines_per_file_count": "{0:.1f}".format(lines / files)
+                              }
+            project_data['files'].append(file_type_dict)
+
+        # load and render template
+        code_dir = os.path.dirname(os.path.abspath(__file__))
+        templates_dir = os.path.join(code_dir, 'templates')
+        j2_env = Environment(loader=FileSystemLoader(templates_dir), trim_blocks=True)
+
+        template_rendered = j2_env.get_template('files.html').render(
+            project=project_data,
+            page_title="Files"
         )
         return template_rendered
 

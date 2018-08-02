@@ -1,5 +1,25 @@
 {% extends "base.html" %}
 
 {% block content %}
-<p>{{text}}</p>
+<dl>
+    <dt>Total number of files</dt><dd>{{project.files_count}}</dd>
+    <dt>Total codebase</dt><dd>{{project.size}} bytes</dd>
+    <dt>Average file size</dt><dd>{{project.average_file_size}} bytes</dd>
+</dl>
+
+<h2 id="file_count_by_date"><a href="#file_count_by_date">Files number by date</a></h2>
+<img src="files_by_date.png" alt="Files by Date">
+
+<h2 id="extensions"><a href="#extensions">File types</a></h2>
+<table class="sortable" id="ext">
+    <tr><th>Extension</th><th>Number (%)</th><th>Lines (%)</th><th>Lines per file</th></tr>
+    {% for file_type in project.files %}
+        <tr>
+            <td>{{file_type.extension}}</td>
+            <td>{{file_type.count}} ({{file_type.relative_count}}%)</td>
+            <td>{{file_type.lines_count}} ({{file_type.relative_lines_count}}%)</td>
+            <td>{{file_type.lines_per_file_count}}</td>
+        </tr>
+    {% endfor %}
+</table>
 {% endblock %}
