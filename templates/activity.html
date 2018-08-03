@@ -1,5 +1,95 @@
 {% extends "base.html" %}
 
 {% block content %}
-<p>{{text}}</p>
+<h2 id="recent_activity"><a href="#recent_activity">Recent activity</a></h2>
+
+{# TODO: Replace this with bar-graph instead of constructing a graph using table #}
+<p>Last {{activity_weeks_range}} weeks</p>
+<table class="noborders">
+    <tr>
+        <td style="text-align: center; vertical-align: bottom">0<div style="display: block; background-color: red; width: 20px; height: 1px"></div></td>
+        <td style="text-align: center; vertical-align: bottom">0<div style="display: block; background-color: red; width: 20px; height: 1px"></div></td>
+        <td style="text-align: center; vertical-align: bottom">0<div style="display: block; background-color: red; width: 20px; height: 1px"></div></td>
+        <td style="text-align: center; vertical-align: bottom">0<div style="display: block; background-color: red; width: 20px; height: 1px"></div></td>
+        <td style="text-align: center; vertical-align: bottom">0<div style="display: block; background-color: red; width: 20px; height: 1px"></div></td>
+        <td style="text-align: center; vertical-align: bottom">0<div style="display: block; background-color: red; width: 20px; height: 1px"></div></td>
+        <td style="text-align: center; vertical-align: bottom">0<div style="display: block; background-color: red; width: 20px; height: 1px"></div></td>
+        <td style="text-align: center; vertical-align: bottom">0<div style="display: block; background-color: red; width: 20px; height: 1px"></div></td>
+        <td style="text-align: center; vertical-align: bottom">0<div style="display: block; background-color: red; width: 20px; height: 1px"></div></td>
+        <td style="text-align: center; vertical-align: bottom">0<div style="display: block; background-color: red; width: 20px; height: 1px"></div></td>
+        <td style="text-align: center; vertical-align: bottom">0<div style="display: block; background-color: red; width: 20px; height: 1px"></div></td>
+        <td style="text-align: center; vertical-align: bottom">0<div style="display: block; background-color: red; width: 20px; height: 1px"></div></td>
+        <td style="text-align: center; vertical-align: bottom">0<div style="display: block; background-color: red; width: 20px; height: 1px"></div></td>
+        <td style="text-align: center; vertical-align: bottom">0<div style="display: block; background-color: red; width: 20px; height: 1px"></div></td>
+        <td style="text-align: center; vertical-align: bottom">0<div style="display: block; background-color: red; width: 20px; height: 1px"></div></td>
+        <td style="text-align: center; vertical-align: bottom">0<div style="display: block; background-color: red; width: 20px; height: 1px"></div></td>
+        <td style="text-align: center; vertical-align: bottom">0<div style="display: block; background-color: red; width: 20px; height: 1px"></div></td>
+        <td style="text-align: center; vertical-align: bottom">0<div style="display: block; background-color: red; width: 20px; height: 1px"></div></td>
+        <td style="text-align: center; vertical-align: bottom">0<div style="display: block; background-color: red; width: 20px; height: 1px"></div></td>
+        <td style="text-align: center; vertical-align: bottom">0<div style="display: block; background-color: red; width: 20px; height: 1px"></div></td>
+        <td style="text-align: center; vertical-align: bottom">0<div style="display: block; background-color: red; width: 20px; height: 1px"></div></td>
+        <td style="text-align: center; vertical-align: bottom">0<div style="display: block; background-color: red; width: 20px; height: 1px"></div></td>
+        <td style="text-align: center; vertical-align: bottom">0<div style="display: block; background-color: red; width: 20px; height: 1px"></div></td>
+        <td style="text-align: center; vertical-align: bottom">0<div style="display: block; background-color: red; width: 20px; height: 1px"></div></td>
+        <td style="text-align: center; vertical-align: bottom">0<div style="display: block; background-color: red; width: 20px; height: 1px"></div></td>
+        <td style="text-align: center; vertical-align: bottom">0<div style="display: block; background-color: red; width: 20px; height: 1px"></div></td>
+        <td style="text-align: center; vertical-align: bottom">0<div style="display: block; background-color: red; width: 20px; height: 1px"></div></td>
+        <td style="text-align: center; vertical-align: bottom">0<div style="display: block; background-color: red; width: 20px; height: 1px"></div></td>
+        <td style="text-align: center; vertical-align: bottom">0<div style="display: block; background-color: red; width: 20px; height: 1px"></div></td>
+        <td style="text-align: center; vertical-align: bottom">0<div style="display: block; background-color: red; width: 20px; height: 1px"></div></td>
+        <td style="text-align: center; vertical-align: bottom">0<div style="display: block; background-color: red; width: 20px; height: 1px"></div></td>
+        <td style="text-align: center; vertical-align: bottom">1<div style="display: block; background-color: red; width: 20px; height: 8px"></div></td>
+    </tr>
+    <tr>
+        <td>32</td><td>31</td><td>30</td><td>29</td><td>28</td><td>27</td><td>26</td><td>25</td><td>24</td><td>23</td><td>22</td><td>21</td><td>20</td><td>19</td><td>18</td><td>17</td><td>16</td><td>15</td><td>14</td><td>13</td><td>12</td><td>11</td><td>10</td><td>9</td><td>8</td><td>7</td><td>6</td><td>5</td><td>4</td><td>3</td><td>2</td><td>1</td>
+    </tr>
+</table>
+
+ <div class="row">
+  <div class="column">
+    <h2 id="hour_weekday_activity"><a href="#hour_weekday_activity">Hour-Weekday activity</a></h2>
+    <table>
+        <tr>
+            <th>Hour</th><th>0</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th><th>8</th><th>9</th><th>10</th><th>11</th><th>12</th><th>13</th><th>14</th><th>15</th><th>16</th><th>17</th><th>18</th><th>19</th><th>20</th><th>21</th><th>22</th><th>23</th>
+        </tr>
+        <tr>
+            <th>Commits</th><td style="background-color: rgb(140, 0, 0)">3</td><td style="background-color: rgb(131, 0, 0)">1</td><td style="background-color: rgb(131, 0, 0)">1</td><td style="background-color: rgb(131, 0, 0)">1</td><td style="background-color: rgb(131, 0, 0)">1</td><td>0</td><td style="background-color: rgb(135, 0, 0)">2</td><td style="background-color: rgb(149, 0, 0)">5</td><td style="background-color: rgb(184, 0, 0)">13</td><td style="background-color: rgb(219, 0, 0)">21</td><td style="background-color: rgb(206, 0, 0)">18</td><td style="background-color: rgb(149, 0, 0)">5</td><td style="background-color: rgb(179, 0, 0)">12</td><td style="background-color: rgb(188, 0, 0)">14</td><td style="background-color: rgb(255, 0, 0)">29</td><td style="background-color: rgb(241, 0, 0)">26</td><td style="background-color: rgb(232, 0, 0)">24</td><td style="background-color: rgb(255, 0, 0)">29</td><td style="background-color: rgb(241, 0, 0)">26</td><td style="background-color: rgb(210, 0, 0)">19</td><td style="background-color: rgb(219, 0, 0)">21</td><td style="background-color: rgb(202, 0, 0)">17</td><td style="background-color: rgb(144, 0, 0)">4</td><td style="background-color: rgb(140, 0, 0)">3</td>
+        </tr>
+        <tr>
+            <th>%</th><td style="background-color: rgb(140, 0, 0)">1.02</td><td style="background-color: rgb(131, 0, 0)">0.34</td><td style="background-color: rgb(131, 0, 0)">0.34</td><td style="background-color: rgb(131, 0, 0)">0.34</td><td style="background-color: rgb(131, 0, 0)">0.34</td><td>0.00</td><td style="background-color: rgb(135, 0, 0)">0.68</td><td style="background-color: rgb(149, 0, 0)">1.69</td><td style="background-color: rgb(184, 0, 0)">4.41</td><td style="background-color: rgb(219, 0, 0)">7.12</td><td style="background-color: rgb(206, 0, 0)">6.10</td><td style="background-color: rgb(149, 0, 0)">1.69</td><td style="background-color: rgb(179, 0, 0)">4.07</td><td style="background-color: rgb(188, 0, 0)">4.75</td><td style="background-color: rgb(255, 0, 0)">9.83</td><td style="background-color: rgb(241, 0, 0)">8.81</td><td style="background-color: rgb(232, 0, 0)">8.14</td><td style="background-color: rgb(255, 0, 0)">9.83</td><td style="background-color: rgb(241, 0, 0)">8.81</td><td style="background-color: rgb(210, 0, 0)">6.44</td><td style="background-color: rgb(219, 0, 0)">7.12</td><td style="background-color: rgb(202, 0, 0)">5.76</td><td style="background-color: rgb(144, 0, 0)">1.36</td><td style="background-color: rgb(140, 0, 0)">1.02</td>
+        </tr>
+    </table>
+    <table>
+        <tr><th>Weekday</th><th>0</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th><th>8</th><th>9</th><th>10</th><th>11</th><th>12</th><th>13</th><th>14</th><th>15</th><th>16</th><th>17</th><th>18</th><th>19</th><th>20</th><th>21</th><th>22</th><th>23</th></tr>
+        <tr><th>Mon</th><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td style="background-color: rgb(141, 0, 0)">1</td><td></td><td style="background-color: rgb(169, 0, 0)">3</td><td style="background-color: rgb(183, 0, 0)">4</td><td style="background-color: rgb(226, 0, 0)">7</td><td style="background-color: rgb(183, 0, 0)">4</td><td style="background-color: rgb(198, 0, 0)">5</td><td style="background-color: rgb(155, 0, 0)">2</td><td></td><td></td></tr>
+        <tr><th>Tue</th><td style="background-color: rgb(141, 0, 0)">1</td><td></td><td></td><td style="background-color: rgb(141, 0, 0)">1</td><td></td><td></td><td></td><td></td><td style="background-color: rgb(183, 0, 0)">4</td><td style="background-color: rgb(141, 0, 0)">1</td><td style="background-color: rgb(141, 0, 0)">1</td><td></td><td></td><td style="background-color: rgb(169, 0, 0)">3</td><td style="background-color: rgb(255, 0, 0)">9</td><td style="background-color: rgb(255, 0, 0)">9</td><td style="background-color: rgb(240, 0, 0)">8</td><td style="background-color: rgb(255, 0, 0)">9</td><td style="background-color: rgb(240, 0, 0)">8</td><td style="background-color: rgb(169, 0, 0)">3</td><td style="background-color: rgb(198, 0, 0)">5</td><td style="background-color: rgb(169, 0, 0)">3</td><td style="background-color: rgb(141, 0, 0)">1</td><td></td></tr>
+        <tr><th>Wed</th><td></td><td></td><td style="background-color: rgb(141, 0, 0)">1</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td style="background-color: rgb(169, 0, 0)">3</td><td></td><td></td><td style="background-color: rgb(226, 0, 0)">7</td><td style="background-color: rgb(212, 0, 0)">6</td><td style="background-color: rgb(169, 0, 0)">3</td><td style="background-color: rgb(169, 0, 0)">3</td><td style="background-color: rgb(169, 0, 0)">3</td><td style="background-color: rgb(169, 0, 0)">3</td><td style="background-color: rgb(141, 0, 0)">1</td><td></td></tr>
+        <tr><th>Thu</th><td></td><td></td><td></td><td></td><td></td><td></td><td style="background-color: rgb(141, 0, 0)">1</td><td></td><td></td><td style="background-color: rgb(240, 0, 0)">8</td><td style="background-color: rgb(169, 0, 0)">3</td><td></td><td style="background-color: rgb(141, 0, 0)">1</td><td style="background-color: rgb(183, 0, 0)">4</td><td style="background-color: rgb(212, 0, 0)">6</td><td style="background-color: rgb(198, 0, 0)">5</td><td style="background-color: rgb(141, 0, 0)">1</td><td></td><td style="background-color: rgb(169, 0, 0)">3</td><td style="background-color: rgb(198, 0, 0)">5</td><td style="background-color: rgb(183, 0, 0)">4</td><td style="background-color: rgb(169, 0, 0)">3</td><td style="background-color: rgb(155, 0, 0)">2</td><td></td></tr>
+        <tr><th>Fri</th><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td style="background-color: rgb(155, 0, 0)">2</td><td style="background-color: rgb(226, 0, 0)">7</td><td style="background-color: rgb(141, 0, 0)">1</td><td style="background-color: rgb(183, 0, 0)">4</td><td style="background-color: rgb(141, 0, 0)">1</td><td style="background-color: rgb(155, 0, 0)">2</td><td style="background-color: rgb(198, 0, 0)">5</td><td style="background-color: rgb(169, 0, 0)">3</td><td style="background-color: rgb(212, 0, 0)">6</td><td style="background-color: rgb(141, 0, 0)">1</td><td></td><td style="background-color: rgb(141, 0, 0)">1</td><td style="background-color: rgb(183, 0, 0)">4</td><td></td><td></td></tr>
+        <tr><th>Sat</th><td style="background-color: rgb(141, 0, 0)">1</td><td></td><td></td><td></td><td></td><td></td><td></td><td style="background-color: rgb(141, 0, 0)">1</td><td style="background-color: rgb(183, 0, 0)">4</td><td style="background-color: rgb(255, 0, 0)">9</td><td style="background-color: rgb(226, 0, 0)">7</td><td style="background-color: rgb(155, 0, 0)">2</td><td style="background-color: rgb(141, 0, 0)">1</td><td style="background-color: rgb(155, 0, 0)">2</td><td style="background-color: rgb(240, 0, 0)">8</td><td style="background-color: rgb(141, 0, 0)">1</td><td></td><td style="background-color: rgb(141, 0, 0)">1</td><td></td><td style="background-color: rgb(155, 0, 0)">2</td><td></td><td></td><td></td><td style="background-color: rgb(169, 0, 0)">3</td></tr>
+        <tr><th>Sun</th><td style="background-color: rgb(141, 0, 0)">1</td><td style="background-color: rgb(141, 0, 0)">1</td><td></td><td></td><td style="background-color: rgb(141, 0, 0)">1</td><td></td><td style="background-color: rgb(141, 0, 0)">1</td><td style="background-color: rgb(183, 0, 0)">4</td><td style="background-color: rgb(198, 0, 0)">5</td><td style="background-color: rgb(141, 0, 0)">1</td><td></td><td style="background-color: rgb(155, 0, 0)">2</td><td style="background-color: rgb(212, 0, 0)">6</td><td style="background-color: rgb(141, 0, 0)">1</td><td style="background-color: rgb(169, 0, 0)">3</td><td style="background-color: rgb(212, 0, 0)">6</td><td style="background-color: rgb(155, 0, 0)">2</td><td style="background-color: rgb(169, 0, 0)">3</td><td style="background-color: rgb(183, 0, 0)">4</td><td style="background-color: rgb(155, 0, 0)">2</td><td style="background-color: rgb(169, 0, 0)">3</td><td style="background-color: rgb(155, 0, 0)">2</td><td></td><td></td></tr>
+    </table>
+      {# TODO: vertical weekday activity table to the right of weekday-hour activity #}
+  </div>
+  <div class="column">
+      <h2 id="commits_by_timezone"><a href="#commits_by_timezone">Commits by Timezone</a></h2>
+    <table>
+        <tr><th>Timezone</th><th>Commits</th></tr>
+        {% for timezone in project.timezones %}
+        <tr><th>{{timezone}}</th><td style="background-color: rgb(128, 0, 0)">{{timezone.commits_count}}</td></tr>
+        {% endfor %}
+    </table>
+  </div>
+</div>
+
+<h2 id="month_of_year"><a href="#month_of_year">Month in a Year activity</a></h2>
+<img src="month_of_year.png" alt="Month in a Year activity">
+
+{# TODO: next two graphs are supposed to be merged in one #}
+<h2 id="commits_by_year/month"><a href="#commits_by_year/month">Commits by year/month</a></h2>
+<img src="commits_by_year_month.png" alt="Commits by year/month">
+
+<h2 id="commits_by_year"><a href="#commits_by_year">Commits by Year</a></h2>
+<img src="commits_by_year.png" alt="Commits by Year">
+
 {% endblock %}
