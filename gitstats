@@ -738,28 +738,9 @@ class HTMLReportCreator(ReportCreator):
             else:
                 print 'Warning: "%s" not found, so not copied (searched: %s)' % (file, basedirs)
 
-        f = open(path + "/index.html", 'w')
-        format = '%Y-%m-%d %H:%M:%S'
-        self.printHeader(f)
-
-        f.write('<h1>GitStats - %s</h1>' % data.projectname)
-
-        self.printNav(f)
-
-        f.write('<dl>')
-        f.write('<dt>Project name</dt><dd>%s</dd>' % (data.projectname))
-        f.write('<dt>Generated</dt><dd>%s (in %d seconds)</dd>' % (datetime.datetime.now().strftime(format), time.time() - data.getStampCreated()))
-        f.write('<dt>Generator</dt><dd><a href="http://gitstats.sourceforge.net/">GitStats</a> (version %s), %s, %s</dd>' % (getversion(), getgitversion(), getgnuplotversion()))
-        f.write('<dt>Report Period</dt><dd>%s to %s</dd>' % (data.getFirstCommitDate().strftime(format), data.getLastCommitDate().strftime(format)))
-        f.write('<dt>Age</dt><dd>%d days, %d active days (%3.2f%%)</dd>' % (data.getCommitDeltaDays(), len(data.getActiveDays()), (100.0 * len(data.getActiveDays()) / data.getCommitDeltaDays())))
-        f.write('<dt>Total Files</dt><dd>%s</dd>' % data.getTotalFiles())
-        f.write('<dt>Total Lines of Code</dt><dd>%s (%d added, %d removed)</dd>' % (data.getTotalLOC(), data.total_lines_added, data.total_lines_removed))
-        f.write('<dt>Total Commits</dt><dd>%s (average %.1f commits per active day, %.1f per all days)</dd>' % (data.getTotalCommits(), float(data.getTotalCommits()) / len(data.getActiveDays()), float(data.getTotalCommits()) / data.getCommitDeltaDays()))
-        f.write('<dt>Authors</dt><dd>%s (average %.1f commits per author)</dd>' % (data.getTotalAuthors(), (1.0 * data.getTotalCommits()) / data.getTotalAuthors()))
-        f.write('</dl>')
-
-        f.write('</body>\n</html>')
-        f.close()
+        general_html = self.render_general_page(data)
+        with open(os.path.join(path, "general.html"), 'w') as f:
+            f.write(general_html)
 
         ###
         # Activity
@@ -1159,6 +1140,49 @@ class HTMLReportCreator(ReportCreator):
 
         self.createGraphs(path)
 
+    def render_general_page(self, data):
+        from jinja2 import Environment, FileSystemLoader
+
+        date_format_str = '%Y-%m-%d %H:%M'
+        # TODO: this conversion from old 'data' to new 'project data' should perhaps be removed in future
+        project_data = {
+            "name": data.projectname,
+            "url": "https://github.com/vifactor/repostat",
+            "version": getversion(),
+            "tools": [getgitversion(), getgnuplotversion()],
+            "age": data.getCommitDeltaDays(),
+            "active_days_count": len(data.getActiveDays()),
+            "active_days_ratio": "{0:.2f}".format((100.0 * len(data.getActiveDays()) / data.getCommitDeltaDays())),
+            "commits_count": data.getTotalCommits(),
+            "commits_per_active_day_count": "{0:.2f}".format(float(data.getTotalCommits()) / len(data.getActiveDays())),
+            "commits_per_day_count": "{0:.2f}".format(float(data.getTotalCommits()) / data.getCommitDeltaDays()),
+            "authors_count": data.getTotalAuthors(),
+            "commits_per_author_count": "{0:.2f}".format(float(data.getTotalCommits()) / data.getTotalAuthors()),
+            "files_count": data.getTotalFiles(),
+            "total_lines_count": data.getTotalLOC(),
+            "added_lines_count": data.total_lines_added,
+            "removed_lines_count": data.total_lines_removed,
+            "first_commit_date": data.getFirstCommitDate().strftime(date_format_str),
+            "last_commit_date": data.getLastCommitDate().strftime(date_format_str)
+        }
+
+        generation_data = {
+            "datetime": datetime.datetime.today().strftime(date_format_str),
+            "duration": "{0:.3f}".format(time.time() - data.getStampCreated())
+        }
+
+        # load and render template
+        code_dir = os.path.dirname(os.path.abspath(__file__))
+        templates_dir = os.path.join(code_dir, 'templates')
+        j2_env = Environment(loader=FileSystemLoader(templates_dir), trim_blocks=True)
+
+        template_rendered = j2_env.get_template('general.html').render(
+            project=project_data,
+            generation=generation_data,
+            page_title="General"
+        )
+        return template_rendered
+
     def createGraphs(self, path):
         print 'Generating graphs...'
 
@@ -1382,7 +1406,7 @@ plot """
         f.write("""
 <div class="nav">
 <ul>
-<li><a href="index.html">General</a></li>
+<li><a href="general.html">General</a></li>
 <li><a href="activity.html">Activity</a></li>
 <li><a href="authors.html">Authors</a></li>
 <li><a href="files.html">Files</a></li>
@@ -1476,7 +1500,7 @@ class GitStats:
         if sys.stdin.isatty():
             print 'You may now run:'
             print
-            print '   sensible-browser \'%s\'' % os.path.join(outputpath, 'index.html').replace("'", "'\\''")
+            print '   sensible-browser \'%s\'' % os.path.join(outputpath, 'general.html').replace("'", "'\\''")
             print
 
 
