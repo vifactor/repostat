@@ -1,5 +1,8 @@
 {% extends "base.html" %}
 
 {% block content %}
-<p>{{text}}</p>
+<dl><dt>Total tags</dt><dd>{{project.tags_count}}</dd></dl>
+<table class="tags">
+    <tr><th>Name</th><th>Date</th><th>Commits</th><th>Authors</th></tr>
+</table>
 {% endblock %}
