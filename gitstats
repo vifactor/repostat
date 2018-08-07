@@ -1065,34 +1065,9 @@ class HTMLReportCreator(ReportCreator):
         ###
         # tags.html
         tags_html = self.render_tags_page(data)
-        with open(os.path.join(path, "tags_test.html"), 'w') as f:
+        with open(os.path.join(path, "tags.html"), 'w') as f:
             f.write(tags_html)
 
-        f = open(path + '/tags.html', 'w')
-        self.printHeader(f)
-        f.write('<h1>Tags</h1>')
-        self.printNav(f)
-
-        f.write('<dl>')
-        f.write('<dt>Total tags</dt><dd>%d</dd>' % len(data.tags))
-        if len(data.tags) > 0:
-            f.write('<dt>Average commits per tag</dt><dd>%.2f</dd>' % (1.0 * data.getTotalCommits() / len(data.tags)))
-        f.write('</dl>')
-
-        f.write('<table class="tags">')
-        f.write('<tr><th>Name</th><th>Date</th><th>Commits</th><th>Authors</th></tr>')
-        # sort the tags by date desc
-        tags_sorted_by_date_desc = map(lambda el : el[1], reversed(sorted(map(lambda el : (el[1]['date'], el[0]), data.tags.items()))))
-        for tag in tags_sorted_by_date_desc:
-            authorinfo = []
-            self.authors_by_commits = getkeyssortedbyvalues(data.tags[tag]['authors'])
-            for i in reversed(self.authors_by_commits):
-                authorinfo.append('%s (%d)' % (i, data.tags[tag]['authors'][i]))
-            f.write('<tr><td>%s</td><td>%s</td><td>%d</td><td>%s</td></tr>' % (tag, data.tags[tag]['date'], data.tags[tag]['commits'], ', '.join(authorinfo)))
-        f.write('</table>')
-
-        f.write('</body></html>')
-        f.close()
 
         self.createGraphs(path)
 
@@ -1203,8 +1178,33 @@ class HTMLReportCreator(ReportCreator):
 
         # TODO: this conversion from old 'data' to new 'project data' should perhaps be removed in future
         project_data = {
-            'tags_count': data.tags
+            'tags_count': len(data.tags),
+            'tags': []
         }
+
+        # TODO: fix error
+        """
+        fatal: ambiguous argument 'gitstats': both revision and filename
+        Use '--' to separate paths from revisions, like this:
+        'git <command> [<revision>...] -- [<file>...]'
+        """
+
+        # TODO: refactor the following code
+        tags_sorted_by_date_desc = map(lambda el: el[1],
+                                       reversed(sorted(map(lambda el: (el[1]['date'], el[0]), data.tags.items()))))
+        for tag in tags_sorted_by_date_desc:
+            authorinfo = []
+            authors_by_commits = getkeyssortedbyvalues(data.tags[tag]['authors'])
+            for i in reversed(authors_by_commits):
+                authorinfo.append('%s (%d)' % (i, data.tags[tag]['authors'][i]))
+            print authorinfo
+            tag_dict = {
+                'name': tag,
+                'date': data.tags[tag]['date'],
+                'commits_count': data.tags[tag]['commits'],
+                'authors': ', '.join(authorinfo).decode('utf-8')
+            }
+            project_data['tags'].append(tag_dict)
 
         # load and render template
         code_dir = os.path.dirname(os.path.abspath(__file__))
@@ -1215,7 +1215,7 @@ class HTMLReportCreator(ReportCreator):
             project=project_data,
             page_title="Tags"
         )
-        return template_rendered
+        return template_rendered.encode('utf-8')
 
     def createGraphs(self, path):
         print 'Generating graphs...'
