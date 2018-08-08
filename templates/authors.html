@@ -1,5 +1,26 @@
 {% extends "base.html" %}
 
 {% block content %}
-<p>{{text}}</p>
+<h2 id="list_of_authors"><a href="#list_of_authors">Authors statistics (top-{{project.top_authors|length}}) </a></h2>
+<table class="authors sortable" id="authors">
+    <tr>
+        <th>Author</th>
+        <th>Commits (%)</th>
+        <th>+ lines</th><th>- lines</th>
+        <th>First commit</th><th>Latest commit</th>
+        <th>Contributed (days)</th><th>Actively contributed (days)</th>
+    </tr>
+    {% for author in project.top_authors %}
+    <tr>
+        <td>{{author.name}}</td>
+        <td>{{author.commits_count}} ({{'%0.2f'| format(author.commits_relative_count|float)}}%)</td>
+        <td>{{author.lines_added_count}}</td><td>{{author.lines_removed_count}}</td>
+        <td>{{author.first_commit_date}}</td><td>{{author.latest_commit_date}}</td>
+        <td>{{author.contributed_days_count}}</td><td>{{author.active_days_count}}</td>
+    </tr>
+    {% endfor %}
+</table>
+{# TODO: Add condition for the case list of top authors is empty #}
+<p class="moreauthors">These didn't make it to the top: {{project.non_top_authors|join(', ')}}</p>
+
 {% endblock %}
