@@ -1062,6 +1062,10 @@ class HTMLReportCreator(ReportCreator):
 
         ###
         # Lines
+        with open(path + '/lines_of_code.dat', 'w') as fg:
+            for stamp in sorted(data.changes_by_date.keys()):
+                fg.write('%d %d\n' % (stamp, data.changes_by_date[stamp]['lines']))
+
         lines_html = self.render_lines_page(data)
         with open(os.path.join(path, "lines.html"), 'w') as f:
             f.write(lines_html)
@@ -1229,7 +1233,7 @@ class HTMLReportCreator(ReportCreator):
             'tags': []
         }
 
-        # TODO: fix error
+        # TODO: fix error occuring when a tag name and project name are the same
         """
         fatal: ambiguous argument 'gitstats': both revision and filename
         Use '--' to separate paths from revisions, like this:
@@ -1241,8 +1245,8 @@ class HTMLReportCreator(ReportCreator):
                                        reversed(sorted(map(lambda el: (el[1]['date'], el[0]), data.tags.items()))))
         for tag in tags_sorted_by_date_desc:
             authorinfo = []
-            authors_by_commits = getkeyssortedbyvalues(data.tags[tag]['authors'])
-            for i in reversed(authors_by_commits):
+            self.authors_by_commits = getkeyssortedbyvalues(data.tags[tag]['authors'])
+            for i in reversed(self.authors_by_commits):
                 authorinfo.append('%s (%d)' % (i, data.tags[tag]['authors'][i]))
             print authorinfo
             tag_dict = {
