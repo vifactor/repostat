@@ -4,47 +4,22 @@
 <h2 id="recent_activity"><a href="#recent_activity">Recent activity</a></h2>
 
 {# TODO: Replace this with bar-graph instead of constructing a graph using table #}
-<p>Last {{activity_weeks_range}} weeks</p>
+<p>Last {{project.recent_activity|length}} weeks</p>
+
 <table class="noborders">
     <tr>
-        <td style="text-align: center; vertical-align: bottom">0<div style="display: block; background-color: red; width: 20px; height: 1px"></div></td>
-        <td style="text-align: center; vertical-align: bottom">0<div style="display: block; background-color: red; width: 20px; height: 1px"></div></td>
-        <td style="text-align: center; vertical-align: bottom">0<div style="display: block; background-color: red; width: 20px; height: 1px"></div></td>
-        <td style="text-align: center; vertical-align: bottom">0<div style="display: block; background-color: red; width: 20px; height: 1px"></div></td>
-        <td style="text-align: center; vertical-align: bottom">0<div style="display: block; background-color: red; width: 20px; height: 1px"></div></td>
-        <td style="text-align: center; vertical-align: bottom">0<div style="display: block; background-color: red; width: 20px; height: 1px"></div></td>
-        <td style="text-align: center; vertical-align: bottom">0<div style="display: block; background-color: red; width: 20px; height: 1px"></div></td>
-        <td style="text-align: center; vertical-align: bottom">0<div style="display: block; background-color: red; width: 20px; height: 1px"></div></td>
-        <td style="text-align: center; vertical-align: bottom">0<div style="display: block; background-color: red; width: 20px; height: 1px"></div></td>
-        <td style="text-align: center; vertical-align: bottom">0<div style="display: block; background-color: red; width: 20px; height: 1px"></div></td>
-        <td style="text-align: center; vertical-align: bottom">0<div style="display: block; background-color: red; width: 20px; height: 1px"></div></td>
-        <td style="text-align: center; vertical-align: bottom">0<div style="display: block; background-color: red; width: 20px; height: 1px"></div></td>
-        <td style="text-align: center; vertical-align: bottom">0<div style="display: block; background-color: red; width: 20px; height: 1px"></div></td>
-        <td style="text-align: center; vertical-align: bottom">0<div style="display: block; background-color: red; width: 20px; height: 1px"></div></td>
-        <td style="text-align: center; vertical-align: bottom">0<div style="display: block; background-color: red; width: 20px; height: 1px"></div></td>
-        <td style="text-align: center; vertical-align: bottom">0<div style="display: block; background-color: red; width: 20px; height: 1px"></div></td>
-        <td style="text-align: center; vertical-align: bottom">0<div style="display: block; background-color: red; width: 20px; height: 1px"></div></td>
-        <td style="text-align: center; vertical-align: bottom">0<div style="display: block; background-color: red; width: 20px; height: 1px"></div></td>
-        <td style="text-align: center; vertical-align: bottom">0<div style="display: block; background-color: red; width: 20px; height: 1px"></div></td>
-        <td style="text-align: center; vertical-align: bottom">0<div style="display: block; background-color: red; width: 20px; height: 1px"></div></td>
-        <td style="text-align: center; vertical-align: bottom">0<div style="display: block; background-color: red; width: 20px; height: 1px"></div></td>
-        <td style="text-align: center; vertical-align: bottom">0<div style="display: block; background-color: red; width: 20px; height: 1px"></div></td>
-        <td style="text-align: center; vertical-align: bottom">0<div style="display: block; background-color: red; width: 20px; height: 1px"></div></td>
-        <td style="text-align: center; vertical-align: bottom">0<div style="display: block; background-color: red; width: 20px; height: 1px"></div></td>
-        <td style="text-align: center; vertical-align: bottom">0<div style="display: block; background-color: red; width: 20px; height: 1px"></div></td>
-        <td style="text-align: center; vertical-align: bottom">0<div style="display: block; background-color: red; width: 20px; height: 1px"></div></td>
-        <td style="text-align: center; vertical-align: bottom">0<div style="display: block; background-color: red; width: 20px; height: 1px"></div></td>
-        <td style="text-align: center; vertical-align: bottom">0<div style="display: block; background-color: red; width: 20px; height: 1px"></div></td>
-        <td style="text-align: center; vertical-align: bottom">0<div style="display: block; background-color: red; width: 20px; height: 1px"></div></td>
-        <td style="text-align: center; vertical-align: bottom">0<div style="display: block; background-color: red; width: 20px; height: 1px"></div></td>
-        <td style="text-align: center; vertical-align: bottom">0<div style="display: block; background-color: red; width: 20px; height: 1px"></div></td>
-        <td style="text-align: center; vertical-align: bottom">1<div style="display: block; background-color: red; width: 20px; height: 8px"></div></td>
+        {% for (commits, height) in project.recent_activity %}
+        <td style="text-align: center; vertical-align: bottom">{{commits}}<div style="display: block; background-color: red; width: 20px; height: {{height}}px"></div></td>
+        {% endfor %}
     </tr>
     <tr>
-        <td>32</td><td>31</td><td>30</td><td>29</td><td>28</td><td>27</td><td>26</td><td>25</td><td>24</td><td>23</td><td>22</td><td>21</td><td>20</td><td>19</td><td>18</td><td>17</td><td>16</td><td>15</td><td>14</td><td>13</td><td>12</td><td>11</td><td>10</td><td>9</td><td>8</td><td>7</td><td>6</td><td>5</td><td>4</td><td>3</td><td>2</td><td>1</td>
+        {% for i in range(project.recent_activity|length, 0, -1) %}
+        <td>{{i}}</td>
+        {% endfor %}
     </tr>
 </table>
 
+{#
  <div class="row">
   <div class="column">
     <h2 id="hour_weekday_activity"><a href="#hour_weekday_activity">Hour-Weekday activity</a></h2>
@@ -81,6 +56,7 @@
     </table>
   </div>
 </div>
+#}
 
 <h2 id="month_of_year"><a href="#month_of_year">Month in a Year activity</a></h2>
 <img src="month_of_year.png" alt="Month in a Year activity">
