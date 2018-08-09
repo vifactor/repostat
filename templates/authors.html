@@ -23,4 +23,45 @@
 {# TODO: Add condition for the case list of top authors is empty #}
 <p class="moreauthors">These didn't make it to the top: {{project.non_top_authors|join(', ')}}</p>
 
+<h2 id="cumulated_added_lines_of_code_per_author"><a href="#cumulated_added_lines_of_code_per_author">Cumulated Added Lines of Code per Author</a></h2>
+<img src="lines_of_code_by_author.png" alt="Lines of code per Author"><p class="moreauthors">Only top {{project.top_authors|length}} authors shown</p>
+
+<h2 id="commits_per_author"><a href="#commits_per_author">Commits per Author</a></h2>
+<img src="commits_by_author.png" alt="Commits per Author"><p class="moreauthors">Only top {{project.top_authors|length}} authors shown</p>
+
+<h2 id="author_of_month"><a href="#author_of_month">Author of the Month</a></h2>
+<table class="sortable" id="aom">
+    <tr>
+        <th>Month</th>
+        <th>Author</th><th>Commits count</th>
+        <th class="unsortable">Next top 5</th>
+    </tr>
+    {% for month in project.months %}
+    <tr>
+        <td>{{month.date}}</td>
+        <td>{{month.top_author.name}}</td><td>{{month.top_author.commits_count}} (of {{month.all_commits_count}})</td>
+        <td>{{month.next_top_authors}}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+<h2 id="author_of_year"><a href="#author_of_year">Author of the Year</a></h2>
+<table class="sortable" id="aoy">
+    <tr>
+        <th>Year</th>
+        <th>Author</th><th>Commits count</th>
+        <th class="unsortable">Next top 5</th>
+    </tr>
+    {% for year in project.years %}
+    <tr>
+        <td>{{year.date}}</td>
+        <td>{{year.top_author.name}}</td><td>{{year.top_author.commits_count}} (of {{year.all_commits_count}})</td>
+        <td>{{year.next_top_authors}}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+{# TODO: Plot as pie-chart instead of bar-plot #}
+<h2 id="commits_by_domains"><a href="#commits_by_domains">Commits by Domains</a></h2>
+<img src="domains.png" alt="Commits by Domains">
 {% endblock %}
