@@ -12,6 +12,8 @@ import shutil
 import sys
 import time
 import zlib
+import calendar
+
 from tools import get_external_execution_time, get_pipe_output
 
 if sys.version_info < (2, 6):
@@ -747,22 +749,11 @@ class HTMLReportCreator(ReportCreator):
         ###
         # Activity
         activity_html = self.render_activity_page(data)
-        with open(os.path.join(path, "activity-test.html"), 'w') as f:
+        with open(os.path.join(path, "activity.html"), 'w') as f:
             f.write(activity_html)
-
-        f = open(path + '/activity.html', 'w')
-        self.printHeader(f)
-        f.write('<h1>Activity</h1>')
-        self.printNav(f)
-
-        #f.write('<h2>Last 30 days</h2>')
-
-        #f.write('<h2>Last 12 months</h2>')
 
         # Weekly activity
         WEEKS = 32
-        f.write(html_header(2, 'Weekly activity'))
-        f.write('<p>Last %d weeks</p>' % WEEKS)
 
         # generate weeks to show (previous N weeks from now)
         now = datetime.datetime.now()
@@ -773,52 +764,8 @@ class HTMLReportCreator(ReportCreator):
             weeks.insert(0, stampcur.strftime('%Y-%W'))
             stampcur -= deltaweek
 
-        # top row: commits & bar
-        f.write('<table class="noborders"><tr>')
-        for i in range(0, WEEKS):
-            commits = 0
-            if weeks[i] in data.activity_by_year_week:
-                commits = data.activity_by_year_week[weeks[i]]
-
-            percentage = 0
-            if weeks[i] in data.activity_by_year_week:
-                percentage = float(data.activity_by_year_week[weeks[i]]) / data.activity_by_year_week_peak
-            height = max(1, int(200 * percentage))
-            f.write('<td style="text-align: center; vertical-align: bottom">%d<div style="display: block; background-color: red; width: 20px; height: %dpx"></div></td>' % (commits, height))
-
-        # bottom row: year/week
-        f.write('</tr><tr>')
-        for i in range(0, WEEKS):
-            f.write('<td>%s</td>' % (WEEKS - i))
-        f.write('</tr></table>')
-
         # Hour of Day
-        f.write(html_header(2, 'Hour of Day'))
         hour_of_day = data.getActivityByHourOfDay()
-        f.write('<table><tr><th>Hour</th>')
-        for i in range(0, 24):
-            f.write('<th>%d</th>' % i)
-        f.write('</tr>\n<tr><th>Commits</th>')
-        fp = open(path + '/hour_of_day.dat', 'w')
-        for i in range(0, 24):
-            if i in hour_of_day:
-                r = 127 + int((float(hour_of_day[i]) / data.activity_by_hour_of_day_busiest) * 128)
-                f.write('<td style="background-color: rgb(%d, 0, 0)">%d</td>' % (r, hour_of_day[i]))
-                fp.write('%d %d\n' % (i, hour_of_day[i]))
-            else:
-                f.write('<td>0</td>')
-                fp.write('%d 0\n' % i)
-        fp.close()
-        f.write('</tr>\n<tr><th>%</th>')
-        totalcommits = data.getTotalCommits()
-        for i in range(0, 24):
-            if i in hour_of_day:
-                r = 127 + int((float(hour_of_day[i]) / data.activity_by_hour_of_day_busiest) * 128)
-                f.write('<td style="background-color: rgb(%d, 0, 0)">%.2f</td>' % (r, (100.0 * hour_of_day[i]) / totalcommits))
-            else:
-                f.write('<td>0.00</td>')
-        f.write('</tr></table>')
-        f.write('<img src="hour_of_day.png" alt="Hour of Day">')
         fg = open(path + '/hour_of_day.dat', 'w')
         for i in range(0, 24):
             if i in hour_of_day:
@@ -828,107 +775,35 @@ class HTMLReportCreator(ReportCreator):
         fg.close()
 
         # Day of Week
-        f.write(html_header(2, 'Day of Week'))
         day_of_week = data.getActivityByDayOfWeek()
-        f.write('<div class="vtable"><table>')
-        f.write('<tr><th>Day</th><th>Total (%)</th></tr>')
         fp = open(path + '/day_of_week.dat', 'w')
         for d in range(0, 7):
             commits = 0
             if d in day_of_week:
                 commits = day_of_week[d]
             fp.write('%d %s %d\n' % (d + 1, WEEKDAYS[d], commits))
-            f.write('<tr>')
-            f.write('<th>%s</th>' % (WEEKDAYS[d]))
-            if d in day_of_week:
-                f.write('<td>%d (%.2f%%)</td>' % (day_of_week[d], (100.0 * day_of_week[d]) / totalcommits))
-            else:
-                f.write('<td>0</td>')
-            f.write('</tr>')
-        f.write('</table></div>')
-        f.write('<img src="day_of_week.png" alt="Day of Week">')
         fp.close()
 
-        # Hour of Week
-        f.write(html_header(2, 'Hour of Week'))
-        f.write('<table>')
-
-        f.write('<tr><th>Weekday</th>')
-        for hour in range(0, 24):
-            f.write('<th>%d</th>' % (hour))
-        f.write('</tr>')
-
-        for weekday in range(0, 7):
-            f.write('<tr><th>%s</th>' % (WEEKDAYS[weekday]))
-            for hour in range(0, 24):
-                try:
-                    commits = data.activity_by_hour_of_week[weekday][hour]
-                except KeyError:
-                    commits = 0
-                if commits != 0:
-                    f.write('<td')
-                    r = 127 + int((float(commits) / data.activity_by_hour_of_week_busiest) * 128)
-                    f.write(' style="background-color: rgb(%d, 0, 0)"' % r)
-                    f.write('>%d</td>' % commits)
-                else:
-                    f.write('<td></td>')
-            f.write('</tr>')
-
-        f.write('</table>')
-
         # Month of Year
-        f.write(html_header(2, 'Month of Year'))
-        f.write('<div class="vtable"><table>')
-        f.write('<tr><th>Month</th><th>Commits (%)</th></tr>')
         fp = open (path + '/month_of_year.dat', 'w')
         for mm in range(1, 13):
             commits = 0
             if mm in data.activity_by_month_of_year:
                 commits = data.activity_by_month_of_year[mm]
-            f.write('<tr><td>%d</td><td>%d (%.2f %%)</td></tr>' % (mm, commits, (100.0 * commits) / data.getTotalCommits()))
             fp.write('%d %d\n' % (mm, commits))
         fp.close()
-        f.write('</table></div>')
-        f.write('<img src="month_of_year.png" alt="Month of Year">')
 
         # Commits by year/month
-        f.write(html_header(2, 'Commits by year/month'))
-        f.write('<div class="vtable"><table><tr><th>Month</th><th>Commits</th><th>Lines added</th><th>Lines removed</th></tr>')
-        for yymm in reversed(sorted(data.commits_by_month.keys())):
-            f.write('<tr><td>%s</td><td>%d</td><td>%d</td><td>%d</td></tr>' % (yymm, data.commits_by_month.get(yymm,0), data.lines_added_by_month.get(yymm,0), data.lines_removed_by_month.get(yymm,0)))
-        f.write('</table></div>')
-        f.write('<img src="commits_by_year_month.png" alt="Commits by year/month">')
         fg = open(path + '/commits_by_year_month.dat', 'w')
         for yymm in sorted(data.commits_by_month.keys()):
             fg.write('%s %s\n' % (yymm, data.commits_by_month[yymm]))
         fg.close()
 
         # Commits by year
-        f.write(html_header(2, 'Commits by Year'))
-        f.write('<div class="vtable"><table><tr><th>Year</th><th>Commits (% of all)</th><th>Lines added</th><th>Lines removed</th></tr>')
-        for yy in reversed(sorted(data.commits_by_year.keys())):
-            f.write('<tr><td>%s</td><td>%d (%.2f%%)</td><td>%d</td><td>%d</td></tr>' % (yy, data.commits_by_year.get(yy,0), (100.0 * data.commits_by_year.get(yy,0)) / data.getTotalCommits(), data.lines_added_by_year.get(yy,0), data.lines_removed_by_year.get(yy,0)))
-        f.write('</table></div>')
-        f.write('<img src="commits_by_year.png" alt="Commits by Year">')
         fg = open(path + '/commits_by_year.dat', 'w')
         for yy in sorted(data.commits_by_year.keys()):
             fg.write('%d %d\n' % (yy, data.commits_by_year[yy]))
         fg.close()
-
-        # Commits by timezone
-        f.write(html_header(2, 'Commits by Timezone'))
-        f.write('<table><tr>')
-        f.write('<th>Timezone</th><th>Commits</th>')
-        f.write('</tr>')
-        max_commits_on_tz = max(data.commits_by_timezone.values())
-        for i in sorted(data.commits_by_timezone.keys(), key = lambda n : int(n)):
-            commits = data.commits_by_timezone[i]
-            r = 127 + int((float(commits) / max_commits_on_tz) * 128)
-            f.write('<tr><th>%s</th><td style="background-color: rgb(%d, 0, 0)">%d</td></tr>' % (i, r, commits))
-        f.write('</table>')
-
-        f.write('</body></html>')
-        f.close()
 
         ###
         # Authors
@@ -1069,7 +944,10 @@ class HTMLReportCreator(ReportCreator):
         # TODO: this conversion from old 'data' to new 'project data' should perhaps be removed in future
         activity_period_weeks = 32
         project_data = {
-            'recent_activity': []
+            'recent_activity': [],
+            'hourly_activity': [],
+            'weekday_hourly_activity': {},
+            'timezones_activity': []
         }
 
         # generate weeks to show (previous N weeks from now)
@@ -1092,6 +970,34 @@ class HTMLReportCreator(ReportCreator):
                 percentage = float(data.activity_by_year_week[weeks[i]]) / data.activity_by_year_week_peak
             bar_height = max(1, int(200 * percentage))
             project_data['recent_activity'].append((commits, bar_height))
+
+        totalcommits = data.getTotalCommits()
+        hour_of_day = data.getActivityByHourOfDay()
+        for i in range(0, 24):
+            if i in hour_of_day:
+                r = 127 + int((float(hour_of_day[i]) / data.activity_by_hour_of_day_busiest) * 128)
+                project_data['hourly_activity'].append({'intensity': r, 'commits_count': hour_of_day[i], 'relative_commits_count': (100.0 * hour_of_day[i]) / totalcommits})
+            else:
+                project_data['hourly_activity'].append({'intensity': 0, 'commits_count': 0, 'relative_commits_count': 0.00})
+
+        for weekday, weekday_name in enumerate(calendar.day_name):
+            project_data['weekday_hourly_activity'][weekday_name] = []
+            for hour in range(0, 24):
+                try:
+                    commits = data.activity_by_hour_of_week[weekday][hour]
+                except KeyError:
+                    commits = 0
+                if commits != 0:
+                    r = 127 + int((float(commits) / data.activity_by_hour_of_week_busiest) * 128)
+                    project_data['weekday_hourly_activity'][weekday_name].append((r, commits))
+                else:
+                    project_data['weekday_hourly_activity'][weekday_name].append((0, commits))
+
+        max_commits_on_tz = max(data.commits_by_timezone.values())
+        for i in sorted(data.commits_by_timezone.keys(), key = lambda n: int(n)):
+            commits = data.commits_by_timezone[i]
+            r = 127 + int((float(commits) / max_commits_on_tz) * 128)
+            project_data['timezones_activity'].append((i, r, commits))
 
         # load and render template
         code_dir = os.path.dirname(os.path.abspath(__file__))
