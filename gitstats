@@ -6,13 +6,14 @@ import getopt
 import glob
 import os
 import pickle
-import platform
 import re
 import shutil
 import sys
 import time
 import zlib
 import calendar
+from multiprocessing import Pool
+from jinja2 import Environment, FileSystemLoader
 
 from tools import get_external_execution_time, get_pipe_output
 
@@ -20,12 +21,9 @@ if sys.version_info < (2, 6):
     print >> sys.stderr, "Python 2.6 or higher is required for gitstats"
     sys.exit(1)
 
-from multiprocessing import Pool
-
 os.environ['LC_ALL'] = 'C'
 
 GNUPLOT_COMMON = 'set terminal png transparent size 640,240\nset size 1.0,1.0\n'
-ON_LINUX = (platform.system() == 'Linux')
 WEEKDAYS = ('Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun')
 
 exectime_internal = 0.0
@@ -713,15 +711,6 @@ class ReportCreator:
         self.path = path
 
 
-def html_linkify(text):
-    return text.lower().replace(' ', '_')
-
-
-def html_header(level, text):
-    name = html_linkify(text)
-    return '\n<h%d id="%s"><a href="#%s">%s</a></h%d>\n\n' % (level, name, name, text, level)
-
-
 class HTMLReportCreator(ReportCreator):
     def create(self, data, path):
         ReportCreator.create(self, data, path)
@@ -892,12 +881,9 @@ class HTMLReportCreator(ReportCreator):
         with open(os.path.join(path, "tags.html"), 'w') as f:
             f.write(tags_html)
 
-
         self.createGraphs(path)
 
     def render_general_page(self, data):
-        from jinja2 import Environment, FileSystemLoader
-
         date_format_str = '%Y-%m-%d %H:%M'
         # TODO: this conversion from old 'data' to new 'project data' should perhaps be removed in future
         project_data = {
@@ -939,8 +925,6 @@ class HTMLReportCreator(ReportCreator):
         return template_rendered
 
     def render_activity_page(self, data):
-        from jinja2 import Environment, FileSystemLoader
-
         # TODO: this conversion from old 'data' to new 'project data' should perhaps be removed in future
         activity_period_weeks = 32
         project_data = {
@@ -1011,8 +995,6 @@ class HTMLReportCreator(ReportCreator):
         return template_rendered
 
     def render_authors_page(self, data):
-        from jinja2 import Environment, FileSystemLoader
-
         # TODO: this conversion from old 'data' to new 'project data' should perhaps be removed in future
         project_data = {
             'top_authors': [],
@@ -1085,8 +1067,6 @@ class HTMLReportCreator(ReportCreator):
         return template_rendered.encode('utf-8')
 
     def render_files_page(self, data):
-        from jinja2 import Environment, FileSystemLoader
-
         # TODO: this conversion from old 'data' to new 'project data' should perhaps be removed in future
         project_data = {
             'files_count': data.getTotalFiles(),
@@ -1123,8 +1103,6 @@ class HTMLReportCreator(ReportCreator):
         return template_rendered
 
     def render_lines_page(self, data):
-        from jinja2 import Environment, FileSystemLoader
-
         # TODO: this conversion from old 'data' to new 'project data' should perhaps be removed in future
         project_data = {
             "total_lines_count": data.getTotalLOC(),
@@ -1144,8 +1122,6 @@ class HTMLReportCreator(ReportCreator):
         return template_rendered
 
     def render_tags_page(self, data):
-        from jinja2 import Environment, FileSystemLoader
-
         # TODO: this conversion from old 'data' to new 'project data' should perhaps be removed in future
         project_data = {
             'tags_count': len(data.tags),
@@ -1392,34 +1368,6 @@ plot """
             if len(out) > 0:
                 print out
 
-    def printHeader(self, f, title = ''):
-        f.write(
-"""<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>GitStats - %s</title>
-    <link rel="stylesheet" href="%s" type="text/css">
-    <meta name="generator" content="GitStats %s">
-    <script type="text/javascript" src="sortable.js"></script>
-</head>
-<body>
-""" % (self.title, conf['style'], getversion()))
-
-    def printNav(self, f):
-        f.write("""
-<div class="nav">
-<ul>
-<li><a href="general.html">General</a></li>
-<li><a href="activity.html">Activity</a></li>
-<li><a href="authors.html">Authors</a></li>
-<li><a href="files.html">Files</a></li>
-<li><a href="lines.html">Lines</a></li>
-<li><a href="tags.html">Tags</a></li>
-</ul>
-</div>
-""")
-
 def usage():
     print """
 Usage: gitstats [options] <gitpath..> <outputpath>
@@ -1508,7 +1456,7 @@ class GitStats:
             print
 
 
-if __name__=='__main__':
+if __name__ == '__main__':
     g = GitStats()
     g.run(sys.argv[1:])
 

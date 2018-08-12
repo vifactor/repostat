@@ -1,0 +1,6 @@
+dateutils==0.6.6
+Jinja2==2.10
+MarkupSafe==1.0
+python-dateutil==2.7.3
+pytz==2018.5
+six==1.11.0
