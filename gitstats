@@ -490,7 +490,6 @@ class GitDataCollector(DataCollector):
         lines = get_pipe_output(['git log --shortstat %s --pretty=format:"%%at %%aN" %s' % (extra, getlogrange('HEAD'))]).split('\n')
         lines.reverse()
         files = 0; inserted = 0; deleted = 0; total_lines = 0
-        author = None
         for line in lines:
             if len(line) == 0:
                 continue
@@ -543,8 +542,7 @@ class GitDataCollector(DataCollector):
         # committed what, not just through mainline)
         lines = get_pipe_output(['git log --shortstat --date-order --pretty=format:"%%at %%aN" %s' % (getlogrange('HEAD'))]).split('\n')
         lines.reverse()
-        files = 0; inserted = 0; deleted = 0
-        author = None
+        inserted = 0; deleted = 0
         stamp = 0
         for line in lines:
             if len(line) == 0:
@@ -1117,13 +1115,17 @@ class HTMLReportCreator:
         )
         return template_rendered.encode('utf-8')
 
+    @staticmethod
+    def create_graph_script(script_path, script_code):
+        with open(script_path, 'w') as f:
+            f.write(GNUPLOT_COMMON)
+            f.write(script_code)
+
     def createGraphs(self, path):
         print 'Generating graphs...'
 
         # hour of day
-        f = open(path + '/hour_of_day.plot', 'w')
-        f.write(GNUPLOT_COMMON)
-        f.write(
+        self.create_graph_script(os.path.join(path, 'hour_of_day.plot'),
 """
 set output 'hour_of_day.png'
 unset key
@@ -1134,12 +1136,9 @@ set grid y
 set ylabel "Commits"
 plot 'hour_of_day.dat' using 1:2:(0.5) w boxes fs solid
 """)
-        f.close()
 
         # day of week
-        f = open(path + '/day_of_week.plot', 'w')
-        f.write(GNUPLOT_COMMON)
-        f.write(
+        self.create_graph_script(os.path.join(path, 'day_of_week.plot'),
 """
 set output 'day_of_week.png'
 unset key
@@ -1150,12 +1149,9 @@ set grid y
 set ylabel "Commits"
 plot 'day_of_week.dat' using 1:3:(0.5):xtic(2) w boxes fs solid
 """)
-        f.close()
 
         # Domains
-        f = open(path + '/domains.plot', 'w')
-        f.write(GNUPLOT_COMMON)
-        f.write(
+        self.create_graph_script(os.path.join(path, 'domains.plot'),
 """
 set output 'domains.png'
 unset key
@@ -1165,12 +1161,9 @@ set grid y
 set ylabel "Commits"
 plot 'domains.dat' using 2:3:(0.5) with boxes fs solid, '' using 2:3:1 with labels rotate by 45 offset 0,1
 """)
-        f.close()
 
         # Month of Year
-        f = open(path + '/month_of_year.plot', 'w')
-        f.write(GNUPLOT_COMMON)
-        f.write(
+        self.create_graph_script(os.path.join(path, 'month_of_year.plot'),
 """
 set output 'month_of_year.png'
 unset key
@@ -1181,12 +1174,9 @@ set grid y
 set ylabel "Commits"
 plot 'month_of_year.dat' using 1:2:(0.5) w boxes fs solid
 """)
-        f.close()
 
         # commits_by_year_month
-        f = open(path + '/commits_by_year_month.plot', 'w')
-        f.write(GNUPLOT_COMMON)
-        f.write(
+        self.create_graph_script(os.path.join(path, 'commits_by_year_month.plot'),
 """
 set output 'commits_by_year_month.png'
 unset key
@@ -1200,12 +1190,9 @@ set grid y
 set ylabel "Commits"
 plot 'commits_by_year_month.dat' using 1:2:(0.5) w boxes fs solid
 """)
-        f.close()
 
         # commits_by_year
-        f = open(path + '/commits_by_year.plot', 'w')
-        f.write(GNUPLOT_COMMON)
-        f.write(
+        self.create_graph_script(os.path.join(path, 'commits_by_year.plot'),
 """
 set output 'commits_by_year.png'
 unset key
@@ -1216,12 +1203,9 @@ set ylabel "Commits"
 set yrange [0:]
 plot 'commits_by_year.dat' using 1:2:(0.5) w boxes fs solid
 """)
-        f.close()
 
         # Files by date
-        f = open(path + '/files_by_date.plot', 'w')
-        f.write(GNUPLOT_COMMON)
-        f.write(
+        self.create_graph_script(os.path.join(path, 'files_by_date.plot'),
 """
 set output 'files_by_date.png'
 unset key
@@ -1236,12 +1220,9 @@ set ytics autofreq
 set bmargin 6
 plot 'files_by_date.dat' using 1:2 w steps
 """)
-        f.close()
 
         # Lines of Code
-        f = open(path + '/lines_of_code.plot', 'w')
-        f.write(GNUPLOT_COMMON)
-        f.write(
+        self.create_graph_script(os.path.join(path, 'lines_of_code.plot'),
 """
 set output 'lines_of_code.png'
 unset key
@@ -1255,12 +1236,9 @@ set xtics rotate
 set bmargin 6
 plot 'lines_of_code.dat' using 1:2 w lines
 """)
-        f.close()
 
         # Lines of Code Added per author
-        f = open(path + '/lines_of_code_by_author.plot', 'w')
-        f.write(GNUPLOT_COMMON)
-        f.write(
+        script_content = \
 """
 set terminal png transparent size 640,480
 set output 'lines_of_code_by_author.png'
@@ -1274,22 +1252,15 @@ set ylabel "Lines"
 set xtics rotate
 set bmargin 6
 plot """
-)
-        i = 1
         plots = []
-        for a in self.authors_to_plot:
-            i = i + 1
+        for i, a in enumerate(self.authors_to_plot):
             author = a.replace("\"", "\\\"").replace("`", "")
-            plots.append("""'lines_of_code_by_author.dat' using 1:%d title "%s" w lines""" % (i, author))
-        f.write(", ".join(plots))
-        f.write('\n')
-
-        f.close()
+            plots.append("""'lines_of_code_by_author.dat' using 1:%d title "%s" w lines""" % (i + 1, author))
+        script_content += ", ".join(plots) + '\n'
+        self.create_graph_script(os.path.join(path, 'lines_of_code_by_author.plot'), script_content)
 
         # Commits per author
-        f = open(path + '/commits_by_author.plot', 'w')
-        f.write(GNUPLOT_COMMON)
-        f.write(
+        script_content = \
 """
 set terminal png transparent size 640,480
 set output 'commits_by_author.png'
@@ -1303,18 +1274,14 @@ set ylabel "Commits"
 set xtics rotate
 set bmargin 6
 plot """
-)
-        i = 1
         plots = []
-        for a in self.authors_to_plot:
-            i = i + 1
+        for i, a in enumerate(self.authors_to_plot):
             author = a.replace("\"", "\\\"").replace("`", "")
-            plots.append("""'commits_by_author.dat' using 1:%d title "%s" w lines""" % (i, author))
-        f.write(", ".join(plots))
-        f.write('\n')
+            plots.append("""'commits_by_author.dat' using 1:%d title "%s" w lines""" % (i + 1, author))
+        script_content += ", ".join(plots) + '\n'
+        self.create_graph_script(os.path.join(path, 'commits_by_author.plot'), script_content)
 
-        f.close()
-
+        # use gnuplot to process scripts
         os.chdir(path)
         files = glob.glob(path + '/*.plot')
         for f in files:
