@@ -277,6 +277,7 @@ class GitDataCollector(DataCollector):
 
         repo_statistics = GitStatistics(dir)
 
+        self.authors = repo_statistics.authors
         self.total_authors = len(repo_statistics.authors)
         self.tags = repo_statistics.tags
 
@@ -340,19 +341,6 @@ class GitDataCollector(DataCollector):
             if self.activity_by_year_week_peak < self.activity_by_year_week[yyw]:
                 self.activity_by_year_week_peak = self.activity_by_year_week[yyw]
 
-            # author stats
-            if author not in self.authors:
-                self.authors[author] = {}
-            # commits, note again that commits may be in any date order because of cherry-picking and patches
-            if 'last_commit_stamp' not in self.authors[author]:
-                self.authors[author]['last_commit_stamp'] = stamp
-            if stamp > self.authors[author]['last_commit_stamp']:
-                self.authors[author]['last_commit_stamp'] = stamp
-            if 'first_commit_stamp' not in self.authors[author]:
-                self.authors[author]['first_commit_stamp'] = stamp
-            if stamp < self.authors[author]['first_commit_stamp']:
-                self.authors[author]['first_commit_stamp'] = stamp
-
             # author of the month/year
             yymm = date.strftime('%Y-%m')
             if yymm in self.author_of_month:
@@ -370,15 +358,7 @@ class GitDataCollector(DataCollector):
                 self.author_of_year[yy][author] = 1
             self.commits_by_year[yy] = self.commits_by_year.get(yy, 0) + 1
 
-            # authors: active days
             yymmdd = date.strftime('%Y-%m-%d')
-            if 'last_active_day' not in self.authors[author]:
-                self.authors[author]['last_active_day'] = yymmdd
-                self.authors[author]['active_days'] = set([yymmdd])
-            elif yymmdd != self.authors[author]['last_active_day']:
-                self.authors[author]['last_active_day'] = yymmdd
-                self.authors[author]['active_days'].add(yymmdd)
-
             # project: active days
             if yymmdd != self.last_active_day:
                 self.last_active_day = yymmdd
@@ -546,9 +526,10 @@ class GitDataCollector(DataCollector):
         # committed what, not just through mainline)
         lines = get_pipe_output(['git log --shortstat --date-order --pretty=format:"%%at %%aN" %s' % (getlogrange('HEAD'))]).split('\n')
         lines.reverse()
-        files = 0; inserted = 0; deleted = 0
-        author = None
+        inserted = 0
         stamp = 0
+        # remove this when changes_by_date_by_author is migrated to pygit2
+        tmp_authors = {}
         for line in lines:
             if len(line) == 0:
                 continue
@@ -563,24 +544,23 @@ class GitDataCollector(DataCollector):
                         if oldstamp > stamp:
                             # clock skew, keep old timestamp to avoid having ugly graph
                             stamp = oldstamp
-                        if author not in self.authors:
-                            self.authors[author] = { 'lines_added' : 0, 'lines_removed' : 0, 'commits' : 0}
-                        self.authors[author]['commits'] = self.authors[author].get('commits', 0) + 1
-                        self.authors[author]['lines_added'] = self.authors[author].get('lines_added', 0) + inserted
-                        self.authors[author]['lines_removed'] = self.authors[author].get('lines_removed', 0) + deleted
+                        if author not in tmp_authors:
+                            tmp_authors[author] = {'lines_added': 0, 'commits': 0}
+                        tmp_authors[author]['commits'] = tmp_authors[author].get('commits', 0) + 1
+                        tmp_authors[author]['lines_added'] = tmp_authors[author].get('lines_added', 0) + inserted
                         if stamp not in self.changes_by_date_by_author:
                             self.changes_by_date_by_author[stamp] = {}
                         if author not in self.changes_by_date_by_author[stamp]:
                             self.changes_by_date_by_author[stamp][author] = {}
-                        self.changes_by_date_by_author[stamp][author]['lines_added'] = self.authors[author]['lines_added']
-                        self.changes_by_date_by_author[stamp][author]['commits'] = self.authors[author]['commits']
+                        self.changes_by_date_by_author[stamp][author]['lines_added'] = tmp_authors[author]['lines_added']
+                        self.changes_by_date_by_author[stamp][author]['commits'] = tmp_authors[author]['commits']
                         files, inserted, deleted = 0, 0, 0
                     except ValueError:
                         print 'Warning: unexpected line "%s"' % line
                 else:
                     print 'Warning: unexpected line "%s"' % line
             else:
-                numbers = getstatsummarycounts(line);
+                numbers = getstatsummarycounts(line)
 
                 if len(numbers) == 3:
                     (files, inserted, deleted) = map(lambda el : int(el), numbers)
@@ -1405,7 +1385,6 @@ class GitStats:
         data.refine()
 
         os.chdir(rundir)
-
         print 'Generating report...'
         report = HTMLReportCreator()
         report.create(data, outputpath)
