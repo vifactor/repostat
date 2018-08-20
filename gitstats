@@ -280,6 +280,7 @@ class GitDataCollector(DataCollector):
         self.authors = repo_statistics.authors
         self.total_authors = len(repo_statistics.authors)
         self.tags = repo_statistics.tags
+        self.domains = repo_statistics.domains
 
         # Collect revision statistics
         # Outputs "<stamp> <date> <time> <timezone> <author> '<' <mail> '>'"
@@ -293,10 +294,6 @@ class GitDataCollector(DataCollector):
             timezone = parts[3]
             author, mail = parts[4].split('<', 1)
             author = author.rstrip()
-            mail = mail.rstrip('>')
-            domain = '?'
-            if mail.find('@') != -1:
-                domain = mail.rsplit('@', 1)[1]
             date = datetime.datetime.fromtimestamp(float(stamp))
 
             # First and last commit stamp (may be in any order because of cherry-picking and patches)
@@ -316,12 +313,6 @@ class GitDataCollector(DataCollector):
             # day of week
             day = date.weekday()
             self.activity_by_day_of_week[day] = self.activity_by_day_of_week.get(day, 0) + 1
-
-            # domain stats
-            if domain not in self.domains:
-                self.domains[domain] = {}
-            # commits
-            self.domains[domain]['commits'] = self.domains[domain].get('commits', 0) + 1
 
             # hour of week
             if day not in self.activity_by_hour_of_week:

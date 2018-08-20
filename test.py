@@ -169,6 +169,29 @@ def get_authors_info():
     return authors
 
 
+def get_domain_info():
+    domains = {}
+    lines = get_pipe_output(
+        ['git rev-list --pretty=format:"%%at %%ai %%aN <%%aE>" %s' % getlogrange('HEAD'), 'grep -v ^commit']).split(
+        '\n')
+    for line in lines:
+        parts = line.split(' ', 4)
+        author, mail = parts[4].split('<', 1)
+        mail = mail.rstrip('>')
+        domain = '?'
+        if mail.find('@') != -1:
+            domain = mail.rsplit('@', 1)[1]
+
+        domain = domain.decode('utf-8')
+        # domain stats
+        if domain not in domains:
+            domains[domain] = {}
+        # commits
+        domains[domain]['commits'] = domains[domain].get('commits', 0) + 1
+
+    return domains
+
+
 class TestPygitMethods(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -216,6 +239,12 @@ class TestPygitMethods(unittest.TestCase):
         expected_last_commit_stamp = [v['last_commit_stamp'] for (_, v) in expected_authors_dict.items()]
         actual_last_commit_stamp = [v['last_commit_stamp'] for (_, v) in actual_authors_dict.items()]
         self.assertListEqual(sorted(expected_last_commit_stamp), sorted(actual_last_commit_stamp))
+
+    def test_domain_info(self):
+        expected_domain_info = get_domain_info()
+        actual_domain_info = self.gs.domains
+        for do, co in expected_domain_info.items():
+            self.assertEquals(actual_domain_info[do]['commits'], co['commits'])
 
 
 if __name__ == '__main__':

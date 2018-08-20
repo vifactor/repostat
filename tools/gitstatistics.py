@@ -2,16 +2,23 @@ import pygit2 as git
 import datetime
 
 
+def split_email_address(email_address):
+    parts = email_address.split('@')
+    if len(parts) != 2:
+        raise ValueError('Not an email passed: %s' % email_address)
+    return parts[0], parts[1]
+
 class GitStatistics:
     def __init__(self, path):
         """
         :param path: path to a repository
         """
         self.repo = git.Repository(path)
-        self.authors = self.fetch_authors()
+        self.authors = self.fetch_authors_info()
         self.tags = self.fetch_tags_info()
+        self.domains = self.fetch_domains_info()
 
-    def fetch_authors(self):
+    def fetch_authors_info(self):
         """
         e.g.
         {'Stefano Mosconi': {'lines_removed': 1, 'last_commit_stamp': 1302027851, 'active_days': set(['2011-04-05']),
@@ -80,4 +87,13 @@ class GitStatistics:
                 commit_count = 0
                 authors = {}
 
+        return result
+
+    def fetch_domains_info(self):
+        result = {}
+        for commit in self.repo.walk(self.repo.head.target):
+            _, domain = split_email_address(commit.author.email)
+            result[domain] = result.get(domain, 0) + 1
+        # TODO: this is done to save compatibility with gitstats' structures
+        result = {k: {'commits': v} for k, v in result.items()}
         return result
