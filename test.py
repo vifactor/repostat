@@ -192,6 +192,19 @@ def get_domain_info():
     return domains
 
 
+def get_timezone_info():
+    timezones = {}
+    lines = get_pipe_output(
+        ['git rev-list --pretty=format:"%%at %%ai %%aN <%%aE>" %s' % getlogrange('HEAD'), 'grep -v ^commit']).split(
+        '\n')
+    for line in lines:
+        parts = line.split(' ', 4)
+        timezone = parts[3]
+        timezones[timezone] = timezones.get(timezone, 0) + 1
+
+    return timezones
+
+
 class TestPygitMethods(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -245,6 +258,11 @@ class TestPygitMethods(unittest.TestCase):
         actual_domain_info = self.gs.domains
         for do, co in expected_domain_info.items():
             self.assertEquals(actual_domain_info[do]['commits'], co['commits'])
+
+    def test_timezone_info(self):
+        expected_timezone_info = get_timezone_info()
+        actual_timezone_info = self.gs.timezones
+        self.assertDictEqual(expected_timezone_info, actual_timezone_info)
 
 
 if __name__ == '__main__':

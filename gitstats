@@ -281,6 +281,7 @@ class GitDataCollector(DataCollector):
         self.total_authors = len(repo_statistics.authors)
         self.tags = repo_statistics.tags
         self.domains = repo_statistics.domains
+        self.commits_by_timezone = repo_statistics.timezones
 
         # Collect revision statistics
         # Outputs "<stamp> <date> <time> <timezone> <author> '<' <mail> '>'"
@@ -291,7 +292,6 @@ class GitDataCollector(DataCollector):
                 stamp = int(parts[0])
             except ValueError:
                 stamp = 0
-            timezone = parts[3]
             author, mail = parts[4].split('<', 1)
             author = author.rstrip()
             date = datetime.datetime.fromtimestamp(float(stamp))
@@ -355,14 +355,10 @@ class GitDataCollector(DataCollector):
                 self.last_active_day = yymmdd
                 self.active_days.add(yymmdd)
 
-            # timezone
-            self.commits_by_timezone[timezone] = self.commits_by_timezone.get(timezone, 0) + 1
-
         # outputs "<stamp> <files>" for each revision
         revlines = get_pipe_output(['git rev-list --pretty=format:"%%at %%T" %s' % getlogrange('HEAD'), 'grep -v ^commit']).strip().split('\n')
         lines = []
         revs_to_read = []
-        time_rev_count = []
         #Look up rev in cache and take info from cache if found
         #If not append rev to list of rev to read from repo
         for revline in revlines:
