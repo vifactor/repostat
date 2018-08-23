@@ -282,6 +282,8 @@ class GitDataCollector(DataCollector):
         self.tags = repo_statistics.tags
         self.domains = repo_statistics.domains
         self.commits_by_timezone = repo_statistics.timezones
+        self.first_commit_stamp = repo_statistics.first_commit_timestamp
+        self.last_commit_stamp = repo_statistics.last_commit_timestamp
 
         # Collect revision statistics
         # Outputs "<stamp> <date> <time> <timezone> <author> '<' <mail> '>'"
@@ -295,12 +297,6 @@ class GitDataCollector(DataCollector):
             author, mail = parts[4].split('<', 1)
             author = author.rstrip()
             date = datetime.datetime.fromtimestamp(float(stamp))
-
-            # First and last commit stamp (may be in any order because of cherry-picking and patches)
-            if stamp > self.last_commit_stamp:
-                self.last_commit_stamp = stamp
-            if self.first_commit_stamp == 0 or stamp < self.first_commit_stamp:
-                self.first_commit_stamp = stamp
 
             # activity
             # hour
@@ -460,7 +456,6 @@ class GitDataCollector(DataCollector):
         lines = get_pipe_output(['git log --shortstat %s --pretty=format:"%%at %%aN" %s' % (extra, getlogrange('HEAD'))]).split('\n')
         lines.reverse()
         files = 0; inserted = 0; deleted = 0; total_lines = 0
-        author = None
         for line in lines:
             if len(line) == 0:
                 continue

@@ -38,6 +38,8 @@ class GitStatistics:
         self.tags = self.fetch_tags_info()
         self.domains = self.fetch_domains_info()
         self.timezones = self.fetch_timezone_info()
+        self.first_commit_timestamp = min(commit.author.time for commit in self.repo.walk(self.repo.head.target))
+        self.last_commit_timestamp = max(commit.author.time for commit in self.repo.walk(self.repo.head.target))
 
     def fetch_authors_info(self):
         """
