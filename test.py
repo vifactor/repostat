@@ -257,6 +257,37 @@ def get_winners_info():
     return aom, aoy
 
 
+def get_weekly_hourly_activity():
+    activity_by_hour_of_week = {}
+    activity_by_hour_of_week_busiest = 0
+    lines = get_pipe_output(
+        ['git rev-list --pretty=format:"%%at %%ai %%aN <%%aE>" %s' % getlogrange('HEAD'), 'grep -v ^commit']).split(
+        '\n')
+    for line in lines:
+        parts = line.split(' ', 4)
+        try:
+            stamp = int(parts[0])
+        except ValueError:
+            stamp = 0
+        date = datetime.datetime.fromtimestamp(float(stamp))
+
+        # activity
+        # hour
+        hour = date.hour
+        # day of week
+        day = date.weekday()
+
+        # hour of week
+        if day not in activity_by_hour_of_week:
+            activity_by_hour_of_week[day] = {}
+        activity_by_hour_of_week[day][hour] = activity_by_hour_of_week[day].get(hour, 0) + 1
+        # most active hour?
+        if activity_by_hour_of_week[day][hour] > activity_by_hour_of_week_busiest:
+            activity_by_hour_of_week_busiest = activity_by_hour_of_week[day][hour]
+
+    return activity_by_hour_of_week, activity_by_hour_of_week_busiest
+
+
 class TestPygitMethods(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -324,6 +355,19 @@ class TestPygitMethods(unittest.TestCase):
         expected_aom_dict, expected_aoy_dict = get_winners_info()
         self.assertEquals(self.gs.author_of_month, expected_aom_dict)
         self.assertEquals(self.gs.author_of_year, expected_aoy_dict)
+
+    def test_activity_weekly_hourly(self):
+        expected_activity, expected_commits_count_in_busiest_weekday_hour = get_weekly_hourly_activity()
+        self.assertDictEqual(expected_activity, self.gs.activity_weekly_hourly)
+        self.assertEquals(expected_commits_count_in_busiest_weekday_hour, self.gs.max_weekly_hourly_activity)
+
+    def test_activity_weekly(self):
+        # TODO: manually checked
+        print self.gs.get_weekly_activity()
+
+    def test_activity_hourly(self):
+        # TODO: manually checked
+        print self.gs.get_hourly_activity()
 
 
 if __name__ == '__main__':

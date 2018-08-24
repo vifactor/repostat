@@ -286,6 +286,11 @@ class GitDataCollector(DataCollector):
         self.active_days = repo_statistics.active_days
         self.author_of_month = repo_statistics.author_of_month
         self.author_of_year = repo_statistics.author_of_year
+        self.activity_by_hour_of_week = repo_statistics.activity_weekly_hourly
+        self.activity_by_hour_of_week_busiest = repo_statistics.max_weekly_hourly_activity
+        self.activity_by_day_of_week = repo_statistics.get_weekly_activity()
+        self.activity_by_hour_of_day = repo_statistics.get_hourly_activity()
+        self.activity_by_hour_of_day_busiest = max(self.activity_by_hour_of_day.values())
 
         # Collect revision statistics
         # Outputs "<stamp> <date> <time> <timezone> <author> '<' <mail> '>'"
@@ -299,25 +304,6 @@ class GitDataCollector(DataCollector):
             date = datetime.datetime.fromtimestamp(float(stamp))
 
             # activity
-            # hour
-            hour = date.hour
-            self.activity_by_hour_of_day[hour] = self.activity_by_hour_of_day.get(hour, 0) + 1
-            # most active hour?
-            if self.activity_by_hour_of_day[hour] > self.activity_by_hour_of_day_busiest:
-                self.activity_by_hour_of_day_busiest = self.activity_by_hour_of_day[hour]
-
-            # day of week
-            day = date.weekday()
-            self.activity_by_day_of_week[day] = self.activity_by_day_of_week.get(day, 0) + 1
-
-            # hour of week
-            if day not in self.activity_by_hour_of_week:
-                self.activity_by_hour_of_week[day] = {}
-            self.activity_by_hour_of_week[day][hour] = self.activity_by_hour_of_week[day].get(hour, 0) + 1
-            # most active hour?
-            if self.activity_by_hour_of_week[day][hour] > self.activity_by_hour_of_week_busiest:
-                self.activity_by_hour_of_week_busiest = self.activity_by_hour_of_week[day][hour]
-
             # month of year
             month = date.month
             self.activity_by_month_of_year[month] = self.activity_by_month_of_year.get(month, 0) + 1
