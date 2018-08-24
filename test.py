@@ -205,6 +205,25 @@ def get_timezone_info():
     return timezones
 
 
+def get_active_days_info():
+    active_days = set()
+    lines = get_pipe_output(
+        ['git rev-list --pretty=format:"%%at %%ai %%aN <%%aE>" %s' % getlogrange('HEAD'), 'grep -v ^commit']).split(
+        '\n')
+    for line in lines:
+        parts = line.split(' ', 4)
+        try:
+            stamp = int(parts[0])
+        except ValueError:
+            stamp = 0
+        date = datetime.datetime.fromtimestamp(float(stamp))
+        yymmdd = date.strftime('%Y-%m-%d')
+        # project: active days
+        active_days.add(yymmdd)
+
+    return active_days
+
+
 class TestPygitMethods(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -263,6 +282,10 @@ class TestPygitMethods(unittest.TestCase):
         expected_timezone_info = get_timezone_info()
         actual_timezone_info = self.gs.timezones
         self.assertDictEqual(expected_timezone_info, actual_timezone_info)
+
+    def test_active_days_info(self):
+        expected_active_days = get_active_days_info()
+        self.assertEquals(expected_active_days, self.gs.active_days)
 
 
 if __name__ == '__main__':

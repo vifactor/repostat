@@ -156,7 +156,6 @@ class DataCollector:
         self.lines_removed_by_year = {} # year -> lines removed
         self.first_commit_stamp = 0
         self.last_commit_stamp = 0
-        self.last_active_day = None
         self.active_days = set()
 
         # lines
@@ -284,6 +283,7 @@ class GitDataCollector(DataCollector):
         self.commits_by_timezone = repo_statistics.timezones
         self.first_commit_stamp = repo_statistics.first_commit_timestamp
         self.last_commit_stamp = repo_statistics.last_commit_timestamp
+        self.active_days = repo_statistics.active_days
 
         # Collect revision statistics
         # Outputs "<stamp> <date> <time> <timezone> <author> '<' <mail> '>'"
@@ -344,12 +344,6 @@ class GitDataCollector(DataCollector):
                 self.author_of_year[yy] = {}
                 self.author_of_year[yy][author] = 1
             self.commits_by_year[yy] = self.commits_by_year.get(yy, 0) + 1
-
-            yymmdd = date.strftime('%Y-%m-%d')
-            # project: active days
-            if yymmdd != self.last_active_day:
-                self.last_active_day = yymmdd
-                self.active_days.add(yymmdd)
 
         # outputs "<stamp> <files>" for each revision
         revlines = get_pipe_output(['git rev-list --pretty=format:"%%at %%T" %s' % getlogrange('HEAD'), 'grep -v ^commit']).strip().split('\n')
