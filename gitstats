@@ -284,6 +284,8 @@ class GitDataCollector(DataCollector):
         self.first_commit_stamp = repo_statistics.first_commit_timestamp
         self.last_commit_stamp = repo_statistics.last_commit_timestamp
         self.active_days = repo_statistics.active_days
+        self.author_of_month = repo_statistics.author_of_month
+        self.author_of_year = repo_statistics.author_of_year
 
         # Collect revision statistics
         # Outputs "<stamp> <date> <time> <timezone> <author> '<' <mail> '>'"
@@ -294,8 +296,6 @@ class GitDataCollector(DataCollector):
                 stamp = int(parts[0])
             except ValueError:
                 stamp = 0
-            author, mail = parts[4].split('<', 1)
-            author = author.rstrip()
             date = datetime.datetime.fromtimestamp(float(stamp))
 
             # activity
@@ -330,19 +330,9 @@ class GitDataCollector(DataCollector):
 
             # author of the month/year
             yymm = date.strftime('%Y-%m')
-            if yymm in self.author_of_month:
-                self.author_of_month[yymm][author] = self.author_of_month[yymm].get(author, 0) + 1
-            else:
-                self.author_of_month[yymm] = {}
-                self.author_of_month[yymm][author] = 1
             self.commits_by_month[yymm] = self.commits_by_month.get(yymm, 0) + 1
 
             yy = date.year
-            if yy in self.author_of_year:
-                self.author_of_year[yy][author] = self.author_of_year[yy].get(author, 0) + 1
-            else:
-                self.author_of_year[yy] = {}
-                self.author_of_year[yy][author] = 1
             self.commits_by_year[yy] = self.commits_by_year.get(yy, 0) + 1
 
         # outputs "<stamp> <files>" for each revision

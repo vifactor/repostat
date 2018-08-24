@@ -224,6 +224,39 @@ def get_active_days_info():
     return active_days
 
 
+def get_winners_info():
+    aom = {}
+    aoy = {}
+    lines = get_pipe_output(
+        ['git rev-list --pretty=format:"%%at %%ai %%aN <%%aE>" %s' % getlogrange('HEAD'), 'grep -v ^commit']).split(
+        '\n')
+    for line in lines:
+        parts = line.split(' ', 4)
+        try:
+            stamp = int(parts[0])
+        except ValueError:
+            stamp = 0
+        author, mail = parts[4].split('<', 1)
+        author = author.rstrip()
+        date = datetime.datetime.fromtimestamp(float(stamp))
+
+        # author of the month/year
+        yymm = date.strftime('%Y-%m')
+        if yymm in aom:
+            aom[yymm][author] = aom[yymm].get(author, 0) + 1
+        else:
+            aom[yymm] = {}
+            aom[yymm][author] = 1
+
+        yy = date.year
+        if yy in aoy:
+            aoy[yy][author] = aoy[yy].get(author, 0) + 1
+        else:
+            aoy[yy] = {}
+            aoy[yy][author] = 1
+    return aom, aoy
+
+
 class TestPygitMethods(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -286,6 +319,11 @@ class TestPygitMethods(unittest.TestCase):
     def test_active_days_info(self):
         expected_active_days = get_active_days_info()
         self.assertEquals(expected_active_days, self.gs.active_days)
+
+    def test_winners_info(self):
+        expected_aom_dict, expected_aoy_dict = get_winners_info()
+        self.assertEquals(self.gs.author_of_month, expected_aom_dict)
+        self.assertEquals(self.gs.author_of_year, expected_aoy_dict)
 
 
 if __name__ == '__main__':

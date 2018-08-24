@@ -34,6 +34,8 @@ class GitStatistics:
         :param path: path to a repository
         """
         self.repo = git.Repository(path)
+        self.author_of_year = {}
+        self.author_of_month = {}
         self.authors = self.fetch_authors_info()
         self.tags = self.fetch_tags_info()
         self.domains = self.fetch_domains_info()
@@ -63,6 +65,7 @@ class GitStatistics:
                 is_merge_commit = True
             commit_day_str = datetime.fromtimestamp(child_commit.author.time).strftime('%Y-%m-%d')
             author_name = child_commit.author.name.encode('utf-8')
+            self._update_winners(author_name, child_commit.author.time)
             if author_name not in result:
                 result[author_name] = {
                     'lines_removed': st.deletions if not is_merge_commit else 0,
@@ -132,3 +135,17 @@ class GitStatistics:
             timezone_str = dt.strftime('%z')
             result[timezone_str] = result.get(timezone_str, 0) + 1
         return result
+
+    def _update_winners(self, author, timestamp):
+        date = datetime.fromtimestamp(timestamp)
+        yymm = date.strftime('%Y-%m')
+        if yymm in self.author_of_month:
+            self.author_of_month[yymm][author] = self.author_of_month[yymm].get(author, 0) + 1
+        else:
+            self.author_of_month[yymm] = {author: 1}
+
+        yy = date.year
+        if yy in self.author_of_year:
+            self.author_of_year[yy][author] = self.author_of_year[yy].get(author, 0) + 1
+        else:
+            self.author_of_year[yy] = {author: 1}
