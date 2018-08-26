@@ -294,24 +294,8 @@ class GitDataCollector(DataCollector):
         self.activity_by_month_of_year = repo_statistics.activity_monthly
         self.commits_by_month = repo_statistics.monthly_commits_timeline
         self.commits_by_year = repo_statistics.yearly_commits_timeline
-
-        # Collect revision statistics
-        # Outputs "<stamp> <date> <time> <timezone> <author> '<' <mail> '>'"
-        lines = get_pipe_output(['git rev-list --pretty=format:"%%at %%ai %%aN <%%aE>" %s' % getlogrange('HEAD'), 'grep -v ^commit']).split('\n')
-        for line in lines:
-            parts = line.split(' ', 4)
-            try:
-                stamp = int(parts[0])
-            except ValueError:
-                stamp = 0
-            date = datetime.datetime.fromtimestamp(float(stamp))
-
-            # activity
-            # yearly/weekly activity
-            yyw = date.strftime('%Y-%W')
-            self.activity_by_year_week[yyw] = self.activity_by_year_week.get(yyw, 0) + 1
-            if self.activity_by_year_week_peak < self.activity_by_year_week[yyw]:
-                self.activity_by_year_week_peak = self.activity_by_year_week[yyw]
+        self.activity_by_year_week = repo_statistics.recent_activity_by_week
+        self.activity_by_year_week_peak = repo_statistics.recent_activity_peak
 
         # outputs "<stamp> <files>" for each revision
         revlines = get_pipe_output(['git rev-list --pretty=format:"%%at %%T" %s' % getlogrange('HEAD'), 'grep -v ^commit']).strip().split('\n')

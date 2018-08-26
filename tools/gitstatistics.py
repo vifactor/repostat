@@ -50,6 +50,8 @@ class GitStatistics:
         self.max_weekly_hourly_activity = max(commits_count for _, hourly_activity in self.activity_weekly_hourly.items()
                                               for _, commits_count in hourly_activity.items())
         self.activity_monthly = self.fetch_monthly_activity()
+        self.recent_activity_by_week = self.fetch_recent_activity()
+        self.recent_activity_peak = max(activity for activity in self.recent_activity_by_week.values())
 
     def fetch_authors_info(self):
         """
@@ -160,6 +162,15 @@ class GitStatistics:
             month = date.month
             activity[month] = activity.get(month, 0) + 1
             self._adjust_commits_timeline(date)
+        return activity
+
+    def fetch_recent_activity(self, weeks=None):
+        # FIXME: so far this returns whole activity on week basis, use the weeks argument to skip unused data
+        activity = {}
+        for commit in self.repo.walk(self.repo.head.target):
+            date = datetime.fromtimestamp(commit.author.time)
+            yyw = date.strftime('%Y-%W')
+            activity[yyw] = activity.get(yyw, 0) + 1
         return activity
 
     def get_weekly_activity(self):

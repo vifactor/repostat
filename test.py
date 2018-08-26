@@ -331,6 +331,28 @@ def get_commits_count_change_timeline():
     return commits_by_month, commits_by_year
 
 
+def get_activity_by_year_week():
+    activity_by_year_week = {}
+    activity_by_year_week_peak = 0
+    lines = get_pipe_output(
+        ['git rev-list --pretty=format:"%%at %%ai %%aN <%%aE>" %s' % getlogrange('HEAD'), 'grep -v ^commit']).split('\n')
+    for line in lines:
+        parts = line.split(' ', 4)
+        try:
+            stamp = int(parts[0])
+        except ValueError:
+            stamp = 0
+        date = datetime.datetime.fromtimestamp(float(stamp))
+
+        # activity
+        # yearly/weekly activity
+        yyw = date.strftime('%Y-%W')
+        activity_by_year_week[yyw] = activity_by_year_week.get(yyw, 0) + 1
+        if activity_by_year_week_peak < activity_by_year_week[yyw]:
+            activity_by_year_week_peak = activity_by_year_week[yyw]
+    return activity_by_year_week, activity_by_year_week_peak
+
+
 class TestPygitMethods(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -420,6 +442,11 @@ class TestPygitMethods(unittest.TestCase):
         expected_by_month, expected_by_year = get_commits_count_change_timeline()
         self.assertDictEqual(expected_by_month, self.gs.monthly_commits_timeline)
         self.assertDictEqual(expected_by_year, self.gs.yearly_commits_timeline)
+
+    def test_recent_by_week_activity(self):
+        expected_activity, expected_activity_peak = get_activity_by_year_week()
+        self.assertDictEqual(expected_activity, self.gs.recent_activity_by_week)
+        self.assertEquals(expected_activity_peak, self.gs.recent_activity_peak)
 
 
 if __name__ == '__main__':
