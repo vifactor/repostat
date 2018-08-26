@@ -353,6 +353,69 @@ def get_activity_by_year_week():
     return activity_by_year_week, activity_by_year_week_peak
 
 
+def get_total_changes_timeline():
+    # line statistics
+    # outputs:
+    #  N files changed, N insertions (+), N deletions(-)
+    # <stamp> <author>
+    changes_by_date = {}  # stamp -> { files, ins, del }
+    lines_added_by_month = {}
+    lines_removed_by_month = {}
+    lines_added_by_year = {}
+    lines_removed_by_year = {}
+    total_lines_added = 0
+    total_lines_removed = 0
+    # computation of lines of code by date is better done
+    # on a linear history.
+    extra = ''
+    if conf['linear_linestats']:
+        extra = '--first-parent -m'
+    lines = get_pipe_output(
+        ['git log --shortstat %s --pretty=format:"%%at %%aN" %s' % (extra, getlogrange('HEAD'))]).split('\n')
+    lines.reverse()
+    files = 0
+    inserted = 0
+    deleted = 0
+    total_lines = 0
+    for line in lines:
+        if len(line) == 0:
+            continue
+        # <stamp> <author>
+        if re.search('files? changed', line) is None:
+            pos = line.find(' ')
+            if pos != -1:
+                try:
+                    (stamp, author) = (long(line[:pos]), line[pos + 1:])
+                    changes_by_date[stamp] = {u'files': files, u'ins': inserted, u'del': deleted, u'lines': total_lines}
+
+                    date = datetime.datetime.fromtimestamp(stamp)
+                    yymm = date.strftime('%Y-%m')
+                    lines_added_by_month[yymm] = lines_added_by_month.get(yymm, 0) + inserted
+                    lines_removed_by_month[yymm] = lines_removed_by_month.get(yymm, 0) + deleted
+
+                    yy = date.year
+                    lines_added_by_year[yy] = lines_added_by_year.get(yy, 0) + inserted
+                    lines_removed_by_year[yy] = lines_removed_by_year.get(yy, 0) + deleted
+
+                    files, inserted, deleted = 0, 0, 0
+                except ValueError:
+                    print 'Warning: unexpected line "%s"' % line
+            else:
+                print 'Warning: unexpected line "%s"' % line
+        else:
+            numbers = get_stat_summary_counts(line)
+            if len(numbers) == 3:
+                (files, inserted, deleted) = map(lambda el: int(el), numbers)
+                total_lines += inserted
+                total_lines -= deleted
+                total_lines_added += inserted
+                total_lines_removed += deleted
+            else:
+                print 'Warning: failed to handle line "%s"' % line
+                (files, inserted, deleted) = (0, 0, 0)
+    return changes_by_date, total_lines_added, total_lines_removed
+
+
 class TestPygitMethods(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -448,6 +511,13 @@ class TestPygitMethods(unittest.TestCase):
         self.assertDictEqual(expected_activity, self.gs.recent_activity_by_week)
         self.assertEquals(expected_activity_peak, self.gs.recent_activity_peak)
 
+    def test_changes_history(self):
+        expected_history, tla, tlr = get_total_changes_timeline()
+        for t, expected_record in expected_history.iteritems():
+            self.assertDictEqual(expected_record, self.gs.changes_history[t], "{}: {} vs. {}".format(
+                t, expected_record, self.gs.changes_history[t]))
+        self.assertEquals(tla, self.gs.total_lines_added)
+        self.assertEquals(tlr, self.gs.total_lines_removed)
 
 if __name__ == '__main__':
     unittest.main()

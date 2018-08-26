@@ -52,6 +52,7 @@ class GitStatistics:
         self.activity_monthly = self.fetch_monthly_activity()
         self.recent_activity_by_week = self.fetch_recent_activity()
         self.recent_activity_peak = max(activity for activity in self.recent_activity_by_week.values())
+        self.changes_history, self.total_lines_added, self.total_lines_removed = self.fetch_total_history()
 
     def fetch_authors_info(self):
         """
@@ -172,6 +173,33 @@ class GitStatistics:
             yyw = date.strftime('%Y-%W')
             activity[yyw] = activity.get(yyw, 0) + 1
         return activity
+
+    def fetch_total_history(self):
+        history = {}
+        child_commit = self.repo.head.peel()
+        while len(child_commit.parents) != 0:
+            # taking [0]-parent is equivalent of '--first-parent -m' options
+            parent_commit = child_commit.parents[0]
+            st = self.repo.diff(parent_commit, child_commit).stats
+            history[child_commit.author.time] = {'files': st.files_changed,
+                                                 'ins': st.insertions,
+                                                 'del': st.deletions}
+            child_commit = parent_commit
+        # initial commit does not have parent, so we take diff to empty tree
+        st = child_commit.tree.diff_to_tree(swap=True).stats
+        history[child_commit.author.time] = {'files': st.files_changed,
+                                             'ins': st.insertions,
+                                             'del': st.deletions}
+        lines_count = 0
+        lines_added = 0
+        lines_removed = 0
+        timestamps = sorted(history.iterkeys())
+        for t in timestamps:
+            lines_added += history[t]['ins']
+            lines_removed += history[t]['del']
+            lines_count += history[t]['ins'] - history[t]['del']
+            history[t]['lines'] = lines_count
+        return history, lines_added, lines_removed
 
     def get_weekly_activity(self):
         return {weekday: sum(commits_count for commits_count in hourly_activity.values())
