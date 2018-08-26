@@ -288,6 +288,27 @@ def get_weekly_hourly_activity():
     return activity_by_hour_of_week, activity_by_hour_of_week_busiest
 
 
+def get_monthly_activity_info():
+    activity_by_month_of_year = {}
+    lines = get_pipe_output(
+        ['git rev-list --pretty=format:"%%at %%ai %%aN <%%aE>" %s' % getlogrange('HEAD'), 'grep -v ^commit']).split(
+        '\n')
+    for line in lines:
+        parts = line.split(' ', 4)
+        try:
+            stamp = int(parts[0])
+        except ValueError:
+            stamp = 0
+        date = datetime.datetime.fromtimestamp(float(stamp))
+
+        # activity
+        # month of year
+        month = date.month
+        activity_by_month_of_year[month] = activity_by_month_of_year.get(month, 0) + 1
+
+    return activity_by_month_of_year
+
+
 class TestPygitMethods(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -368,6 +389,10 @@ class TestPygitMethods(unittest.TestCase):
     def test_activity_hourly(self):
         # TODO: manually checked
         print self.gs.get_hourly_activity()
+
+    def test_activity_monthly(self):
+        expected_monthly_activity = get_monthly_activity_info()
+        self.assertDictEqual(expected_monthly_activity, self.gs.activity_monthly)
 
 
 if __name__ == '__main__':

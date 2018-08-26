@@ -291,6 +291,7 @@ class GitDataCollector(DataCollector):
         self.activity_by_day_of_week = repo_statistics.get_weekly_activity()
         self.activity_by_hour_of_day = repo_statistics.get_hourly_activity()
         self.activity_by_hour_of_day_busiest = max(self.activity_by_hour_of_day.values())
+        self.activity_by_month_of_year = repo_statistics.activity_monthly
 
         # Collect revision statistics
         # Outputs "<stamp> <date> <time> <timezone> <author> '<' <mail> '>'"
@@ -304,10 +305,6 @@ class GitDataCollector(DataCollector):
             date = datetime.datetime.fromtimestamp(float(stamp))
 
             # activity
-            # month of year
-            month = date.month
-            self.activity_by_month_of_year[month] = self.activity_by_month_of_year.get(month, 0) + 1
-
             # yearly/weekly activity
             yyw = date.strftime('%Y-%W')
             self.activity_by_year_week[yyw] = self.activity_by_year_week.get(yyw, 0) + 1

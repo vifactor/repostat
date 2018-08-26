@@ -47,6 +47,7 @@ class GitStatistics:
         self.activity_weekly_hourly = self.fetch_weekly_hourly_activity()
         self.max_weekly_hourly_activity = max(commits_count for _, hourly_activity in self.activity_weekly_hourly.items()
                                               for _, commits_count in hourly_activity.items())
+        self.activity_monthly = self.fetch_monthly_activity()
 
     def fetch_authors_info(self):
         """
@@ -150,6 +151,14 @@ class GitStatistics:
             activity[weekday][hour] = activity[weekday].get(hour, 0) + 1
         return activity
 
+    def fetch_monthly_activity(self):
+        activity = {}
+        for commit in self.repo.walk(self.repo.head.target):
+            date = datetime.fromtimestamp(commit.author.time)
+            month = date.month
+            activity[month] = activity.get(month, 0) + 1
+        return activity
+
     def get_weekly_activity(self):
         return {weekday: sum(commits_count for commits_count in hourly_activity.values())
                 for weekday, hourly_activity in self.activity_weekly_hourly.items()}
@@ -160,7 +169,6 @@ class GitStatistics:
             for hour, commits_count in hourly_activity.items():
                 activity[hour] = activity.get(hour, 0) + commits_count
         return activity
-
 
     def _update_winners(self, author, timestamp):
         date = datetime.fromtimestamp(timestamp)
