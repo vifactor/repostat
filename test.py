@@ -309,6 +309,28 @@ def get_monthly_activity_info():
     return activity_by_month_of_year
 
 
+def get_commits_count_change_timeline():
+    commits_by_month = {}
+    commits_by_year = {}
+    lines = get_pipe_output(
+        ['git rev-list --pretty=format:"%%at %%ai %%aN <%%aE>" %s' % getlogrange('HEAD'), 'grep -v ^commit']).split(
+        '\n')
+    for line in lines:
+        parts = line.split(' ', 4)
+        try:
+            stamp = int(parts[0])
+        except ValueError:
+            stamp = 0
+        date = datetime.datetime.fromtimestamp(float(stamp))
+        yymm = date.strftime('%Y-%m')
+        commits_by_month[yymm] = commits_by_month.get(yymm, 0) + 1
+
+        yy = date.year
+        commits_by_year[yy] = commits_by_year.get(yy, 0) + 1
+
+    return commits_by_month, commits_by_year
+
+
 class TestPygitMethods(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -393,6 +415,11 @@ class TestPygitMethods(unittest.TestCase):
     def test_activity_monthly(self):
         expected_monthly_activity = get_monthly_activity_info()
         self.assertDictEqual(expected_monthly_activity, self.gs.activity_monthly)
+
+    def test_commits_count_change(self):
+        expected_by_month, expected_by_year = get_commits_count_change_timeline()
+        self.assertDictEqual(expected_by_month, self.gs.monthly_commits_timeline)
+        self.assertDictEqual(expected_by_year, self.gs.yearly_commits_timeline)
 
 
 if __name__ == '__main__':

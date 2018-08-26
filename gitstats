@@ -292,6 +292,8 @@ class GitDataCollector(DataCollector):
         self.activity_by_hour_of_day = repo_statistics.get_hourly_activity()
         self.activity_by_hour_of_day_busiest = max(self.activity_by_hour_of_day.values())
         self.activity_by_month_of_year = repo_statistics.activity_monthly
+        self.commits_by_month = repo_statistics.monthly_commits_timeline
+        self.commits_by_year = repo_statistics.yearly_commits_timeline
 
         # Collect revision statistics
         # Outputs "<stamp> <date> <time> <timezone> <author> '<' <mail> '>'"
@@ -310,13 +312,6 @@ class GitDataCollector(DataCollector):
             self.activity_by_year_week[yyw] = self.activity_by_year_week.get(yyw, 0) + 1
             if self.activity_by_year_week_peak < self.activity_by_year_week[yyw]:
                 self.activity_by_year_week_peak = self.activity_by_year_week[yyw]
-
-            # author of the month/year
-            yymm = date.strftime('%Y-%m')
-            self.commits_by_month[yymm] = self.commits_by_month.get(yymm, 0) + 1
-
-            yy = date.year
-            self.commits_by_year[yy] = self.commits_by_year.get(yy, 0) + 1
 
         # outputs "<stamp> <files>" for each revision
         revlines = get_pipe_output(['git rev-list --pretty=format:"%%at %%T" %s' % getlogrange('HEAD'), 'grep -v ^commit']).strip().split('\n')

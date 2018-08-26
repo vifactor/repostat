@@ -36,6 +36,8 @@ class GitStatistics:
         self.repo = git.Repository(path)
         self.author_of_year = {}
         self.author_of_month = {}
+        self.yearly_commits_timeline = {}
+        self.monthly_commits_timeline = {}
         self.authors = self.fetch_authors_info()
         self.tags = self.fetch_tags_info()
         self.domains = self.fetch_domains_info()
@@ -69,7 +71,7 @@ class GitStatistics:
                 is_merge_commit = True
             commit_day_str = datetime.fromtimestamp(child_commit.author.time).strftime('%Y-%m-%d')
             author_name = child_commit.author.name.encode('utf-8')
-            self._update_winners(author_name, child_commit.author.time)
+            self._adjust_winners(author_name, child_commit.author.time)
             if author_name not in result:
                 result[author_name] = {
                     'lines_removed': st.deletions if not is_merge_commit else 0,
@@ -157,6 +159,7 @@ class GitStatistics:
             date = datetime.fromtimestamp(commit.author.time)
             month = date.month
             activity[month] = activity.get(month, 0) + 1
+            self._adjust_commits_timeline(date)
         return activity
 
     def get_weekly_activity(self):
@@ -170,7 +173,7 @@ class GitStatistics:
                 activity[hour] = activity.get(hour, 0) + commits_count
         return activity
 
-    def _update_winners(self, author, timestamp):
+    def _adjust_winners(self, author, timestamp):
         date = datetime.fromtimestamp(timestamp)
         yymm = date.strftime('%Y-%m')
         if yymm in self.author_of_month:
@@ -183,3 +186,17 @@ class GitStatistics:
             self.author_of_year[yy][author] = self.author_of_year[yy].get(author, 0) + 1
         else:
             self.author_of_year[yy] = {author: 1}
+
+    def _adjust_commits_timeline(self, datetime_obj):
+        """
+        increments commit count into the corresponding dicts gathering yearly/monthly commits' history
+        :param datetime_obj: a datetime object of a commit
+        """
+        yymm = datetime_obj.strftime('%Y-%m')
+        self.monthly_commits_timeline[yymm] = self.monthly_commits_timeline.get(yymm, 0) + 1
+
+        yy = datetime_obj.year
+        self.yearly_commits_timeline[yy] = self.yearly_commits_timeline.get(yy, 0) + 1
+
+
+
