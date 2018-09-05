@@ -1,6 +1,7 @@
 from __future__ import unicode_literals
 import pygit2 as git
 from datetime import datetime, tzinfo, timedelta
+from collections import Counter
 
 
 class FixedOffset(tzinfo):
@@ -47,12 +48,14 @@ class GitStatistics:
         self.active_days = {datetime.fromtimestamp(commit.author.time).strftime('%Y-%m-%d')
                             for commit in self.repo.walk(self.repo.head.target)}
         self.activity_weekly_hourly = self.fetch_weekly_hourly_activity()
-        self.max_weekly_hourly_activity = max(commits_count for _, hourly_activity in self.activity_weekly_hourly.items()
-                                              for _, commits_count in hourly_activity.items())
+        self.max_weekly_hourly_activity = max(
+            commits_count for _, hourly_activity in self.activity_weekly_hourly.items()
+            for _, commits_count in hourly_activity.items())
         self.activity_monthly = self.fetch_monthly_activity()
         self.recent_activity_by_week = self.fetch_recent_activity()
         self.recent_activity_peak = max(activity for activity in self.recent_activity_by_week.values())
-        self.changes_history, self.total_lines_added, self.total_lines_removed = self.fetch_total_history()
+        self.changes_history, self.total_lines_added, self.total_lines_removed, \
+            self.total_lines_count = self.fetch_total_history()
 
     def fetch_authors_info(self):
         """
@@ -177,6 +180,7 @@ class GitStatistics:
     def fetch_total_history(self):
         history = {}
         child_commit = self.repo.head.peel()
+        timestamps = []
         while len(child_commit.parents) != 0:
             # taking [0]-parent is equivalent of '--first-parent -m' options
             parent_commit = child_commit.parents[0]
@@ -184,22 +188,25 @@ class GitStatistics:
             history[child_commit.author.time] = {'files': st.files_changed,
                                                  'ins': st.insertions,
                                                  'del': st.deletions}
+            timestamps.append(child_commit.author.time)
             child_commit = parent_commit
         # initial commit does not have parent, so we take diff to empty tree
         st = child_commit.tree.diff_to_tree(swap=True).stats
         history[child_commit.author.time] = {'files': st.files_changed,
                                              'ins': st.insertions,
                                              'del': st.deletions}
+        timestamps.append(child_commit.author.time)
+
         lines_count = 0
         lines_added = 0
         lines_removed = 0
-        timestamps = sorted(history.iterkeys())
+        timestamps.reverse()
         for t in timestamps:
             lines_added += history[t]['ins']
             lines_removed += history[t]['del']
             lines_count += history[t]['ins'] - history[t]['del']
             history[t]['lines'] = lines_count
-        return history, lines_added, lines_removed
+        return history, lines_added, lines_removed, lines_count
 
     def get_weekly_activity(self):
         return {weekday: sum(commits_count for commits_count in hourly_activity.values())
@@ -211,6 +218,27 @@ class GitStatistics:
             for hour, commits_count in hourly_activity.items():
                 activity[hour] = activity.get(hour, 0) + commits_count
         return activity
+
+    # FIXME: although being 'pythonic', next four methods do not seem to be effective
+    def get_lines_insertions_by_year(self):
+        res = sum((Counter({datetime.fromtimestamp(ts).year: data['ins']})
+                   for ts, data in self.changes_history.items()), Counter())
+        return dict(res)
+
+    def get_lines_deletions_by_year(self):
+        res = sum((Counter({datetime.fromtimestamp(ts).year: data['del']})
+                   for ts, data in self.changes_history.items()), Counter())
+        return dict(res)
+
+    def get_lines_insertions_by_month(self):
+        res = sum((Counter({datetime.fromtimestamp(ts).strftime('%Y-%m'): data['ins']})
+                   for ts, data in self.changes_history.items()), Counter())
+        return dict(res)
+
+    def get_lines_deletions_by_month(self):
+        res = sum((Counter({datetime.fromtimestamp(ts).strftime('%Y-%m'): data['del']})
+                   for ts, data in self.changes_history.items()), Counter())
+        return dict(res)
 
     def _adjust_winners(self, author, timestamp):
         date = datetime.fromtimestamp(timestamp)
@@ -236,6 +264,3 @@ class GitStatistics:
 
         yy = datetime_obj.year
         self.yearly_commits_timeline[yy] = self.yearly_commits_timeline.get(yy, 0) + 1
-
-
-

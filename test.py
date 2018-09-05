@@ -491,11 +491,13 @@ class TestPygitMethods(unittest.TestCase):
 
     def test_activity_weekly(self):
         # TODO: manually checked
-        print self.gs.get_weekly_activity()
+        # print self.gs.get_weekly_activity()
+        pass
 
     def test_activity_hourly(self):
         # TODO: manually checked
-        print self.gs.get_hourly_activity()
+        # print self.gs.get_hourly_activity()
+        pass
 
     def test_activity_monthly(self):
         expected_monthly_activity = get_monthly_activity_info()
@@ -518,6 +520,7 @@ class TestPygitMethods(unittest.TestCase):
                 t, expected_record, self.gs.changes_history[t]))
         self.assertEquals(tla, self.gs.total_lines_added)
         self.assertEquals(tlr, self.gs.total_lines_removed)
+
 
 if __name__ == '__main__':
     unittest.main()

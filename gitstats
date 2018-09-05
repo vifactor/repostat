@@ -296,6 +296,14 @@ class GitDataCollector(DataCollector):
         self.commits_by_year = repo_statistics.yearly_commits_timeline
         self.activity_by_year_week = repo_statistics.recent_activity_by_week
         self.activity_by_year_week_peak = repo_statistics.recent_activity_peak
+        self.changes_by_date = repo_statistics.changes_history
+        self.total_lines_added = repo_statistics.total_lines_added
+        self.total_lines_removed = repo_statistics.total_lines_removed
+        self.total_lines = repo_statistics.total_lines_count
+        self.lines_added_by_year = repo_statistics.get_lines_insertions_by_year()
+        self.lines_removed_by_year = repo_statistics.get_lines_deletions_by_year()
+        self.lines_added_by_month = repo_statistics.get_lines_insertions_by_month()
+        self.lines_removed_by_month = repo_statistics.get_lines_deletions_by_month()
 
         # outputs "<stamp> <files>" for each revision
         revlines = get_pipe_output(['git rev-list --pretty=format:"%%at %%T" %s' % getlogrange('HEAD'), 'grep -v ^commit']).strip().split('\n')
@@ -389,63 +397,7 @@ class GitDataCollector(DataCollector):
             self.cache['lines_in_blob'][blob_id] = linecount
             self.extensions[ext]['lines'] += self.cache['lines_in_blob'][blob_id]
 
-        # line statistics
-        # outputs:
-        #  N files changed, N insertions (+), N deletions(-)
-        # <stamp> <author>
-        self.changes_by_date = {} # stamp -> { files, ins, del }
-        # computation of lines of code by date is better done
-        # on a linear history.
-        extra = ''
-        if conf['linear_linestats']:
-            extra = '--first-parent -m'
-        lines = get_pipe_output(['git log --shortstat %s --pretty=format:"%%at %%aN" %s' % (extra, getlogrange('HEAD'))]).split('\n')
-        lines.reverse()
-        files = 0; inserted = 0; deleted = 0; total_lines = 0
-        for line in lines:
-            if len(line) == 0:
-                continue
-
-            # <stamp> <author>
-            if re.search('files? changed', line) == None:
-                pos = line.find(' ')
-                if pos != -1:
-                    try:
-                        (stamp, author) = (int(line[:pos]), line[pos+1:])
-                        self.changes_by_date[stamp] = { 'files': files, 'ins': inserted, 'del': deleted, 'lines': total_lines }
-
-                        date = datetime.datetime.fromtimestamp(stamp)
-                        yymm = date.strftime('%Y-%m')
-                        self.lines_added_by_month[yymm] = self.lines_added_by_month.get(yymm, 0) + inserted
-                        self.lines_removed_by_month[yymm] = self.lines_removed_by_month.get(yymm, 0) + deleted
-
-                        yy = date.year
-                        self.lines_added_by_year[yy] = self.lines_added_by_year.get(yy,0) + inserted
-                        self.lines_removed_by_year[yy] = self.lines_removed_by_year.get(yy, 0) + deleted
-
-                        files, inserted, deleted = 0, 0, 0
-                    except ValueError:
-                        print 'Warning: unexpected line "%s"' % line
-                else:
-                    print 'Warning: unexpected line "%s"' % line
-            else:
-                numbers = getstatsummarycounts(line)
-
-                if len(numbers) == 3:
-                    (files, inserted, deleted) = map(lambda el : int(el), numbers)
-                    total_lines += inserted
-                    total_lines -= deleted
-                    self.total_lines_added += inserted
-                    self.total_lines_removed += deleted
-
-                else:
-                    print 'Warning: failed to handle line "%s"' % line
-                    (files, inserted, deleted) = (0, 0, 0)
-                #self.changes_by_date[stamp] = { 'files': files, 'ins': inserted, 'del': deleted }
-        self.total_lines += total_lines
-
         # Per-author statistics
-
         # defined for stamp, author only if author commited at this timestamp.
         self.changes_by_date_by_author = {} # stamp -> author -> lines_added
 
