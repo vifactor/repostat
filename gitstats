@@ -74,19 +74,6 @@ def getkeyssortedbyvaluekey(d, key):
     return map(lambda el : el[1], sorted(map(lambda el : (d[el][key], el), d.keys())))
 
 
-def getstatsummarycounts(line):
-    numbers = re.findall('\d+', line)
-    if   len(numbers) == 1:
-        # neither insertions nor deletions: may probably only happen for "0 files changed"
-        numbers.append(0);
-        numbers.append(0);
-    elif len(numbers) == 2 and line.find('(+)') != -1:
-        numbers.append(0);    # only insertions were printed on line
-    elif len(numbers) == 2 and line.find('(-)') != -1:
-        numbers.insert(1, 0); # only deletions were printed on line
-    return numbers
-
-
 VERSION = 0
 def getversion():
     global VERSION
@@ -304,6 +291,7 @@ class GitDataCollector(DataCollector):
         self.lines_removed_by_year = repo_statistics.get_lines_deletions_by_year()
         self.lines_added_by_month = repo_statistics.get_lines_insertions_by_month()
         self.lines_removed_by_month = repo_statistics.get_lines_deletions_by_month()
+        self.changes_by_date_by_author = repo_statistics.author_changes_history
 
         # outputs "<stamp> <files>" for each revision
         revlines = get_pipe_output(['git rev-list --pretty=format:"%%at %%T" %s' % getlogrange('HEAD'), 'grep -v ^commit']).strip().split('\n')
@@ -396,57 +384,6 @@ class GitDataCollector(DataCollector):
                 self.cache['lines_in_blob'] = {}
             self.cache['lines_in_blob'][blob_id] = linecount
             self.extensions[ext]['lines'] += self.cache['lines_in_blob'][blob_id]
-
-        # Per-author statistics
-        # defined for stamp, author only if author commited at this timestamp.
-        self.changes_by_date_by_author = {} # stamp -> author -> lines_added
-
-        # Similar to the above, but never use --first-parent
-        # (we need to walk through every commit to know who
-        # committed what, not just through mainline)
-        lines = get_pipe_output(['git log --shortstat --date-order --pretty=format:"%%at %%aN" %s' % (getlogrange('HEAD'))]).split('\n')
-        lines.reverse()
-        inserted = 0
-        stamp = 0
-        # remove this when changes_by_date_by_author is migrated to pygit2
-        tmp_authors = {}
-        for line in lines:
-            if len(line) == 0:
-                continue
-
-            # <stamp> <author>
-            if re.search('files? changed', line) == None:
-                pos = line.find(' ')
-                if pos != -1:
-                    try:
-                        oldstamp = stamp
-                        (stamp, author) = (int(line[:pos]), line[pos+1:])
-                        if oldstamp > stamp:
-                            # clock skew, keep old timestamp to avoid having ugly graph
-                            stamp = oldstamp
-                        if author not in tmp_authors:
-                            tmp_authors[author] = {'lines_added': 0, 'commits': 0}
-                        tmp_authors[author]['commits'] = tmp_authors[author].get('commits', 0) + 1
-                        tmp_authors[author]['lines_added'] = tmp_authors[author].get('lines_added', 0) + inserted
-                        if stamp not in self.changes_by_date_by_author:
-                            self.changes_by_date_by_author[stamp] = {}
-                        if author not in self.changes_by_date_by_author[stamp]:
-                            self.changes_by_date_by_author[stamp][author] = {}
-                        self.changes_by_date_by_author[stamp][author]['lines_added'] = tmp_authors[author]['lines_added']
-                        self.changes_by_date_by_author[stamp][author]['commits'] = tmp_authors[author]['commits']
-                        files, inserted, deleted = 0, 0, 0
-                    except ValueError:
-                        print 'Warning: unexpected line "%s"' % line
-                else:
-                    print 'Warning: unexpected line "%s"' % line
-            else:
-                numbers = getstatsummarycounts(line)
-
-                if len(numbers) == 3:
-                    (files, inserted, deleted) = map(lambda el : int(el), numbers)
-                else:
-                    print 'Warning: failed to handle line "%s"' % line
-                    (files, inserted, deleted) = (0, 0, 0)
 
     def refine(self):
         # authors
@@ -666,7 +603,6 @@ class HTMLReportCreator(ReportCreator):
         for domain in domains_by_commits:
             if n == conf['max_domains']:
                 break
-            commits = 0
             n += 1
             info = data.getDomainInfo(domain)
             fp.write('%s %d %d\n' % (domain, n , info['commits']))
@@ -969,7 +905,6 @@ class HTMLReportCreator(ReportCreator):
             self.authors_by_commits = getkeyssortedbyvalues(data.tags[tag]['authors'])
             for i in reversed(self.authors_by_commits):
                 authorinfo.append('%s (%d)' % (i, data.tags[tag]['authors'][i]))
-            print authorinfo
             tag_dict = {
                 'name': tag,
                 'date': data.tags[tag]['date'],

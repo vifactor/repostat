@@ -39,6 +39,7 @@ class GitStatistics:
         self.author_of_month = {}
         self.yearly_commits_timeline = {}
         self.monthly_commits_timeline = {}
+        self.author_changes_history = {}
         self.authors = self.fetch_authors_info()
         self.tags = self.fetch_tags_info()
         self.domains = self.fetch_domains_info()
@@ -65,7 +66,7 @@ class GitStatistics:
                              'last_active_day': '2011-04-05'}
         """
         result = {}
-        for child_commit in self.repo.walk(self.repo.head.target, git.GIT_SORT_TIME):
+        for child_commit in self.repo.walk(self.repo.head.target, git.GIT_SORT_TIME | git.GIT_SORT_REVERSE):
             is_merge_commit = False
             if len(child_commit.parents) == 0:
                 # initial commit
@@ -96,6 +97,7 @@ class GitStatistics:
                     result[author_name]['first_commit_stamp'] = child_commit.author.time
                 if result[author_name]['last_commit_stamp'] < child_commit.author.time:
                     result[author_name]['last_commit_stamp'] = child_commit.author.time
+            self._adjust_author_changes_history(child_commit, result)
 
         # it seems that there is a mistake (or my misunderstanding) in 'last_active_day' value
         # my calculations give are not the same as those done by Heikki Hokkanen for this parameter
@@ -253,6 +255,16 @@ class GitStatistics:
             self.author_of_year[yy][author] = self.author_of_year[yy].get(author, 0) + 1
         else:
             self.author_of_year[yy] = {author: 1}
+
+    def _adjust_author_changes_history(self, commit, authors_info):
+        ts = commit.author.time
+        author_name = commit.author.name.encode('utf-8')
+        if ts not in self.author_changes_history:
+            self.author_changes_history[ts] = {}
+        if author_name not in self.author_changes_history[ts]:
+            self.author_changes_history[ts][author_name] = {}
+        self.author_changes_history[ts][author_name]['lines_added'] = authors_info[author_name]['lines_added']
+        self.author_changes_history[ts][author_name]['commits'] = authors_info[author_name]['commits']
 
     def _adjust_commits_timeline(self, datetime_obj):
         """

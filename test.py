@@ -169,6 +169,57 @@ def get_authors_info():
     return authors
 
 
+def get_authors_history():
+    lines = get_pipe_output(
+        ['git log --shortstat --date-order --pretty=format:"%%at %%aN" %s' % (getlogrange('HEAD'))]).split('\n')
+    lines.reverse()
+    inserted = 0
+    stamp = 0
+    tmp_authors = {}
+    changes_by_date_by_author = {}
+    for line in lines:
+        if len(line) == 0:
+            continue
+        # <stamp> <author>
+        if re.search('files? changed', line) is None:
+            pos = line.find(' ')
+            if pos != -1:
+                try:
+                    oldstamp = stamp
+                    (stamp, author) = (int(line[:pos]), line[pos + 1:])
+                    if oldstamp > stamp:
+                        # clock skew, keep old timestamp to avoid having ugly graph
+                        # FIXME: in the original version the clock skew was used to avoid splashes on the graphs
+                        # due to cherry-picking, rebases and amendments. So far the skew is switched of and supposed to
+                        # be fixed using commiter time in future
+                        # stamp = oldstamp
+                        pass
+                    if author not in tmp_authors:
+                        tmp_authors[author] = {'lines_added': 0, 'commits': 0}
+                    tmp_authors[author]['commits'] = tmp_authors[author].get('commits', 0) + 1
+                    tmp_authors[author]['lines_added'] = tmp_authors[author].get('lines_added', 0) + inserted
+                    if stamp not in changes_by_date_by_author:
+                        changes_by_date_by_author[stamp] = {}
+                    if author not in changes_by_date_by_author[stamp]:
+                        changes_by_date_by_author[stamp][author] = {}
+                    changes_by_date_by_author[stamp][author]['lines_added'] = tmp_authors[author]['lines_added']
+                    changes_by_date_by_author[stamp][author]['commits'] = tmp_authors[author]['commits']
+                    files, inserted, deleted = 0, 0, 0
+                except ValueError:
+                    print 'Warning: unexpected line "%s"' % line
+            else:
+                print 'Warning: unexpected line "%s"' % line
+        else:
+            numbers = get_stat_summary_counts(line)
+            if len(numbers) == 3:
+                (files, inserted, deleted) = map(lambda el: int(el), numbers)
+            else:
+                print 'Warning: failed to handle line "%s"' % line
+                (files, inserted, deleted) = (0, 0, 0)
+
+    return changes_by_date_by_author
+
+
 def get_domain_info():
     domains = {}
     lines = get_pipe_output(
@@ -520,6 +571,13 @@ class TestPygitMethods(unittest.TestCase):
                 t, expected_record, self.gs.changes_history[t]))
         self.assertEquals(tla, self.gs.total_lines_added)
         self.assertEquals(tlr, self.gs.total_lines_removed)
+
+    def test_authors_changes_history(self):
+        expected_history = get_authors_history()
+        actual_history = self.gs.author_changes_history
+        self.assertEqual(len(expected_history), len(actual_history))
+        for k, v in expected_history.items():
+            self.assertDictEqual(v, actual_history[k])
 
 
 if __name__ == '__main__':
