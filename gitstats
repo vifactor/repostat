@@ -92,14 +92,6 @@ def getgnuplotversion():
     return get_pipe_output(['%s --version' % gnuplot_cmd]).split('\n')[0]
 
 
-def getnumoflinesinblob(ext_blob):
-    """
-    Get number of lines in blob
-    """
-    ext, blob_id = ext_blob
-    return ext, blob_id, int(get_pipe_output(['git cat-file blob %s' % blob_id, 'wc -l']).split()[0])
-
-
 class DataCollector:
     """Manages data collection from a revision control repository."""
     def __init__(self):
@@ -289,12 +281,12 @@ class GitDataCollector(DataCollector):
         revlines = get_pipe_output(['git rev-list --pretty=format:"%%at %%T" %s' % getlogrange('HEAD'), 'grep -v ^commit']).strip().split('\n')
         lines = []
         revs_to_read = []
-        #Look up rev in cache and take info from cache if found
-        #If not append rev to list of rev to read from repo
+        # look up rev in cache and take info from cache if found
+        # if not append rev to list of rev to read from repo
         for revline in revlines:
             time, rev = revline.split(' ')
-            #if cache empty then add time and rev to list of new rev's
-            #otherwise try to read needed info from cache
+            # if cache empty then add time and rev to list of new rev's
+            # otherwise try to read needed info from cache
             if 'files_in_tree' not in self.cache.keys():
                 revs_to_read.append((time, rev))
                 continue
@@ -303,11 +295,12 @@ class GitDataCollector(DataCollector):
             else:
                 revs_to_read.append((time, rev))
 
-        #Update cache with new revisions and append then to general list
+        # update cache with new revisions and append then to general list
         if 'files_in_tree' not in self.cache:
             self.cache['files_in_tree'] = {}
         for ts, rev in revs_to_read:
-            count = repo_statistics.get_files_count(rev)
+            diff = repo_statistics.get_files_info(rev)
+            count = len(diff)
             self.cache['files_in_tree'][rev] = count
             lines.append((int(ts), count))
 
@@ -317,7 +310,6 @@ class GitDataCollector(DataCollector):
 
         # extensions and size of files
         lines = get_pipe_output(['git ls-tree -r -l -z %s' % getcommitrange('HEAD', end_only = True)]).split('\000')
-        blobs_to_read = []
         for line in lines:
             if len(line) == 0:
                 continue
@@ -325,45 +317,26 @@ class GitDataCollector(DataCollector):
             if parts[0] == '160000' and parts[3] == '-':
                 # skip submodules
                 continue
-            blob_id = parts[2]
             size = int(parts[3])
-            fullpath = parts[4]
 
             self.total_size += size
-            self.total_files += 1
 
-            filename = fullpath.split('/')[-1] # strip directories
-            if filename.find('.') == -1 or filename.rfind('.') == 0:
-                ext = ''
-            else:
-                ext = filename[(filename.rfind('.') + 1):]
+        ext_dat = {}
+        for p in repo_statistics.get_files_info('HEAD'):
+            filename = os.path.basename(p.delta.old_file.path)
+            basename_ext = filename.split('.')
+            ext = basename_ext[1] if len(basename_ext) == 2 and basename_ext[0] else ''
             if len(ext) > conf['max_ext_length']:
                 ext = ''
-            if ext not in self.extensions:
-                self.extensions[ext] = {'files': 0, 'lines': 0}
-            self.extensions[ext]['files'] += 1
-            #if cache empty then add ext and blob id to list of new blob's
-            #otherwise try to read needed info from cache
-            if 'lines_in_blob' not in self.cache.keys():
-                blobs_to_read.append((ext,blob_id))
-                continue
-            if blob_id in self.cache['lines_in_blob'].keys():
-                self.extensions[ext]['lines'] += self.cache['lines_in_blob'][blob_id]
-            else:
-                blobs_to_read.append((ext,blob_id))
 
-        #Get info abount line count for new blob's that wasn't found in cache
-        pool = Pool(processes=conf['processes'])
-        ext_blob_linecount = pool.map(getnumoflinesinblob, blobs_to_read)
-        pool.terminate()
-        pool.join()
+            if ext not in ext_dat:
+                ext_dat[ext] = {'files': 0, 'lines': 0}
 
-        #Update cache and write down info about number of number of lines
-        for (ext, blob_id, linecount) in ext_blob_linecount:
-            if 'lines_in_blob' not in self.cache:
-                self.cache['lines_in_blob'] = {}
-            self.cache['lines_in_blob'][blob_id] = linecount
-            self.extensions[ext]['lines'] += self.cache['lines_in_blob'][blob_id]
+            x, y, lines_count = p.line_stats
+            ext_dat[ext]['lines'] += lines_count
+            ext_dat[ext]['files'] += 1
+        self.extensions = ext_dat
+        self.total_files = sum(v['files'] for k, v in ext_dat.items())
 
     def refine(self):
         # authors
