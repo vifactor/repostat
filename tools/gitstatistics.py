@@ -276,3 +276,7 @@ class GitStatistics:
 
         yy = datetime_obj.year
         self.yearly_commits_timeline[yy] = self.yearly_commits_timeline.get(yy, 0) + 1
+
+    def get_files_count(self, revision):
+        diff = self.repo.revparse_single(revision).diff_to_tree()
+        return len(diff)

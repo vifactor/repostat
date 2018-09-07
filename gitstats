@@ -92,20 +92,12 @@ def getgnuplotversion():
     return get_pipe_output(['%s --version' % gnuplot_cmd]).split('\n')[0]
 
 
-def getnumoffilesfromrev(time_rev):
-    """
-    Get number of files changed in commit
-    """
-    time, rev = time_rev
-    return (int(time), rev, int(get_pipe_output(['git ls-tree -r --name-only "%s"' % rev, 'wc -l']).split('\n')[0]))
-
-
 def getnumoflinesinblob(ext_blob):
     """
     Get number of lines in blob
     """
     ext, blob_id = ext_blob
-    return (ext, blob_id, int(get_pipe_output(['git cat-file blob %s' % blob_id, 'wc -l']).split()[0]))
+    return ext, blob_id, int(get_pipe_output(['git cat-file blob %s' % blob_id, 'wc -l']).split()[0])
 
 
 class DataCollector:
@@ -304,36 +296,24 @@ class GitDataCollector(DataCollector):
             #if cache empty then add time and rev to list of new rev's
             #otherwise try to read needed info from cache
             if 'files_in_tree' not in self.cache.keys():
-                revs_to_read.append((time,rev))
+                revs_to_read.append((time, rev))
                 continue
             if rev in self.cache['files_in_tree'].keys():
-                lines.append('%d %d' % (int(time), self.cache['files_in_tree'][rev]))
+                lines.append((int(time), self.cache['files_in_tree'][rev]))
             else:
-                revs_to_read.append((time,rev))
-
-        #Read revisions from repo
-        pool = Pool(processes=conf['processes'])
-        time_rev_count = pool.map(getnumoffilesfromrev, revs_to_read)
-        pool.terminate()
-        pool.join()
+                revs_to_read.append((time, rev))
 
         #Update cache with new revisions and append then to general list
-        for (time, rev, count) in time_rev_count:
-            if 'files_in_tree' not in self.cache:
-                self.cache['files_in_tree'] = {}
+        if 'files_in_tree' not in self.cache:
+            self.cache['files_in_tree'] = {}
+        for ts, rev in revs_to_read:
+            count = repo_statistics.get_files_count(rev)
             self.cache['files_in_tree'][rev] = count
-            lines.append('%d %d' % (int(time), count))
+            lines.append((int(ts), count))
 
         self.total_commits += len(lines)
-        for line in lines:
-            parts = line.split(' ')
-            if len(parts) != 2:
-                continue
-            (stamp, files) = parts[0:2]
-            try:
-                self.files_by_stamp[int(stamp)] = int(files)
-            except ValueError:
-                print 'Warning: failed to parse line "%s"' % line
+        for (stamp, files) in lines:
+            self.files_by_stamp[stamp] = files
 
         # extensions and size of files
         lines = get_pipe_output(['git ls-tree -r -l -z %s' % getcommitrange('HEAD', end_only = True)]).split('\000')
@@ -1196,7 +1176,7 @@ class GitStats:
             os.chdir(prevdir)
 
         print 'Refining data...'
-        data.saveCache(cachefile)
+        #data.saveCache(cachefile)
         data.refine()
 
         os.chdir(rundir)

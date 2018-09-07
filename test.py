@@ -36,6 +36,14 @@ def getcommitrange(defaultrange='HEAD', end_only=False):
     return defaultrange
 
 
+def get_num_files_in_revision(time_rev):
+    """
+    Get number of files at a given revision
+    """
+    time, rev = time_rev
+    return int(time), rev, int(get_pipe_output(['git ls-tree -r --name-only "%s"' % rev, 'wc -l']).split('\n')[0])
+
+
 def get_tags_info():
     tags = {}
     lines = get_pipe_output(['git show-ref --tags']).split('\n')
