@@ -290,3 +290,19 @@ class GitStatistics:
             diff = obj.tree.diff_to_tree()
 
         return diff
+
+    def get_total_size(self, revision):
+        # FIXME: not the most elegant and effective function
+        # TODO: check how it works for submodules
+        tree = self.repo.revparse_single(revision)
+        if type(tree) is git.Commit:
+            tree = tree.tree
+        s = [tree]
+        res = 0
+        while s:
+            for entry in s.pop():
+                if entry.type == 'blob':
+                    res += self.repo[entry.id].size
+                elif entry.type == 'tree':
+                    s.append(self.repo[entry.id])
+        return res

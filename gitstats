@@ -6,13 +6,11 @@ import getopt
 import glob
 import os
 import pickle
-import re
 import shutil
 import sys
 import time
 import zlib
 import calendar
-from multiprocessing import Pool
 
 from jinja2 import Environment, FileSystemLoader
 from tools import GitStatistics
@@ -308,19 +306,6 @@ class GitDataCollector(DataCollector):
         for (stamp, files) in lines:
             self.files_by_stamp[stamp] = files
 
-        # extensions and size of files
-        lines = get_pipe_output(['git ls-tree -r -l -z %s' % getcommitrange('HEAD', end_only = True)]).split('\000')
-        for line in lines:
-            if len(line) == 0:
-                continue
-            parts = re.split('\s+', line, 4)
-            if parts[0] == '160000' and parts[3] == '-':
-                # skip submodules
-                continue
-            size = int(parts[3])
-
-            self.total_size += size
-
         ext_dat = {}
         for p in repo_statistics.get_files_info('HEAD'):
             filename = os.path.basename(p.delta.old_file.path)
@@ -332,11 +317,13 @@ class GitDataCollector(DataCollector):
             if ext not in ext_dat:
                 ext_dat[ext] = {'files': 0, 'lines': 0}
 
-            x, y, lines_count = p.line_stats
+            # unclear what first two entries of the tuple mean, for each file they were equal to 0
+            _, _, lines_count = p.line_stats
             ext_dat[ext]['lines'] += lines_count
             ext_dat[ext]['files'] += 1
         self.extensions = ext_dat
         self.total_files = sum(v['files'] for k, v in ext_dat.items())
+        self.total_size = repo_statistics.get_total_size('HEAD')
 
     def refine(self):
         # authors
