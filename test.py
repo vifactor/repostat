@@ -596,10 +596,9 @@ class TestPygitMethods(unittest.TestCase):
             ts, tree_id = line.split(' ')
             expected_data.append((long(ts), tree_id))
 
-        import pygit2 as git
         actual_data = []
-        for commit in self.gs.repo.walk(self.gs.repo.head.target, git.GIT_SORT_TIME):
-            actual_data.append((commit.author.time, commit.tree_id.hex))
+        for t, r in self.gs.get_revisions():
+            actual_data.append((t, r))
 
         self.assertListEqual(expected_data, actual_data)
 

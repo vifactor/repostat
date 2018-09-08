@@ -55,8 +55,8 @@ class GitStatistics:
         self.activity_monthly = self.fetch_monthly_activity()
         self.recent_activity_by_week = self.fetch_recent_activity()
         self.recent_activity_peak = max(activity for activity in self.recent_activity_by_week.values())
-        self.changes_history, self.total_lines_added, self.total_lines_removed, \
-            self.total_lines_count = self.fetch_total_history()
+        self.changes_history, self.total_lines_added, self.total_lines_removed, self.total_lines_count \
+            = self.fetch_total_history()
 
     def fetch_authors_info(self):
         """
@@ -306,3 +306,8 @@ class GitStatistics:
                 elif entry.type == 'tree':
                     s.append(self.repo[entry.id])
         return res
+
+    # TODO: too low level function for a GitStatistics class. Needed for fastest migration to pygit2
+    def get_revisions(self):
+        for commit in self.repo.walk(self.repo.head.target, git.GIT_SORT_TIME):
+            yield commit.author.time, commit.tree_id.hex

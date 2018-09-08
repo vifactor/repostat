@@ -25,7 +25,6 @@ os.environ['LC_ALL'] = 'C'
 GNUPLOT_COMMON = 'set terminal png transparent size 640,240\nset size 1.0,1.0\n'
 WEEKDAYS = ('Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun')
 
-exectime_internal = 0.0
 time_start = time.time()
 
 # By default, gnuplot is searched from path, but can be overridden with the
@@ -275,36 +274,30 @@ class GitDataCollector(DataCollector):
         self.lines_removed_by_month = repo_statistics.get_lines_deletions_by_month()
         self.changes_by_date_by_author = repo_statistics.author_changes_history
 
-        # outputs "<stamp> <files>" for each revision
-        revlines = get_pipe_output(['git rev-list --pretty=format:"%%at %%T" %s' % getlogrange('HEAD'), 'grep -v ^commit']).strip().split('\n')
-        lines = []
+        if 'files_in_tree' not in self.cache:
+            self.cache['files_in_tree'] = {}
+        revs_cached = []
         revs_to_read = []
         # look up rev in cache and take info from cache if found
         # if not append rev to list of rev to read from repo
-        for revline in revlines:
-            time, rev = revline.split(' ')
+        for ts, tree_id in repo_statistics.get_revisions():
             # if cache empty then add time and rev to list of new rev's
             # otherwise try to read needed info from cache
-            if 'files_in_tree' not in self.cache.keys():
-                revs_to_read.append((time, rev))
-                continue
-            if rev in self.cache['files_in_tree'].keys():
-                lines.append((int(time), self.cache['files_in_tree'][rev]))
+            if tree_id in self.cache['files_in_tree'].keys():
+                revs_cached.append((ts, self.cache['files_in_tree'][tree_id]))
             else:
-                revs_to_read.append((time, rev))
+                revs_to_read.append((ts, tree_id))
 
         # update cache with new revisions and append then to general list
-        if 'files_in_tree' not in self.cache:
-            self.cache['files_in_tree'] = {}
         for ts, rev in revs_to_read:
             diff = repo_statistics.get_files_info(rev)
             count = len(diff)
             self.cache['files_in_tree'][rev] = count
-            lines.append((int(ts), count))
+            revs_cached.append((ts, count))
 
-        self.total_commits += len(lines)
-        for (stamp, files) in lines:
+        for (stamp, files) in revs_cached:
             self.files_by_stamp[stamp] = files
+        self.total_commits = len(self.files_by_stamp)
 
         ext_dat = {}
         for p in repo_statistics.get_files_info('HEAD'):
