@@ -587,6 +587,22 @@ class TestPygitMethods(unittest.TestCase):
         for k, v in expected_history.items():
             self.assertDictEqual(v, actual_history[k])
 
+    def test_rev_list(self):
+        revlines = get_pipe_output([
+            'git rev-list --pretty=format:"%%at %%T" %s' % getlogrange('HEAD'),
+            'grep -v ^commit']).strip().split('\n')
+        expected_data = []
+        for line in revlines:
+            ts, tree_id = line.split(' ')
+            expected_data.append((long(ts), tree_id))
+
+        import pygit2 as git
+        actual_data = []
+        for commit in self.gs.repo.walk(self.gs.repo.head.target, git.GIT_SORT_TIME):
+            actual_data.append((commit.author.time, commit.tree_id.hex))
+
+        self.assertListEqual(expected_data, actual_data)
+
 
 if __name__ == '__main__':
     unittest.main()
