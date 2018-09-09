@@ -6,15 +6,14 @@ import getopt
 import glob
 import os
 import pickle
-import re
 import shutil
 import sys
 import time
 import zlib
 import calendar
-from multiprocessing import Pool
-from jinja2 import Environment, FileSystemLoader
 
+from jinja2 import Environment, FileSystemLoader
+from tools import GitStatistics
 from tools import get_external_execution_time, get_pipe_output
 
 if sys.version_info < (2, 6):
@@ -26,7 +25,6 @@ os.environ['LC_ALL'] = 'C'
 GNUPLOT_COMMON = 'set terminal png transparent size 640,240\nset size 1.0,1.0\n'
 WEEKDAYS = ('Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun')
 
-exectime_internal = 0.0
 time_start = time.time()
 
 # By default, gnuplot is searched from path, but can be overridden with the
@@ -73,19 +71,6 @@ def getkeyssortedbyvaluekey(d, key):
     return map(lambda el : el[1], sorted(map(lambda el : (d[el][key], el), d.keys())))
 
 
-def getstatsummarycounts(line):
-    numbers = re.findall('\d+', line)
-    if   len(numbers) == 1:
-        # neither insertions nor deletions: may probably only happen for "0 files changed"
-        numbers.append(0);
-        numbers.append(0);
-    elif len(numbers) == 2 and line.find('(+)') != -1:
-        numbers.append(0);    # only insertions were printed on line
-    elif len(numbers) == 2 and line.find('(-)') != -1:
-        numbers.insert(1, 0); # only deletions were printed on line
-    return numbers
-
-
 VERSION = 0
 def getversion():
     global VERSION
@@ -102,22 +87,6 @@ def getgitversion():
 
 def getgnuplotversion():
     return get_pipe_output(['%s --version' % gnuplot_cmd]).split('\n')[0]
-
-
-def getnumoffilesfromrev(time_rev):
-    """
-    Get number of files changed in commit
-    """
-    time, rev = time_rev
-    return (int(time), rev, int(get_pipe_output(['git ls-tree -r --name-only "%s"' % rev, 'wc -l']).split('\n')[0]))
-
-
-def getnumoflinesinblob(ext_blob):
-    """
-    Get number of lines in blob
-    """
-    ext, blob_id = ext_blob
-    return (ext, blob_id, int(get_pipe_output(['git cat-file blob %s' % blob_id, 'wc -l']).split()[0]))
 
 
 class DataCollector:
@@ -155,7 +124,6 @@ class DataCollector:
         self.lines_removed_by_year = {} # year -> lines removed
         self.first_commit_stamp = 0
         self.last_commit_stamp = 0
-        self.last_active_day = None
         self.active_days = set()
 
         # lines
@@ -238,350 +206,80 @@ class DataCollector:
 class GitDataCollector(DataCollector):
     def collect(self, dir):
         DataCollector.collect(self, dir)
+        repo_statistics = GitStatistics(dir)
 
-        self.total_authors += int(get_pipe_output(['git shortlog -s %s' % getlogrange(), 'wc -l']))
-        #self.total_lines = int(getoutput('git-ls-files -z |xargs -0 cat |wc -l'))
+        self.authors = repo_statistics.authors
+        self.total_authors = len(repo_statistics.authors)
+        self.tags = repo_statistics.tags
+        self.domains = repo_statistics.domains
+        self.commits_by_timezone = repo_statistics.timezones
+        self.first_commit_stamp = repo_statistics.first_commit_timestamp
+        self.last_commit_stamp = repo_statistics.last_commit_timestamp
+        self.active_days = repo_statistics.active_days
+        self.author_of_month = repo_statistics.author_of_month
+        self.author_of_year = repo_statistics.author_of_year
+        self.activity_by_hour_of_week = repo_statistics.activity_weekly_hourly
+        self.activity_by_hour_of_week_busiest = repo_statistics.max_weekly_hourly_activity
+        self.activity_by_day_of_week = repo_statistics.get_weekly_activity()
+        self.activity_by_hour_of_day = repo_statistics.get_hourly_activity()
+        self.activity_by_hour_of_day_busiest = max(self.activity_by_hour_of_day.values())
+        self.activity_by_month_of_year = repo_statistics.activity_monthly
+        self.commits_by_month = repo_statistics.monthly_commits_timeline
+        self.commits_by_year = repo_statistics.yearly_commits_timeline
+        self.activity_by_year_week = repo_statistics.recent_activity_by_week
+        self.activity_by_year_week_peak = repo_statistics.recent_activity_peak
+        self.changes_by_date = repo_statistics.changes_history
+        self.total_lines_added = repo_statistics.total_lines_added
+        self.total_lines_removed = repo_statistics.total_lines_removed
+        self.total_lines = repo_statistics.total_lines_count
+        self.lines_added_by_year = repo_statistics.get_lines_insertions_by_year()
+        self.lines_removed_by_year = repo_statistics.get_lines_deletions_by_year()
+        self.lines_added_by_month = repo_statistics.get_lines_insertions_by_month()
+        self.lines_removed_by_month = repo_statistics.get_lines_deletions_by_month()
+        self.changes_by_date_by_author = repo_statistics.author_changes_history
 
-        # tags
-        lines = get_pipe_output(['git show-ref --tags']).split('\n')
-        for line in lines:
-            if len(line) == 0:
-                continue
-            (hash, tag) = line.split(' ')
-
-            tag = tag.replace('refs/tags/', '')
-            output = get_pipe_output(['git log "%s" --pretty=format:"%%at %%aN" -n 1' % hash])
-            if len(output) > 0:
-                parts = output.split(' ')
-                try:
-                    stamp = int(parts[0])
-                except ValueError:
-                    stamp = 0
-                self.tags[tag] = { 'stamp': stamp, 'hash' : hash, 'date' : datetime.datetime.fromtimestamp(stamp).strftime('%Y-%m-%d'), 'commits': 0, 'authors': {} }
-
-        # collect info on tags, starting from latest
-        tags_sorted_by_date_desc = map(lambda el : el[1], reversed(sorted(map(lambda el : (el[1]['date'], el[0]), self.tags.items()))))
-        prev = None
-        for tag in reversed(tags_sorted_by_date_desc):
-            cmd = 'git shortlog -s "%s"' % tag
-            if prev != None:
-                cmd += ' "^%s"' % prev
-            output = get_pipe_output([cmd])
-            if len(output) == 0:
-                continue
-            prev = tag
-            for line in output.split('\n'):
-                parts = re.split('\s+', line, 2)
-                commits = int(parts[1])
-                author = parts[2]
-                self.tags[tag]['commits'] += commits
-                self.tags[tag]['authors'][author] = commits
-
-        # Collect revision statistics
-        # Outputs "<stamp> <date> <time> <timezone> <author> '<' <mail> '>'"
-        lines = get_pipe_output(['git rev-list --pretty=format:"%%at %%ai %%aN <%%aE>" %s' % getlogrange('HEAD'), 'grep -v ^commit']).split('\n')
-        for line in lines:
-            parts = line.split(' ', 4)
-            try:
-                stamp = int(parts[0])
-            except ValueError:
-                stamp = 0
-            timezone = parts[3]
-            author, mail = parts[4].split('<', 1)
-            author = author.rstrip()
-            mail = mail.rstrip('>')
-            domain = '?'
-            if mail.find('@') != -1:
-                domain = mail.rsplit('@', 1)[1]
-            date = datetime.datetime.fromtimestamp(float(stamp))
-
-            # First and last commit stamp (may be in any order because of cherry-picking and patches)
-            if stamp > self.last_commit_stamp:
-                self.last_commit_stamp = stamp
-            if self.first_commit_stamp == 0 or stamp < self.first_commit_stamp:
-                self.first_commit_stamp = stamp
-
-            # activity
-            # hour
-            hour = date.hour
-            self.activity_by_hour_of_day[hour] = self.activity_by_hour_of_day.get(hour, 0) + 1
-            # most active hour?
-            if self.activity_by_hour_of_day[hour] > self.activity_by_hour_of_day_busiest:
-                self.activity_by_hour_of_day_busiest = self.activity_by_hour_of_day[hour]
-
-            # day of week
-            day = date.weekday()
-            self.activity_by_day_of_week[day] = self.activity_by_day_of_week.get(day, 0) + 1
-
-            # domain stats
-            if domain not in self.domains:
-                self.domains[domain] = {}
-            # commits
-            self.domains[domain]['commits'] = self.domains[domain].get('commits', 0) + 1
-
-            # hour of week
-            if day not in self.activity_by_hour_of_week:
-                self.activity_by_hour_of_week[day] = {}
-            self.activity_by_hour_of_week[day][hour] = self.activity_by_hour_of_week[day].get(hour, 0) + 1
-            # most active hour?
-            if self.activity_by_hour_of_week[day][hour] > self.activity_by_hour_of_week_busiest:
-                self.activity_by_hour_of_week_busiest = self.activity_by_hour_of_week[day][hour]
-
-            # month of year
-            month = date.month
-            self.activity_by_month_of_year[month] = self.activity_by_month_of_year.get(month, 0) + 1
-
-            # yearly/weekly activity
-            yyw = date.strftime('%Y-%W')
-            self.activity_by_year_week[yyw] = self.activity_by_year_week.get(yyw, 0) + 1
-            if self.activity_by_year_week_peak < self.activity_by_year_week[yyw]:
-                self.activity_by_year_week_peak = self.activity_by_year_week[yyw]
-
-            # author stats
-            if author not in self.authors:
-                self.authors[author] = {}
-            # commits, note again that commits may be in any date order because of cherry-picking and patches
-            if 'last_commit_stamp' not in self.authors[author]:
-                self.authors[author]['last_commit_stamp'] = stamp
-            if stamp > self.authors[author]['last_commit_stamp']:
-                self.authors[author]['last_commit_stamp'] = stamp
-            if 'first_commit_stamp' not in self.authors[author]:
-                self.authors[author]['first_commit_stamp'] = stamp
-            if stamp < self.authors[author]['first_commit_stamp']:
-                self.authors[author]['first_commit_stamp'] = stamp
-
-            # author of the month/year
-            yymm = date.strftime('%Y-%m')
-            if yymm in self.author_of_month:
-                self.author_of_month[yymm][author] = self.author_of_month[yymm].get(author, 0) + 1
-            else:
-                self.author_of_month[yymm] = {}
-                self.author_of_month[yymm][author] = 1
-            self.commits_by_month[yymm] = self.commits_by_month.get(yymm, 0) + 1
-
-            yy = date.year
-            if yy in self.author_of_year:
-                self.author_of_year[yy][author] = self.author_of_year[yy].get(author, 0) + 1
-            else:
-                self.author_of_year[yy] = {}
-                self.author_of_year[yy][author] = 1
-            self.commits_by_year[yy] = self.commits_by_year.get(yy, 0) + 1
-
-            # authors: active days
-            yymmdd = date.strftime('%Y-%m-%d')
-            if 'last_active_day' not in self.authors[author]:
-                self.authors[author]['last_active_day'] = yymmdd
-                self.authors[author]['active_days'] = set([yymmdd])
-            elif yymmdd != self.authors[author]['last_active_day']:
-                self.authors[author]['last_active_day'] = yymmdd
-                self.authors[author]['active_days'].add(yymmdd)
-
-            # project: active days
-            if yymmdd != self.last_active_day:
-                self.last_active_day = yymmdd
-                self.active_days.add(yymmdd)
-
-            # timezone
-            self.commits_by_timezone[timezone] = self.commits_by_timezone.get(timezone, 0) + 1
-
-        # outputs "<stamp> <files>" for each revision
-        revlines = get_pipe_output(['git rev-list --pretty=format:"%%at %%T" %s' % getlogrange('HEAD'), 'grep -v ^commit']).strip().split('\n')
-        lines = []
+        if 'files_in_tree' not in self.cache:
+            self.cache['files_in_tree'] = {}
+        revs_cached = []
         revs_to_read = []
-        time_rev_count = []
-        #Look up rev in cache and take info from cache if found
-        #If not append rev to list of rev to read from repo
-        for revline in revlines:
-            time, rev = revline.split(' ')
-            #if cache empty then add time and rev to list of new rev's
-            #otherwise try to read needed info from cache
-            if 'files_in_tree' not in self.cache.keys():
-                revs_to_read.append((time,rev))
-                continue
-            if rev in self.cache['files_in_tree'].keys():
-                lines.append('%d %d' % (int(time), self.cache['files_in_tree'][rev]))
+        # look up rev in cache and take info from cache if found
+        # if not append rev to list of rev to read from repo
+        for ts, tree_id in repo_statistics.get_revisions():
+            # if cache empty then add time and rev to list of new rev's
+            # otherwise try to read needed info from cache
+            if tree_id in self.cache['files_in_tree'].keys():
+                revs_cached.append((ts, self.cache['files_in_tree'][tree_id]))
             else:
-                revs_to_read.append((time,rev))
+                revs_to_read.append((ts, tree_id))
 
-        #Read revisions from repo
-        pool = Pool(processes=conf['processes'])
-        time_rev_count = pool.map(getnumoffilesfromrev, revs_to_read)
-        pool.terminate()
-        pool.join()
-
-        #Update cache with new revisions and append then to general list
-        for (time, rev, count) in time_rev_count:
-            if 'files_in_tree' not in self.cache:
-                self.cache['files_in_tree'] = {}
+        # update cache with new revisions and append then to general list
+        for ts, rev in revs_to_read:
+            diff = repo_statistics.get_files_info(rev)
+            count = len(diff)
             self.cache['files_in_tree'][rev] = count
-            lines.append('%d %d' % (int(time), count))
+            revs_cached.append((ts, count))
 
-        self.total_commits += len(lines)
-        for line in lines:
-            parts = line.split(' ')
-            if len(parts) != 2:
-                continue
-            (stamp, files) = parts[0:2]
-            try:
-                self.files_by_stamp[int(stamp)] = int(files)
-            except ValueError:
-                print 'Warning: failed to parse line "%s"' % line
 
-        # extensions and size of files
-        lines = get_pipe_output(['git ls-tree -r -l -z %s' % getcommitrange('HEAD', end_only = True)]).split('\000')
-        blobs_to_read = []
-        for line in lines:
-            if len(line) == 0:
-                continue
-            parts = re.split('\s+', line, 4)
-            if parts[0] == '160000' and parts[3] == '-':
-                # skip submodules
-                continue
-            blob_id = parts[2]
-            size = int(parts[3])
-            fullpath = parts[4]
+        for (stamp, files) in revs_cached:
+            self.files_by_stamp[stamp] = files
+        self.total_commits = len(self.files_by_stamp)
 
-            self.total_size += size
-            self.total_files += 1
-
-            filename = fullpath.split('/')[-1] # strip directories
-            if filename.find('.') == -1 or filename.rfind('.') == 0:
-                ext = ''
-            else:
-                ext = filename[(filename.rfind('.') + 1):]
+        ext_dat = {}
+        for p in repo_statistics.get_files_info('HEAD'):
+            filename = os.path.basename(p.delta.old_file.path)
+            basename_ext = filename.split('.')
+            ext = basename_ext[1] if len(basename_ext) == 2 and basename_ext[0] else ''
             if len(ext) > conf['max_ext_length']:
                 ext = ''
-            if ext not in self.extensions:
-                self.extensions[ext] = {'files': 0, 'lines': 0}
-            self.extensions[ext]['files'] += 1
-            #if cache empty then add ext and blob id to list of new blob's
-            #otherwise try to read needed info from cache
-            if 'lines_in_blob' not in self.cache.keys():
-                blobs_to_read.append((ext,blob_id))
-                continue
-            if blob_id in self.cache['lines_in_blob'].keys():
-                self.extensions[ext]['lines'] += self.cache['lines_in_blob'][blob_id]
-            else:
-                blobs_to_read.append((ext,blob_id))
-
-        #Get info abount line count for new blob's that wasn't found in cache
-        pool = Pool(processes=conf['processes'])
-        ext_blob_linecount = pool.map(getnumoflinesinblob, blobs_to_read)
-        pool.terminate()
-        pool.join()
-
-        #Update cache and write down info about number of number of lines
-        for (ext, blob_id, linecount) in ext_blob_linecount:
-            if 'lines_in_blob' not in self.cache:
-                self.cache['lines_in_blob'] = {}
-            self.cache['lines_in_blob'][blob_id] = linecount
-            self.extensions[ext]['lines'] += self.cache['lines_in_blob'][blob_id]
-
-        # line statistics
-        # outputs:
-        #  N files changed, N insertions (+), N deletions(-)
-        # <stamp> <author>
-        self.changes_by_date = {} # stamp -> { files, ins, del }
-        # computation of lines of code by date is better done
-        # on a linear history.
-        extra = ''
-        if conf['linear_linestats']:
-            extra = '--first-parent -m'
-        lines = get_pipe_output(['git log --shortstat %s --pretty=format:"%%at %%aN" %s' % (extra, getlogrange('HEAD'))]).split('\n')
-        lines.reverse()
-        files = 0; inserted = 0; deleted = 0; total_lines = 0
-        for line in lines:
-            if len(line) == 0:
-                continue
-
-            # <stamp> <author>
-            if re.search('files? changed', line) == None:
-                pos = line.find(' ')
-                if pos != -1:
-                    try:
-                        (stamp, author) = (int(line[:pos]), line[pos+1:])
-                        self.changes_by_date[stamp] = { 'files': files, 'ins': inserted, 'del': deleted, 'lines': total_lines }
-
-                        date = datetime.datetime.fromtimestamp(stamp)
-                        yymm = date.strftime('%Y-%m')
-                        self.lines_added_by_month[yymm] = self.lines_added_by_month.get(yymm, 0) + inserted
-                        self.lines_removed_by_month[yymm] = self.lines_removed_by_month.get(yymm, 0) + deleted
-
-                        yy = date.year
-                        self.lines_added_by_year[yy] = self.lines_added_by_year.get(yy,0) + inserted
-                        self.lines_removed_by_year[yy] = self.lines_removed_by_year.get(yy, 0) + deleted
-
-                        files, inserted, deleted = 0, 0, 0
-                    except ValueError:
-                        print 'Warning: unexpected line "%s"' % line
-                else:
-                    print 'Warning: unexpected line "%s"' % line
-            else:
-                numbers = getstatsummarycounts(line)
-
-                if len(numbers) == 3:
-                    (files, inserted, deleted) = map(lambda el : int(el), numbers)
-                    total_lines += inserted
-                    total_lines -= deleted
-                    self.total_lines_added += inserted
-                    self.total_lines_removed += deleted
-
-                else:
-                    print 'Warning: failed to handle line "%s"' % line
-                    (files, inserted, deleted) = (0, 0, 0)
-                #self.changes_by_date[stamp] = { 'files': files, 'ins': inserted, 'del': deleted }
-        self.total_lines += total_lines
-
-        # Per-author statistics
-
-        # defined for stamp, author only if author commited at this timestamp.
-        self.changes_by_date_by_author = {} # stamp -> author -> lines_added
-
-        # Similar to the above, but never use --first-parent
-        # (we need to walk through every commit to know who
-        # committed what, not just through mainline)
-        lines = get_pipe_output(['git log --shortstat --date-order --pretty=format:"%%at %%aN" %s' % (getlogrange('HEAD'))]).split('\n')
-        lines.reverse()
-        inserted = 0; deleted = 0
-        stamp = 0
-        for line in lines:
-            if len(line) == 0:
-                continue
-
-            # <stamp> <author>
-            if re.search('files? changed', line) == None:
-                pos = line.find(' ')
-                if pos != -1:
-                    try:
-                        oldstamp = stamp
-                        (stamp, author) = (int(line[:pos]), line[pos+1:])
-                        if oldstamp > stamp:
-                            # clock skew, keep old timestamp to avoid having ugly graph
-                            stamp = oldstamp
-                        if author not in self.authors:
-                            self.authors[author] = { 'lines_added' : 0, 'lines_removed' : 0, 'commits' : 0}
-                        self.authors[author]['commits'] = self.authors[author].get('commits', 0) + 1
-                        self.authors[author]['lines_added'] = self.authors[author].get('lines_added', 0) + inserted
-                        self.authors[author]['lines_removed'] = self.authors[author].get('lines_removed', 0) + deleted
-                        if stamp not in self.changes_by_date_by_author:
-                            self.changes_by_date_by_author[stamp] = {}
-                        if author not in self.changes_by_date_by_author[stamp]:
-                            self.changes_by_date_by_author[stamp][author] = {}
-                        self.changes_by_date_by_author[stamp][author]['lines_added'] = self.authors[author]['lines_added']
-                        self.changes_by_date_by_author[stamp][author]['commits'] = self.authors[author]['commits']
-                        files, inserted, deleted = 0, 0, 0
-                    except ValueError:
-                        print 'Warning: unexpected line "%s"' % line
-                else:
-                    print 'Warning: unexpected line "%s"' % line
-            else:
-                numbers = getstatsummarycounts(line);
-
-                if len(numbers) == 3:
-                    (files, inserted, deleted) = map(lambda el : int(el), numbers)
-                else:
-                    print 'Warning: failed to handle line "%s"' % line
-                    (files, inserted, deleted) = (0, 0, 0)
+            if ext not in ext_dat:
+                ext_dat[ext] = {'files': 0, 'lines': 0}
+            # unclear what first two entries of the tuple mean, for each file they were equal to 0
+            _, _, lines_count = p.line_stats
+            ext_dat[ext]['lines'] += lines_count
+            ext_dat[ext]['files'] += 1
+        self.extensions = ext_dat
+        self.total_files = sum(v['files'] for k, v in ext_dat.items())
+        self.total_size = repo_statistics.get_total_size('HEAD')
 
     def refine(self):
         # authors
@@ -792,7 +490,6 @@ class HTMLReportCreator:
         for domain in domains_by_commits:
             if n == conf['max_domains']:
                 break
-            commits = 0
             n += 1
             info = data.getDomainInfo(domain)
             fp.write('%s %d %d\n' % (domain, n , info['commits']))
@@ -1095,12 +792,11 @@ class HTMLReportCreator:
             self.authors_by_commits = getkeyssortedbyvalues(data.tags[tag]['authors'])
             for i in reversed(self.authors_by_commits):
                 authorinfo.append('%s (%d)' % (i, data.tags[tag]['authors'][i]))
-            print authorinfo
             tag_dict = {
                 'name': tag,
                 'date': data.tags[tag]['date'],
                 'commits_count': data.tags[tag]['commits'],
-                'authors': ', '.join(authorinfo).decode('utf-8')
+                'authors': ', '.join(authorinfo)
             }
             project_data['tags'].append(tag_dict)
 
@@ -1356,11 +1052,10 @@ class GitStats:
             os.chdir(prevdir)
 
         print 'Refining data...'
-        data.saveCache(cachefile)
+        #data.saveCache(cachefile)
         data.refine()
 
         os.chdir(rundir)
-
         print 'Generating report...'
         report = HTMLReportCreator()
         report.create(data, outputpath)
