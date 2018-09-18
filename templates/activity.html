@@ -29,6 +29,8 @@
             {% for i in range(24) %}
             <th>{{i}}</th>
             {% endfor %}
+            <th></th>
+            <th></th>
         </tr>
         <tr>
             <th>Commits</th>
@@ -39,6 +41,8 @@
                 <td>0</td>
                 {% endif %}
             {% endfor %}
+            <th></th>
+            <th></th>
         </tr>
         <tr>
             <th>%</th>
@@ -49,15 +53,17 @@
                 <td>0.00</td>
                 {% endif %}
             {% endfor %}
+            <th></th>
+            <th>Total</th>
         </tr>
-    </table>
 
-    <table>
-
-        <tr><th>Weekday</th>
+        <tr>
+            <th>Weekday/Hour</th>
             {% for i in range(24) %}
             <th>{{i}}</th>
             {% endfor %}
+            <th></th>
+            <th style="word-wrap: break-word">by weekday</th>
         </tr>
         {% for weekday in project.weekday_hourly_activity %}
         <tr>
@@ -69,10 +75,12 @@
                 <td>0</td>
                 {% endif %}
             {% endfor %}
+            <td></td>
+            {% set intensity, commits_count = project.weekday_activity[weekday] %}
+            <td style="background-color: rgb({{intensity}}, 0, 0)">{{commits_count}}</td>
         </tr>
         {% endfor %}
     </table>
-      {# TODO: vertical weekday activity table to the right of weekday-hour activity #}
   </div>
 
   <div class="column">

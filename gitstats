@@ -580,6 +580,7 @@ class HTMLReportCreator:
             'recent_activity': [],
             'hourly_activity': [],
             'weekday_hourly_activity': {},
+            'weekday_activity': {},
             'timezones_activity': []
         }
 
@@ -615,9 +616,11 @@ class HTMLReportCreator:
 
         for weekday, weekday_name in enumerate(calendar.day_name):
             project_data['weekday_hourly_activity'][weekday_name] = []
+            weekday_commits = 0
             for hour in range(0, 24):
                 try:
                     commits = data.activity_by_hour_of_week[weekday][hour]
+                    weekday_commits += commits
                 except KeyError:
                     commits = 0
                 if commits != 0:
@@ -625,6 +628,11 @@ class HTMLReportCreator:
                     project_data['weekday_hourly_activity'][weekday_name].append((r, commits))
                 else:
                     project_data['weekday_hourly_activity'][weekday_name].append((0, commits))
+            project_data['weekday_activity'][weekday_name] = weekday_commits
+        total_commits_by_busiest_weekday = max(cc for cc in project_data['weekday_activity'].values())
+        for weekday, commit_count in project_data['weekday_activity'].items():
+            r = 127 + int((float(commit_count) / total_commits_by_busiest_weekday) * 128)
+            project_data['weekday_activity'][weekday] = (r, commit_count)
 
         max_commits_on_tz = max(data.commits_by_timezone.values())
         for i in sorted(data.commits_by_timezone.keys(), key = lambda n: int(n)):
