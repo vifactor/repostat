@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1><a href={{repostat.url}}>Repostat</a> v.{{repostat.version}}</h1>
+<dl>
+<dt>Tools</dt>
+<dd>
+    <ul>
+    {% for tool in repostat.tools %}
+    <li>{{tool}}</li>
+    {% endfor %}
+    </ul>
+<dd>
+
+<dt>Contributors</dt><br>
+<p>
+    {% set contributors_count_max = 5 %}
+    {{ repostat.contributors[:contributors_count_max]|join(", ") }}
+    {% if repostat.contributors|length > contributors_count_max %}
+        and others.
+    {% endif %}
+</p>
+
+<dt>Licence</dt><br>
+<p>
+    Repostat license is GPLv2/GPLv3.
+    <br>
+    sortable.js, contained in Repostat, is licensed under the MIT license.
+    See the file itself for details.
+</p>
+{% endblock %}
+</dl>

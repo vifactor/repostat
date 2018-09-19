@@ -2,15 +2,7 @@
 
 {% block content %}
 <dl>
-    <dt>Project name</dt><dd><a href={{project.url}}>{{project.name}}</a> v.{{project.version}}</dd>
-    <dt>Generator tools</dt>
-    <dd>
-        <ul>
-        {% for tool in project.tools %}
-        <li>{{tool}}</li>
-        {% endfor %}
-        </ul>
-    <dd>
+    <dt>Project name</dt><dd>{{project.name}}</dd>
     <dt>Report Period</dt><dd>from {{project.first_commit_date}} to {{project.last_commit_date}}</dd>
     <dt>Project age</dt><dd>{{project.age}} days, {{project.active_days_count}} active days ({{project.active_days_ratio}}%)</dd>
     <dt>Total Commits</dt><dd>{{project.commits_count}} (average {{project.commits_per_active_day_count}} commits per active day, {{project.commits_per_day_count}} per all days)</dd>
