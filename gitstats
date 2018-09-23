@@ -22,7 +22,6 @@ if sys.version_info < (2, 6):
 
 os.environ['LC_ALL'] = 'C'
 
-GNUPLOT_COMMON = 'set terminal png transparent size 640,240\nset size 1.0,1.0\n'
 WEEKDAYS = ('Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun')
 
 time_start = time.time()
@@ -463,6 +462,9 @@ class HTMLReportCreator:
         self.authors_to_plot = data.getAuthors(conf['max_authors'])
         with open(os.path.join(path, 'lines_of_code_by_author.dat'), 'w') as fgl, \
                 open(os.path.join(path, 'commits_by_author.dat'), 'w') as fgc:
+            header_row = '"timestamp" ' + ' '.join('"{0}"'.format(w) for w in self.authors_to_plot) + '\n'
+            fgl.write(header_row)
+            fgc.write(header_row)
             for stamp in sorted(data.changes_by_date_by_author.keys()):
                 fgl.write('%d' % stamp)
                 fgc.write('%d' % stamp)
@@ -523,7 +525,6 @@ class HTMLReportCreator:
             f.write(about_html)
 
         print 'Generating graphs...'
-        self.generate_gnuplot_scripts(path)
         repostat_path = os.path.dirname(os.path.realpath(__file__))
         self.process_gnuplot_scripts(scripts_path=os.path.join(repostat_path, 'gnuplot'),
                                      data_path=path,
@@ -835,57 +836,6 @@ class HTMLReportCreator:
         )
         return template_rendered.encode('utf-8')
 
-    @staticmethod
-    def create_graph_script(script_path, script_code):
-        with open(script_path, 'w') as f:
-            f.write(GNUPLOT_COMMON)
-            f.write(script_code)
-
-    def generate_gnuplot_scripts(self, path):
-        # Lines of Code Added per author
-        script_content = \
-            """
-set terminal png transparent size 640,480
-set output 'lines_of_code_by_author.png'
-set key left top
-set yrange [0:]
-set xdata time
-set timefmt "%s"
-set format x "%Y-%m-%d"
-set grid y
-set ylabel "Lines"
-set xtics rotate
-set bmargin 6
-plot """
-        plots = []
-        for i, a in enumerate(self.authors_to_plot):
-            author = a.replace("\"", "\\\"").replace("`", "")
-            plots.append("""'lines_of_code_by_author.dat' using 1:%d title "%s" w lines""" % (i + 2, author))
-        script_content += ", ".join(plots) + '\n'
-        self.create_graph_script(os.path.join(path, 'lines_of_code_by_author.plot'), script_content)
-
-        # Commits per author
-        script_content = \
-            """
-set terminal png transparent size 640,480
-set output 'commits_by_author.png'
-set key left top
-set yrange [0:]
-set xdata time
-set timefmt "%s"
-set format x "%Y-%m-%d"
-set grid y
-set ylabel "Commits"
-set xtics rotate
-set bmargin 6
-plot """
-        plots = []
-        for i, a in enumerate(self.authors_to_plot):
-            author = a.replace("\"", "\\\"").replace("`", "")
-            plots.append("""'commits_by_author.dat' using 1:%d title "%s" w lines""" % (i + 2, author))
-        script_content += ", ".join(plots) + '\n'
-        self.create_graph_script(os.path.join(path, 'commits_by_author.plot'), script_content)
-
     def process_gnuplot_scripts(self, scripts_path, data_path, output_images_path):
         scripts = glob.glob(os.path.join(scripts_path, '*.plot'))
         os.chdir(output_images_path)
@@ -893,13 +843,6 @@ plot """
             gnuplot_command = 'gnuplot -e "data_folder=\'%s\'" "%s"' \
                               % (data_path, script)
             out = get_pipe_output([gnuplot_command])
-            if len(out) > 0:
-                print out
-
-        # processing of dynamic scripts
-        files = glob.glob('*.plot')
-        for f in files:
-            out = get_pipe_output([gnuplot_cmd + ' "%s"' % f])
             if len(out) > 0:
                 print out
 
