@@ -3,6 +3,7 @@ import pygit2 as git
 from datetime import datetime, tzinfo, timedelta
 from collections import Counter
 import warnings
+from .timeit import Timeit
 
 
 class FixedOffset(tzinfo):
@@ -59,6 +60,7 @@ class GitStatistics:
         self.changes_history, self.total_lines_added, self.total_lines_removed, self.total_lines_count \
             = self.fetch_total_history()
 
+    @Timeit("Fetching authors info")
     def fetch_authors_info(self):
         """
         e.g.
@@ -108,6 +110,7 @@ class GitStatistics:
 
         return result
 
+    @Timeit("Fetching tags info")
     def fetch_tags_info(self):
         tags = filter(lambda refobj: refobj.name.startswith('refs/tags'), self.repo.listall_reference_objects())
         commit_tag = {refobj.peel().oid: refobj.shorthand for refobj in tags}
@@ -132,6 +135,7 @@ class GitStatistics:
 
         return result
 
+    @Timeit("Fetching domains info")
     def fetch_domains_info(self):
         result = {}
         for commit in self.repo.walk(self.repo.head.target):
@@ -144,6 +148,7 @@ class GitStatistics:
         result = {k: {'commits': v} for k, v in result.items()}
         return result
 
+    @Timeit("Fetching timezone info")
     def fetch_timezone_info(self):
         result = {}
         for commit in self.repo.walk(self.repo.head.target):
@@ -154,6 +159,7 @@ class GitStatistics:
             result[timezone_str] = result.get(timezone_str, 0) + 1
         return result
 
+    @Timeit("Fetching weekly/hourly activity info")
     def fetch_weekly_hourly_activity(self):
         activity = {}
         for commit in self.repo.walk(self.repo.head.target):
@@ -165,6 +171,7 @@ class GitStatistics:
             activity[weekday][hour] = activity[weekday].get(hour, 0) + 1
         return activity
 
+    @Timeit("Fetching monthly activity info")
     def fetch_monthly_activity(self):
         activity = {}
         for commit in self.repo.walk(self.repo.head.target):
@@ -174,6 +181,7 @@ class GitStatistics:
             self._adjust_commits_timeline(date)
         return activity
 
+    @Timeit("Fetching recent activity info")
     def fetch_recent_activity(self, weeks=None):
         # FIXME: so far this returns whole activity on week basis, use the weeks argument to skip unused data
         activity = {}
@@ -183,6 +191,7 @@ class GitStatistics:
             activity[yyw] = activity.get(yyw, 0) + 1
         return activity
 
+    @Timeit("Fetching total history")
     def fetch_total_history(self):
         history = {}
         child_commit = self.repo.head.peel()
