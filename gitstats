@@ -87,8 +87,14 @@ def getgitversion():
     return get_pipe_output(['git --version']).split('\n')[0]
 
 
-def getgnuplotversion():
-    return get_pipe_output(['%s --version' % gnuplot_cmd]).split('\n')[0]
+GNUPLOT_VERSION_STRING = None
+
+
+def get_gnuplot_version():
+    global GNUPLOT_VERSION_STRING
+    if GNUPLOT_VERSION_STRING is None:
+        GNUPLOT_VERSION_STRING = get_pipe_output(['%s --version' % gnuplot_cmd]).split('\n')[0]
+    return GNUPLOT_VERSION_STRING
 
 
 class DataCollector:
@@ -821,7 +827,7 @@ class HTMLReportCreator:
         page_data = {
             "url": "https://github.com/vifactor/repostat",
             "version": getversion(),
-            "tools": [getgitversion(), getgnuplotversion()],
+            "tools": [getgitversion(), get_gnuplot_version()],
             # fixme: contributors evaluation is wrong for any other repo except repostat's one
             # todo: introduce a way to fetch repostat's authors and save them in repostat's codebase
             "contributors": [author.decode('utf-8') for author in data.getAuthors()]
@@ -892,7 +898,7 @@ class GitStats:
             print 'FATAL: Output path is not a directory or does not exist'
             sys.exit(1)
 
-        if not getgnuplotversion():
+        if not get_gnuplot_version():
             print 'gnuplot not found'
             sys.exit(1)
 
