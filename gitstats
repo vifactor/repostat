@@ -83,8 +83,9 @@ def getversion():
     return VERSION
 
 
-def getgitversion():
-    return get_pipe_output(['git --version']).split('\n')[0]
+def get_jinja_version():
+    import jinja2 as j2
+    return '{} v.{}'.format(j2.__name__, j2.__version__)
 
 
 GNUPLOT_VERSION_STRING = None
@@ -829,7 +830,9 @@ class HTMLReportCreator:
         page_data = {
             "url": "https://github.com/vifactor/repostat",
             "version": getversion(),
-            "tools": [getgitversion(), get_gnuplot_version()],
+            "tools": [GitStatistics.get_fetching_tool_info(),
+                      get_jinja_version(),
+                      get_gnuplot_version()],
             # fixme: contributors evaluation is wrong for any other repo except repostat's one
             # todo: introduce a way to fetch repostat's authors and save them in repostat's codebase
             "contributors": [author.decode('utf-8') for author in data.getAuthors()]

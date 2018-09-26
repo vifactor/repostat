@@ -60,6 +60,11 @@ class GitStatistics:
         self.changes_history, self.total_lines_added, self.total_lines_removed, self.total_lines_count \
             = self.fetch_total_history()
 
+    @classmethod
+    def get_fetching_tool_info(cls):
+        # could be bare git-subprocess invokation, PythonGit package, etc.
+        return '{} v.{}'.format(git.__name__, git.LIBGIT2_VERSION)
+
     @Timeit("Fetching authors info")
     def fetch_authors_info(self):
         """
