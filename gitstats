@@ -11,10 +11,12 @@ import sys
 import time
 import zlib
 import calendar
+import warnings
 
 from jinja2 import Environment, FileSystemLoader
 from tools import GitStatistics
 from tools import get_external_execution_time, get_pipe_output
+from tools import generate_version_from
 
 if sys.version_info < (2, 6):
     print >> sys.stderr, "Python 2.6 or higher is required for gitstats"
@@ -71,16 +73,17 @@ def getkeyssortedbyvaluekey(d, key):
     return map(lambda el: el[1], sorted(map(lambda el: (d[el][key], el), d.keys())))
 
 
-VERSION = 0
+def get_project_version():
+    try:
+        with open('VERSION', 'r') as f:
+            version_string = f.readline()
+    except IOError as e:
+        warnings.warn('This is not a release version of the project?: %s' % e)
+        import pygit2 as git
+        head_commit = git.Repository(os.getcwd()).head.peel()
+        version_string = generate_version_from(head_commit)
 
-
-def getversion():
-    global VERSION
-    if VERSION == 0:
-        gitstats_repo = os.path.dirname(os.path.abspath(__file__))
-        VERSION = get_pipe_output(["git --git-dir=%s/.git --work-tree=%s rev-parse --short %s" %
-                                   (gitstats_repo, gitstats_repo, getcommitrange('HEAD').split('\n')[0])])
-    return VERSION
+    return version_string
 
 
 def get_jinja_version():
@@ -829,7 +832,7 @@ class HTMLReportCreator:
     def render_about_page(self, data):
         page_data = {
             "url": "https://github.com/vifactor/repostat",
-            "version": getversion(),
+            "version": get_project_version(),
             "tools": [GitStatistics.get_fetching_tool_info(),
                       get_jinja_version(),
                       get_gnuplot_version()],
