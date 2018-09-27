@@ -16,7 +16,7 @@ import warnings
 from jinja2 import Environment, FileSystemLoader
 from tools import GitStatistics
 from tools import get_external_execution_time, get_pipe_output
-from tools import generate_version_from
+from tools import generate_version_from, fetch_contributors_from
 
 if sys.version_info < (2, 6):
     print >> sys.stderr, "Python 2.6 or higher is required for gitstats"
@@ -84,6 +84,20 @@ def get_project_version():
         version_string = generate_version_from(head_commit)
 
     return version_string
+
+
+def get_project_contributors():
+    try:
+        with open('CONTRIBUTORS', 'r') as f:
+            contriburtors_list = f.readlines()
+    except IOError as e:
+        warnings.warn('This is not a release version of the project?: %s' % e)
+        import pygit2 as git
+        repo = git.Repository(os.getcwd())
+        head_commit = repo.head.peel()
+        contriburtors_list = fetch_contributors_from(repo, head_commit)
+
+    return contriburtors_list
 
 
 def get_jinja_version():
@@ -838,7 +852,7 @@ class HTMLReportCreator:
                       get_gnuplot_version()],
             # fixme: contributors evaluation is wrong for any other repo except repostat's one
             # todo: introduce a way to fetch repostat's authors and save them in repostat's codebase
-            "contributors": [author.decode('utf-8') for author in data.getAuthors()]
+            "contributors": [author.decode('utf-8') for author in get_project_contributors()]
         }
 
         code_dir = os.path.dirname(os.path.abspath(__file__))

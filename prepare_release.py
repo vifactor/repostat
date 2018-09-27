@@ -7,12 +7,7 @@ This script is supposed to be run before each release to update information like
 """
 import pygit2 as git
 import os
-from tools import generate_version_from
-
-
-def fetch_contributors_from(commit):
-    # TODO: using 'git blame' estimate the authors and order them according to their contribution
-    return ''
+from tools import generate_version_from, fetch_contributors_from
 
 
 if __name__ == '__main__':
@@ -24,11 +19,7 @@ if __name__ == '__main__':
         version = generate_version_from(head_commit)
         f.write(version)
 
-    NAMED_CONTRIBUTORS_COUNT = 3
     with open('CONTRIBUTORS', 'w') as f:
-        contributors = fetch_contributors_from(head_commit)
-        for contributor in contributors[:NAMED_CONTRIBUTORS_COUNT]:
+        contributors = fetch_contributors_from(repostat_repo, head_commit)
+        for contributor in contributors:
             f.write(contributor)
-        if len(contributors) > NAMED_CONTRIBUTORS_COUNT:
-            other_contributors_count = len(contributors) - NAMED_CONTRIBUTORS_COUNT
-            f.write(str(other_contributors_count))
