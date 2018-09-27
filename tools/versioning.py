@@ -11,7 +11,6 @@ def fetch_contributors_from(repo, commit):
     contribution = {}
     for p in commit.tree.diff_to_tree():
         blob_blame = repo.blame(p.delta.new_file.path)
-        print p.delta.new_file.path
         for blame_hunk in blob_blame:
             contribution[blame_hunk.final_committer.name] = contribution.get(blame_hunk.final_committer.name, 0) \
                                                             + blame_hunk.lines_in_hunk

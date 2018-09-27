@@ -18,10 +18,6 @@ from tools import GitStatistics
 from tools import get_external_execution_time, get_pipe_output
 from tools import generate_version_from, fetch_contributors_from
 
-if sys.version_info < (2, 6):
-    print >> sys.stderr, "Python 2.6 or higher is required for gitstats"
-    sys.exit(1)
-
 os.environ['LC_ALL'] = 'C'
 
 WEEKDAYS = ('Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun')
@@ -30,9 +26,7 @@ time_start = time.time()
 
 # By default, gnuplot is searched from path, but can be overridden with the
 # environment variable "GNUPLOT"
-gnuplot_cmd = 'gnuplot'
-if 'GNUPLOT' in os.environ:
-    gnuplot_cmd = os.environ['GNUPLOT']
+gnuplot_executable = os.environ.get('GNUPLOT', failobj='gnuplot')
 
 conf = {
     'max_domains': 10,
@@ -89,15 +83,15 @@ def get_project_version():
 def get_project_contributors():
     try:
         with open('CONTRIBUTORS', 'r') as f:
-            contriburtors_list = f.readlines()
+            contributors_list = f.readlines()
     except IOError as e:
         warnings.warn('This is not a release version of the project?: %s' % e)
         import pygit2 as git
         repo = git.Repository(os.getcwd())
         head_commit = repo.head.peel()
-        contriburtors_list = fetch_contributors_from(repo, head_commit)
+        contributors_list = fetch_contributors_from(repo, head_commit)
 
-    return contriburtors_list
+    return contributors_list
 
 
 def get_jinja_version():
@@ -111,7 +105,7 @@ GNUPLOT_VERSION_STRING = None
 def get_gnuplot_version():
     global GNUPLOT_VERSION_STRING
     if GNUPLOT_VERSION_STRING is None:
-        GNUPLOT_VERSION_STRING = get_pipe_output(['%s --version' % gnuplot_cmd]).split('\n')[0]
+        GNUPLOT_VERSION_STRING = get_pipe_output(['%s --version' % gnuplot_executable]).split('\n')[0]
     return GNUPLOT_VERSION_STRING
 
 
@@ -389,16 +383,20 @@ class GitDataCollector(DataCollector):
         return datetime.datetime.fromtimestamp(stamp).strftime('%Y-%m-%d')
 
 
-class HTMLReportCreator:
+class HTMLReportCreator(object):
+    def __init__(self):
+        self.repostat_root_dir = os.path.dirname(os.path.abspath(__file__))
+        templates_dir = os.path.join(self.repostat_root_dir, 'templates')
+        self.j2_env = Environment(loader=FileSystemLoader(templates_dir), trim_blocks=True)
+
     def create(self, data, path):
         self.data = data
         self.path = path
         self.title = data.projectname
 
         # copy static files. Looks in the binary directory, ../share/gitstats and /usr/share/gitstats
-        binarypath = os.path.dirname(os.path.abspath(__file__))
-        secondarypath = os.path.join(binarypath, '..', 'share', 'gitstats')
-        basedirs = [binarypath, secondarypath, '/usr/share/gitstats']
+        secondarypath = os.path.join(self.repostat_root_dir, '..', 'share', 'gitstats')
+        basedirs = [self.repostat_root_dir, secondarypath, '/usr/share/gitstats']
         for asset in (conf['style'], 'sortable.js', 'arrow-up.gif', 'arrow-down.gif', 'arrow-none.gif'):
             for base in basedirs:
                 src = os.path.join(base, asset)
@@ -483,16 +481,16 @@ class HTMLReportCreator:
         # time. Be robust and keep the list in a variable.
         commits_by_authors = {}
 
-        self.authors_to_plot = data.getAuthors(conf['max_authors'])
+        authors_to_plot = data.getAuthors(conf['max_authors'])
         with open(os.path.join(path, 'lines_of_code_by_author.dat'), 'w') as fgl, \
                 open(os.path.join(path, 'commits_by_author.dat'), 'w') as fgc:
-            header_row = '"timestamp" ' + ' '.join('"{0}"'.format(w) for w in self.authors_to_plot) + '\n'
+            header_row = '"timestamp" ' + ' '.join('"{0}"'.format(w) for w in authors_to_plot) + '\n'
             fgl.write(header_row)
             fgc.write(header_row)
             for stamp in sorted(data.changes_by_date_by_author.keys()):
                 fgl.write('%d' % stamp)
                 fgc.write('%d' % stamp)
-                for author in self.authors_to_plot:
+                for author in authors_to_plot:
                     if author in data.changes_by_date_by_author[stamp].keys():
                         lines_by_authors[author] = data.changes_by_date_by_author[stamp][author]['lines_added']
                         commits_by_authors[author] = data.changes_by_date_by_author[stamp][author]['commits']
@@ -528,7 +526,7 @@ class HTMLReportCreator:
 
         ###
         # Lines
-        with open(path + '/lines_of_code.dat', 'w') as fg:
+        with open(os.path.join(path, 'lines_of_code.dat'), 'w') as fg:
             for stamp in sorted(data.changes_by_date.keys()):
                 fg.write('%d %d\n' % (stamp, data.changes_by_date[stamp]['lines']))
 
@@ -544,13 +542,12 @@ class HTMLReportCreator:
 
         ###
         # about.html
-        about_html = self.render_about_page(data)
+        about_html = self.render_about_page()
         with open(os.path.join(path, "about.html"), 'w') as f:
             f.write(about_html)
 
         print 'Generating graphs...'
-        repostat_path = os.path.dirname(os.path.realpath(__file__))
-        self.process_gnuplot_scripts(scripts_path=os.path.join(repostat_path, 'gnuplot'),
+        self.process_gnuplot_scripts(scripts_path=os.path.join(self.repostat_root_dir, 'gnuplot'),
                                      data_path=path,
                                      output_images_path=path)
 
@@ -581,11 +578,7 @@ class HTMLReportCreator:
         }
 
         # load and render template
-        code_dir = os.path.dirname(os.path.abspath(__file__))
-        templates_dir = os.path.join(code_dir, 'templates')
-        j2_env = Environment(loader=FileSystemLoader(templates_dir), trim_blocks=True)
-
-        template_rendered = j2_env.get_template('general.html').render(
+        template_rendered = self.j2_env.get_template('general.html').render(
             project=project_data,
             generation=generation_data,
             page_title="General"
@@ -663,11 +656,7 @@ class HTMLReportCreator:
             project_data['timezones_activity'].append((i, r, commits))
 
         # load and render template
-        code_dir = os.path.dirname(os.path.abspath(__file__))
-        templates_dir = os.path.join(code_dir, 'templates')
-        j2_env = Environment(loader=FileSystemLoader(templates_dir), trim_blocks=True)
-
-        template_rendered = j2_env.get_template('activity.html').render(
+        template_rendered = self.j2_env.get_template('activity.html').render(
             project=project_data,
             page_title="Activity"
         )
@@ -735,11 +724,7 @@ class HTMLReportCreator:
             project_data['top_authors'].append(author_dict)
 
         # load and render template
-        code_dir = os.path.dirname(os.path.abspath(__file__))
-        templates_dir = os.path.join(code_dir, 'templates')
-        j2_env = Environment(loader=FileSystemLoader(templates_dir), trim_blocks=True)
-
-        template_rendered = j2_env.get_template('authors.html').render(
+        template_rendered = self.j2_env.get_template('authors.html').render(
             project=project_data,
             page_title="Authors"
         )
@@ -771,11 +756,7 @@ class HTMLReportCreator:
             project_data['files'].append(file_type_dict)
 
         # load and render template
-        code_dir = os.path.dirname(os.path.abspath(__file__))
-        templates_dir = os.path.join(code_dir, 'templates')
-        j2_env = Environment(loader=FileSystemLoader(templates_dir), trim_blocks=True)
-
-        template_rendered = j2_env.get_template('files.html').render(
+        template_rendered = self.j2_env.get_template('files.html').render(
             project=project_data,
             page_title="Files"
         )
@@ -790,11 +771,7 @@ class HTMLReportCreator:
         }
 
         # load and render template
-        code_dir = os.path.dirname(os.path.abspath(__file__))
-        templates_dir = os.path.join(code_dir, 'templates')
-        j2_env = Environment(loader=FileSystemLoader(templates_dir), trim_blocks=True)
-
-        template_rendered = j2_env.get_template('lines.html').render(
+        template_rendered = self.j2_env.get_template('lines.html').render(
             project=project_data,
             page_title="Lines"
         )
@@ -821,8 +798,8 @@ class HTMLReportCreator:
             # there are tags containing no commits
             if 'authors' in data.tags[tag].keys():
                 authorinfo = []
-                self.authors_by_commits = getkeyssortedbyvalues(data.tags[tag]['authors'])
-                for i in reversed(self.authors_by_commits):
+                authors_by_commits = getkeyssortedbyvalues(data.tags[tag]['authors'])
+                for i in reversed(authors_by_commits):
                     authorinfo.append('%s (%d)' % (i, data.tags[tag]['authors'][i]))
                 tag_dict = {
                     'name': tag,
@@ -833,17 +810,13 @@ class HTMLReportCreator:
                 project_data['tags'].append(tag_dict)
 
         # load and render template
-        code_dir = os.path.dirname(os.path.abspath(__file__))
-        templates_dir = os.path.join(code_dir, 'templates')
-        j2_env = Environment(loader=FileSystemLoader(templates_dir), trim_blocks=True)
-
-        template_rendered = j2_env.get_template('tags.html').render(
+        template_rendered = self.j2_env.get_template('tags.html').render(
             project=project_data,
             page_title="Tags"
         )
         return template_rendered.encode('utf-8')
 
-    def render_about_page(self, data):
+    def render_about_page(self):
         page_data = {
             "url": "https://github.com/vifactor/repostat",
             "version": get_project_version(),
@@ -855,21 +828,18 @@ class HTMLReportCreator:
             "contributors": [author.decode('utf-8') for author in get_project_contributors()]
         }
 
-        code_dir = os.path.dirname(os.path.abspath(__file__))
-        templates_dir = os.path.join(code_dir, 'templates')
-        j2_env = Environment(loader=FileSystemLoader(templates_dir), trim_blocks=True)
-        template_rendered = j2_env.get_template('about.html').render(
+        template_rendered = self.j2_env.get_template('about.html').render(
             repostat=page_data,
             page_title="About"
         )
         return template_rendered.encode('utf-8')
 
-    def process_gnuplot_scripts(self, scripts_path, data_path, output_images_path):
+    @staticmethod
+    def process_gnuplot_scripts(scripts_path, data_path, output_images_path):
         scripts = glob.glob(os.path.join(scripts_path, '*.plot'))
         os.chdir(output_images_path)
         for script in scripts:
-            gnuplot_command = 'gnuplot -e "data_folder=\'%s\'" "%s"' \
-                              % (data_path, script)
+            gnuplot_command = '%s -e "data_folder=\'%s\'" "%s"' % (gnuplot_executable, data_path, script)
             out = get_pipe_output([gnuplot_command])
             if len(out) > 0:
                 print out
@@ -891,6 +861,14 @@ Please see the manual page for more details.
 
 class GitStats:
     def run(self, args_orig):
+        if (3, 0) <= sys.version_info < (2, 6):
+            warnings.warn("Python 2.6+ (but <3.0) is required for repostat")
+            sys.exit(1)
+
+        if not get_gnuplot_version():
+            warnings.warn('gnuplot not found')
+            sys.exit(1)
+
         optlist, args = getopt.getopt(args_orig, 'hc:', ["help"])
         for o, v in optlist:
             if o == '-c':
@@ -917,11 +895,7 @@ class GitStats:
         except OSError:
             pass
         if not os.path.isdir(outputpath):
-            print 'FATAL: Output path is not a directory or does not exist'
-            sys.exit(1)
-
-        if not get_gnuplot_version():
-            print 'gnuplot not found'
+            warnings.warn('FATAL: Output path is not a directory or does not exist: %s' % outputpath)
             sys.exit(1)
 
         print 'Output path: %s' % outputpath
