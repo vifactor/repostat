@@ -2,7 +2,7 @@ set terminal png transparent size 640,240
 set size 1.0,1.0
 
 stats 'commits_by_author.dat' skip 1 nooutput
-max_col = STATS_columns
+max_col = ceil(STATS_columns)
 
 set terminal png transparent size 640,480
 set output 'commits_by_author.png'
@@ -16,6 +16,5 @@ set ylabel "Commits"
 set xtics rotate
 set bmargin 6
 
-set key autotitle columnheader
-
-plot for [i=2:max_col] 'commits_by_author.dat' using 1:i with lines
+plot for [i=2:max_col] 'commits_by_author.dat' using 1:(sum [col=i:max_col] column(col)) \
+            title columnheader(i) with filledcurves x1

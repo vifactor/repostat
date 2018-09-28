@@ -32,7 +32,7 @@ conf = {
     'max_domains': 10,
     'max_ext_length': 10,
     'style': 'gitstats.css',
-    'max_authors': 20,
+    'max_authors': 7,
     'authors_top': 5,
     'commit_begin': '',
     'commit_end': 'HEAD',
@@ -481,10 +481,12 @@ class HTMLReportCreator(object):
         # time. Be robust and keep the list in a variable.
         commits_by_authors = {}
 
+        others_column_name = 'others'
         authors_to_plot = data.getAuthors(conf['max_authors'])
         with open(os.path.join(path, 'lines_of_code_by_author.dat'), 'w') as fgl, \
                 open(os.path.join(path, 'commits_by_author.dat'), 'w') as fgc:
-            header_row = '"timestamp" ' + ' '.join('"{0}"'.format(w) for w in authors_to_plot) + '\n'
+            header_row = '"timestamp" ' + ' '.join('"{0}"'.format(w) for w in authors_to_plot) + ' ' \
+                         + others_column_name + '\n'
             fgl.write(header_row)
             fgc.write(header_row)
             for stamp in sorted(data.changes_by_date_by_author.keys()):
@@ -496,6 +498,16 @@ class HTMLReportCreator(object):
                         commits_by_authors[author] = data.changes_by_date_by_author[stamp][author]['commits']
                     fgl.write(' %d' % lines_by_authors.get(author, 0))
                     fgc.write(' %d' % commits_by_authors.get(author, 0))
+                for author in data.changes_by_date_by_author[stamp].keys():
+                    if author not in authors_to_plot:
+                        lines_by_authors[others_column_name] = lines_by_authors.get(others_column_name, 0) \
+                                                               + data.changes_by_date_by_author[stamp][author][
+                                                                   'lines_added']
+                        commits_by_authors[others_column_name] = commits_by_authors.get(others_column_name, 0) \
+                                                                 + data.changes_by_date_by_author[stamp][author][
+                                                                     'commits']
+                fgl.write(' %d' % lines_by_authors.get(others_column_name, 0))
+                fgc.write(' %d' % commits_by_authors.get(others_column_name, 0))
                 fgl.write('\n')
                 fgc.write('\n')
 
