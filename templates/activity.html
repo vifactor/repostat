@@ -85,24 +85,30 @@
     </table>
   </div>
 
-  <div class="column">
+     <h2 id="month_of_year"><a href="#month_of_year">Month in a Year activity</a></h2>
+<img src="month_of_year.png" alt="Month in a Year activity">
+
+   <div class="column">
       <h2 id="commits_by_timezone"><a href="#commits_by_timezone">Commits by Timezone</a></h2>
     <table>
-        <tr><th>Timezone</th><th>Commits</th></tr>
-        {% for timezone, intensity, commits_count in project.timezones_activity %}
-            <tr><th>{{timezone}}</th>
-            {% if commits_count > 0 %}
-            <td style="background-color: rgb({{intensity}}, 0, 0)">{{commits_count}}</td>
-            {% else %}
-            <td></td>
-            {% endif %}
-            </tr>
-        {% endfor %}
+        <tr>
+            <th>Timezone</th>
+            {% for timezone, _, _ in project.timezones_activity %}
+            <th>{{timezone}}</th>
+            {% endfor %}
+        </tr>
+        <tr>
+            <th>Commits</th>
+            {% for _, intensity, commits_count in project.timezones_activity %}
+                {% if commits_count > 0 %}
+                <td style="background-color: rgb({{intensity}}, 0, 0)">{{commits_count}}</td>
+                {% else %}
+                <td></td>
+                {% endif %}
+            {% endfor %}
+        </tr>
     </table>
   </div>
 </div>
-
-<h2 id="month_of_year"><a href="#month_of_year">Month in a Year activity</a></h2>
-<img src="month_of_year.png" alt="Month in a Year activity">
 
 {% endblock %}
