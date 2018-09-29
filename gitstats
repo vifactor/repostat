@@ -453,10 +453,13 @@ class HTMLReportCreator(object):
                     commits = data.activity_by_month_of_year[mm]
                 fp.write('%d %d\n' % (mm, commits))
 
-        # Commits by year/month
+        # Commits by current year's months
+        today_date = datetime.date.today()
+        current_year = today_date.year
         with open(os.path.join(path, 'commits_by_year_month.dat'), 'w') as fg:
-            for yymm in sorted(data.commits_by_month.keys()):
-                fg.write('%s %s\n' % (yymm, data.commits_by_month[yymm]))
+            for month in range(1, 13):
+                yymm = datetime.date(current_year, month, 1).strftime("%Y-%m")
+                fg.write('%s %s\n' % (yymm, data.commits_by_month.get(yymm, 0)))
 
         # Commits by year
         with open(os.path.join(path, 'commits_by_year.dat'), 'w') as fg:
