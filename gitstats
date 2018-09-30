@@ -528,26 +528,13 @@ class HTMLReportCreator(object):
         with open(os.path.join(path, "files.html"), 'w') as f:
             f.write(files_html)
 
-        # FIXME: check if this is still needed
-        # use set to get rid of duplicate/unnecessary entries
-        files_by_date = set()
-        for stamp in sorted(data.files_by_stamp.keys()):
-            files_by_date.add('%s %d' %
-                              (datetime.datetime.fromtimestamp(stamp).strftime('%Y-%m-%d'), data.files_by_stamp[stamp]))
-
         with open(os.path.join(path, 'files_by_date.dat'), 'w') as fg:
-            for line in sorted(list(files_by_date)):
-                fg.write('%s\n' % line)
+            for timestamp in sorted(data.files_by_stamp.keys()):
+                fg.write('%d %d\n' % (timestamp, data.files_by_stamp[timestamp]))
 
-        ###
-        # Lines
         with open(os.path.join(path, 'lines_of_code.dat'), 'w') as fg:
             for stamp in sorted(data.changes_by_date.keys()):
                 fg.write('%d %d\n' % (stamp, data.changes_by_date[stamp]['lines']))
-
-        lines_html = self.render_lines_page(data)
-        with open(os.path.join(path, "lines.html"), 'w') as f:
-            f.write(lines_html)
 
         ###
         # tags.html
@@ -774,21 +761,6 @@ class HTMLReportCreator(object):
         template_rendered = self.j2_env.get_template('files.html').render(
             project=project_data,
             page_title="Files"
-        )
-        return template_rendered
-
-    def render_lines_page(self, data):
-        # TODO: this conversion from old 'data' to new 'project data' should perhaps be removed in future
-        project_data = {
-            "total_lines_count": data.getTotalLOC(),
-            "added_lines_count": data.total_lines_added,
-            "removed_lines_count": data.total_lines_removed
-        }
-
-        # load and render template
-        template_rendered = self.j2_env.get_template('lines.html').render(
-            project=project_data,
-            page_title="Lines"
         )
         return template_rendered
 
