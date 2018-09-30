@@ -388,6 +388,7 @@ class HTMLReportCreator(object):
         self.repostat_root_dir = os.path.dirname(os.path.abspath(__file__))
         templates_dir = os.path.join(self.repostat_root_dir, 'templates')
         self.j2_env = Environment(loader=FileSystemLoader(templates_dir), trim_blocks=True)
+        self.j2_env.filters['to_month_name_abr'] = lambda im: calendar.month_abbr[im]
 
     def create(self, data, path):
         self.data = data
@@ -444,14 +445,6 @@ class HTMLReportCreator(object):
                 if d in day_of_week:
                     commits = day_of_week[d]
                 fp.write('%d %s %d\n' % (d + 1, WEEKDAYS[d], commits))
-
-        # Month of Year
-        with open(os.path.join(path, 'month_of_year.dat'), 'w') as fp:
-            for mm in range(1, 13):
-                commits = 0
-                if mm in data.activity_by_month_of_year:
-                    commits = data.activity_by_month_of_year[mm]
-                fp.write('%d %d\n' % (mm, commits))
 
         # Commits by current year's months
         today_date = datetime.date.today()
@@ -595,7 +588,8 @@ class HTMLReportCreator(object):
             'hourly_activity': [],
             'weekday_hourly_activity': {},
             'weekday_activity': {},
-            'timezones_activity': []
+            'timezones_activity': [],
+            'month_in_year_activity': data.activity_by_month_of_year
         }
 
         # generate weeks to show (previous N weeks from now)

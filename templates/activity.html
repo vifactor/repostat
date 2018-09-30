@@ -85,8 +85,28 @@
     </table>
   </div>
 
-     <h2 id="month_of_year"><a href="#month_of_year">Month in a Year activity</a></h2>
-<img src="month_of_year.png" alt="Month in a Year activity">
+    <h2 id="month_of_year"><a href="#month_of_year">Commits by Month of Year</a></h2>
+     <table>
+        <tr>
+            <th>Month</th>
+            {% for imonth in range(1, 13) %}
+                <th>{{imonth|to_month_name_abr}}</th>
+            {% endfor %}
+        </tr>
+        <tr>
+            <th>Commits</th>
+            {% set max_commits_count = project.month_in_year_activity.values() | max %}
+            {% for imonth in range(1, 13) %}
+                {% set commits_count = project.month_in_year_activity.get(imonth, 0) %}
+                {% if commits_count > 0 %}
+                    {% set red_intensity = 127 + (((commits_count) / max_commits_count) * 128) | int %}
+                    <td style="background-color: rgb({{red_intensity}}, 0, 0)">{{commits_count}}</td>
+                {% else %}
+                    <td></td>
+                {% endif %}
+            {% endfor %}
+        </tr>
+     </table>
 
    <div class="column">
       <h2 id="commits_by_timezone"><a href="#commits_by_timezone">Commits by Timezone</a></h2>
