@@ -2,22 +2,8 @@
 
 {% block content %}
 <h2 id="recent_activity"><a href="#recent_activity">Recent activity</a></h2>
-
-{# TODO: Replace this with bar-graph instead of constructing a graph using table #}
-<p>Last {{project.recent_activity|length}} weeks</p>
-
-<table class="noborders">
-    <tr>
-        {% for (commits, height) in project.recent_activity %}
-        <td style="text-align: center; vertical-align: bottom">{{commits}}<div style="display: block; background-color: red; width: 20px; height: {{height}}px"></div></td>
-        {% endfor %}
-    </tr>
-    <tr>
-        {% for i in range(project.recent_activity|length, 0, -1) %}
-        <td>{{i}}</td>
-        {% endfor %}
-    </tr>
-</table>
+{# TODO: Print message instead of empty graph if no recent activity in repo #}
+<img src="recent_activity.png" alt="Recent activity graph">
 
 <h2 id="total_activity"><a href="#total_activity">Total Activity</a></h2>
 <img src="total_activity.png" alt="total_activity">

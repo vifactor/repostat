@@ -1,4 +1,4 @@
-set terminal pngcairo transparent size 640,340
+set terminal pngcairo transparent size 1000,340
 set size 1.0,1.0
 
 set loadpath data_folder

@@ -384,11 +384,27 @@ class GitDataCollector(DataCollector):
 
 
 class HTMLReportCreator(object):
+    recent_activity_period_weeks = 32
+
     def __init__(self):
         self.repostat_root_dir = os.path.dirname(os.path.abspath(__file__))
         templates_dir = os.path.join(self.repostat_root_dir, 'templates')
         self.j2_env = Environment(loader=FileSystemLoader(templates_dir), trim_blocks=True)
         self.j2_env.filters['to_month_name_abr'] = lambda im: calendar.month_abbr[im]
+
+    def _save_recent_activity_data(self, data):
+        # generate weeks to show (previous N weeks from now)
+        now = datetime.datetime.now()
+        weeks = []
+        stampcur = now
+        for i in range(0, self.recent_activity_period_weeks):
+            weeks.insert(0, stampcur.strftime('%Y-%W'))
+            stampcur -= datetime.timedelta(7)
+
+        with open(os.path.join(self.path, 'recent_activity.dat'), 'w') as f:
+            for i in range(0, self.recent_activity_period_weeks):
+                commits = data.activity_by_year_week.get(weeks[i], 0)
+                f.write("%d %d\n" % (self.recent_activity_period_weeks - i - 1, commits))
 
     def create(self, data, path):
         self.data = data
@@ -418,18 +434,6 @@ class HTMLReportCreator(object):
         activity_html = self.render_activity_page(data)
         with open(os.path.join(path, "activity.html"), 'w') as f:
             f.write(activity_html)
-
-        # Weekly activity
-        WEEKS = 32
-
-        # generate weeks to show (previous N weeks from now)
-        now = datetime.datetime.now()
-        deltaweek = datetime.timedelta(7)
-        weeks = []
-        stampcur = now
-        for i in range(0, WEEKS):
-            weeks.insert(0, stampcur.strftime('%Y-%W'))
-            stampcur -= deltaweek
 
         # Hour of Day
         hour_of_day = data.getActivityByHourOfDay()
@@ -612,6 +616,8 @@ class HTMLReportCreator(object):
                 percentage = float(data.activity_by_year_week[weeks[i]]) / data.activity_by_year_week_peak
             bar_height = max(1, int(200 * percentage))
             project_data['recent_activity'].append((commits, bar_height))
+
+        self._save_recent_activity_data(data)
 
         totalcommits = data.getTotalCommits()
         hour_of_day = data.getActivityByHourOfDay()
