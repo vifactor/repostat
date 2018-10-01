@@ -12,6 +12,7 @@ import time
 import zlib
 import calendar
 import warnings
+import itertools
 
 from jinja2 import Environment, FileSystemLoader
 from tools import GitStatistics
@@ -33,6 +34,7 @@ conf = {
     'max_ext_length': 10,
     'style': 'gitstats.css',
     'max_authors': 7,
+    'max_authors_of_months': 6,
     'authors_top': 5,
     'commit_begin': '',
     'commit_end': 'HEAD',
@@ -678,7 +680,9 @@ class HTMLReportCreator(object):
             project_data['non_top_authors'] = rest
 
         project_data['months'] = []
-        for yymm in reversed(sorted(data.author_of_month.keys())):
+        # print out only recent conf['max_authors_of_months'] authors of the month
+        iter_months_with_authors = reversed(sorted(data.author_of_month.keys()))
+        for yymm in itertools.islice(iter_months_with_authors, conf['max_authors_of_months']):
             authordict = data.author_of_month[yymm]
             authors = getkeyssortedbyvalues(authordict)
             authors.reverse()
