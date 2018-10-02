@@ -10,11 +10,9 @@ set key left top
 set yrange [0:]
 set xdata time
 set timefmt "%s"
-set format x "%Y-%m-%d"
+set format x "%Y-%m"
 set grid y
 set ylabel "Lines"
 set xtics rotate
-set bmargin 6
 
-set key autotitle columnheader
-plot for [i=2:max_col] 'lines_of_code_by_author.dat' using 1:i with lines
+plot for [i=2:max_col] 'lines_of_code_by_author.dat' using 1:i with lines lw 2 title columnheader(i)
