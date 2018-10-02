@@ -53,9 +53,9 @@
             <th></th>
             <th style="word-wrap: break-word">by weekday</th>
         </tr>
-        {% for weekday in project.weekday_hourly_activity %}
+        {% for weekday in range(0, 7) %}
         <tr>
-            <th>{{weekday}}</th>
+            <th>{{weekday|to_weekday_name}}</th>
             {% for intensity, commits_count in project.weekday_hourly_activity[weekday] %}
                 {% if commits_count > 0 %}
                 <td style="background-color: rgb({{intensity}}, 0, 0)">{{commits_count}}</td>
