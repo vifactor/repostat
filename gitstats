@@ -306,7 +306,7 @@ class GitDataCollector(DataCollector):
 
     def refine(self):
         # authors
-        # name -> {place_by_commits, commits_frac, date_first, date_last, timedelta}
+        # name -> {place_by_commits, date_first, date_last, timedelta}
         self.authors_by_commits = getkeyssortedbyvaluekey(self.authors, 'commits')
         self.authors_by_commits.reverse()  # most first
         for i, name in enumerate(self.authors_by_commits):
@@ -314,7 +314,6 @@ class GitDataCollector(DataCollector):
 
         for name in self.authors.keys():
             a = self.authors[name]
-            a['commits_frac'] = (100 * float(a['commits'])) / self.getTotalCommits()
             date_first = datetime.datetime.fromtimestamp(a['first_commit_stamp'])
             date_last = datetime.datetime.fromtimestamp(a['last_commit_stamp'])
             delta = date_last - date_first
@@ -356,13 +355,6 @@ class GitDataCollector(DataCollector):
     def getLastCommitDate(self):
         return datetime.datetime.fromtimestamp(self.last_commit_stamp)
 
-    def getTags(self):
-        lines = get_pipe_output(['git show-ref --tags', 'cut -d/ -f3'])
-        return lines.split('\n')
-
-    def getTagDate(self, tag):
-        return self.revToDate('tags/' + tag)
-
     def getTotalAuthors(self):
         return self.total_authors
 
@@ -378,10 +370,6 @@ class GitDataCollector(DataCollector):
     def getTotalSize(self):
         return self.total_size
 
-    def revToDate(self, rev):
-        stamp = int(get_pipe_output(['git log --pretty=format:%%at "%s" -n 1' % rev]))
-        return datetime.datetime.fromtimestamp(stamp).strftime('%Y-%m-%d')
-
 
 class HTMLReportCreator(object):
     recent_activity_period_weeks = 32
@@ -391,7 +379,9 @@ class HTMLReportCreator(object):
         templates_dir = os.path.join(self.repostat_root_dir, 'templates')
         self.j2_env = Environment(loader=FileSystemLoader(templates_dir), trim_blocks=True)
         self.j2_env.filters['to_month_name_abr'] = lambda im: calendar.month_abbr[im]
-        self.j2_env.filters['to_weekday_name'] = lambda id: calendar.day_name[id]
+        self.j2_env.filters['to_weekday_name'] = lambda i: calendar.day_name[i]
+        self.j2_env.filters['to_ratio'] = lambda val, max_val: float(val) / max_val
+        self.j2_env.filters['to_percentage'] = lambda val, max_val: 100 * float(val) / max_val
 
     def _save_recent_activity_data(self, data):
         # generate weeks to show (previous N weeks from now)
@@ -543,12 +533,8 @@ class HTMLReportCreator(object):
             "name": data.projectname,
             "age": data.getCommitDeltaDays(),
             "active_days_count": len(data.getActiveDays()),
-            "active_days_ratio": "{0:.2f}".format((100.0 * len(data.getActiveDays()) / data.getCommitDeltaDays())),
             "commits_count": data.getTotalCommits(),
-            "commits_per_active_day_count": "{0:.2f}".format(float(data.getTotalCommits()) / len(data.getActiveDays())),
-            "commits_per_day_count": "{0:.2f}".format(float(data.getTotalCommits()) / data.getCommitDeltaDays()),
             "authors_count": data.getTotalAuthors(),
-            "commits_per_author_count": "{0:.2f}".format(float(data.getTotalCommits()) / data.getTotalAuthors()),
             "files_count": data.getTotalFiles(),
             "total_lines_count": data.getTotalLOC(),
             "added_lines_count": data.total_lines_added,
@@ -591,12 +577,9 @@ class HTMLReportCreator(object):
         for i in range(0, 24):
             if i in hour_of_day:
                 r = self.calculate_color_intensity(hour_of_day[i], data.activity_by_hour_of_day_busiest)
-                project_data['hourly_activity'].append({'intensity': r, 'commits_count': hour_of_day[i],
-                                                        'relative_commits_count': (100.0 * hour_of_day[
-                                                            i]) / totalcommits})
+                project_data['hourly_activity'].append({'intensity': r, 'commits_count': hour_of_day[i]})
             else:
-                project_data['hourly_activity'].append(
-                    {'intensity': 0, 'commits_count': 0, 'relative_commits_count': 0.00})
+                project_data['hourly_activity'].append({'intensity': 0, 'commits_count': 0})
 
         for weekday in range(len(calendar.day_name)):
             project_data['weekday_hourly_activity'][weekday] = []
@@ -635,7 +618,8 @@ class HTMLReportCreator(object):
         # TODO: this conversion from old 'data' to new 'project data' should perhaps be removed in future
         project_data = {
             'top_authors': [],
-            'non_top_authors': []
+            'non_top_authors': [],
+            'total_commits_count': data.getTotalCommits()
         }
 
         all_authors = data.getAuthors()
@@ -683,7 +667,6 @@ class HTMLReportCreator(object):
             author_dict = {
                 'name': author,
                 'commits_count': info['commits'],
-                'commits_relative_count': info['commits_frac'],
                 'lines_added_count': info['lines_added'],
                 'lines_removed_count': info['lines_removed'],
                 'first_commit_date': info['date_first'],
@@ -705,24 +688,17 @@ class HTMLReportCreator(object):
         # TODO: this conversion from old 'data' to new 'project data' should perhaps be removed in future
         project_data = {
             'files_count': data.getTotalFiles(),
+            'lines_count': data.getTotalLOC(),
             'size': data.getTotalSize(),
-            'average_file_size': "{0:.2f}".format(float(data.getTotalSize()) / data.getTotalFiles()),
             'files': []
         }
 
         for ext in sorted(data.extensions.keys()):
             files = data.extensions[ext]['files']
             lines = data.extensions[ext]['lines']
-            try:
-                loc_percentage = (100.0 * lines) / data.getTotalLOC()
-            except ZeroDivisionError:
-                loc_percentage = 0
             file_type_dict = {"extension": ext,
                               "count": files,
-                              "relative_count": "{0:.2f}".format((100.0 * files) / data.getTotalFiles()),
-                              "lines_count": lines,
-                              "relative_lines_count": "{0:.2f}".format(loc_percentage),
-                              "lines_per_file_count": "{0:.1f}".format(lines / files)
+                              "lines_count": lines
                               }
             project_data['files'].append(file_type_dict)
 

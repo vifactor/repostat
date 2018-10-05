@@ -34,9 +34,10 @@
         </tr>
         <tr>
             <th>%</th>
+            {% set total_commits_count =  project.hourly_activity | sum(attribute='commits_count')%}
             {% for activity in project.hourly_activity %}
                 {% if activity.commits_count > 0 %}
-                <td style="background-color: rgb({{activity.intensity}}, 0, 0)">{{'%0.2f'| format(activity.relative_commits_count|float)}}</td>
+                <td style="background-color: rgb({{activity.intensity}}, 0, 0)">{{'%0.2f'| format(activity.commits_count|to_percentage(total_commits_count))}}</td>
                 {% else %}
                 <td>0.00</td>
                 {% endif %}

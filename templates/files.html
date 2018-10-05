@@ -4,7 +4,7 @@
 <dl>
     <dt>Total number of files</dt><dd>{{project.files_count}}</dd>
     <dt>Total codebase</dt><dd>{{project.size}} bytes</dd>
-    <dt>Average file size</dt><dd>{{project.average_file_size}} bytes</dd>
+    <dt>Average file size</dt><dd>{{'%0.2f'|format(project.size|to_ratio(project.files_count))}} bytes</dd>
 </dl>
 
 <h2 id="file_count_by_date"><a href="#file_count_by_date">Files number by date</a></h2>
@@ -16,9 +16,9 @@
     {% for file_type in project.files %}
         <tr>
             <td>{{file_type.extension}}</td>
-            <td>{{file_type.count}} ({{file_type.relative_count}}%)</td>
-            <td>{{file_type.lines_count}} ({{file_type.relative_lines_count}}%)</td>
-            <td>{{file_type.lines_per_file_count}}</td>
+            <td>{{file_type.count}} ({{'%0.2f'|format(file_type.count|to_percentage(project.files_count))}}%)</td>
+            <td>{{file_type.lines_count}} ({{'%0.2f'|format(file_type.lines_count|to_percentage(project.lines_count))}}%)</td>
+            <td>{{'%0.1f'|format(file_type.lines_count|to_ratio(file_type.count))}}</td>
         </tr>
     {% endfor %}
 </table>

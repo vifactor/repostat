@@ -13,7 +13,7 @@
     {% for author in project.top_authors %}
     <tr>
         <td>{{author.name}}</td>
-        <td>{{author.commits_count}} ({{'%0.2f'| format(author.commits_relative_count|float)}}%)</td>
+        <td>{{author.commits_count}} ({{'%0.2f'| format(author.commits_count|to_percentage(project.total_commits_count))}}%)</td>
         <td>{{author.lines_added_count}}</td><td>{{author.lines_removed_count}}</td>
         <td>{{author.first_commit_date}}</td><td>{{author.latest_commit_date}}</td>
         <td>{{author.contributed_days_count}}</td><td>{{author.active_days_count}}</td>
