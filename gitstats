@@ -115,15 +115,6 @@ class DataCollector:
     def __init__(self):
         self.stamp_created = time.time()
         self.cache = {}
-        self.total_authors = 0
-        self.activity_by_hour_of_day = {}  # hour -> commits
-        self.activity_by_day_of_week = {}  # day -> commits
-        self.activity_by_month_of_year = {}  # month [1-12] -> commits
-        self.activity_by_hour_of_week = {}  # weekday -> hour -> commits
-        self.activity_by_hour_of_day_busiest = 0
-        self.activity_by_hour_of_week_busiest = 0
-        self.activity_by_year_week = {}  # yy_wNN -> commits
-        self.activity_by_year_week_peak = 0
 
         # name -> {commits, first_commit_stamp, last_commit_stamp, last_active_day, active_days,
         #  lines_added,
@@ -134,43 +125,13 @@ class DataCollector:
         self.total_files = 0
         self.authors_by_commits = 0
 
-        # domains
-        self.domains = {}  # domain -> commits
-
-        # author of the month
-        self.author_of_month = {}  # month -> author -> commits
-        self.author_of_year = {}  # year -> author -> commits
-        self.commits_by_month = {}  # month -> commits
-        self.commits_by_year = {}  # year -> commits
-        self.lines_added_by_month = {}  # month -> lines added
-        self.lines_added_by_year = {}  # year -> lines added
-        self.lines_removed_by_month = {}  # month -> lines removed
-        self.lines_removed_by_year = {}  # year -> lines removed
         self.first_commit_stamp = 0
         self.last_commit_stamp = 0
-        self.active_days = set()
-
-        # lines
-        self.total_lines = 0
-        self.total_lines_added = 0
-        self.total_lines_removed = 0
-
-        # size
-        self.total_size = 0
-
-        # timezone
-        self.commits_by_timezone = {}  # timezone -> commits
-
-        # tags
-        self.tags = {}
 
         self.files_by_stamp = {}  # stamp -> files
 
         # extensions
         self.extensions = {}  # extension -> files, lines
-
-        # line statistics
-        self.changes_by_date = {}  # stamp -> { files, ins, del }
 
     ##
     # This should be the main function to extract data from the repository.
@@ -195,11 +156,6 @@ class DataCollector:
             f.seek(0)
             self.cache = pickle.load(f)
         f.close()
-
-    ##
-    # Produce any additional statistics from the extracted data.
-    def refine(self):
-        pass
 
     def getFirstCommitDate(self):
         return datetime.datetime.now()
@@ -230,37 +186,13 @@ class DataCollector:
 class GitDataCollector(DataCollector):
     def collect(self, project_directory):
         DataCollector.collect(self, project_directory)
-        repo_statistics = GitStatistics(project_directory)
+        self.repo_statistics = GitStatistics(project_directory)
 
-        self.authors = repo_statistics.authors
-        self.total_authors = len(repo_statistics.authors)
-        self.tags = repo_statistics.tags
-        self.domains = repo_statistics.domains
-        self.commits_by_timezone = repo_statistics.timezones
-        self.first_commit_stamp = repo_statistics.first_commit_timestamp
-        self.last_commit_stamp = repo_statistics.last_commit_timestamp
-        self.active_days = repo_statistics.active_days
-        self.author_of_month = repo_statistics.author_of_month
-        self.author_of_year = repo_statistics.author_of_year
-        self.activity_by_hour_of_week = repo_statistics.activity_weekly_hourly
-        self.activity_by_hour_of_week_busiest = repo_statistics.max_weekly_hourly_activity
-        self.activity_by_day_of_week = repo_statistics.get_weekly_activity()
-        self.activity_by_hour_of_day = repo_statistics.get_hourly_activity()
-        self.activity_by_hour_of_day_busiest = max(self.activity_by_hour_of_day.values())
-        self.activity_by_month_of_year = repo_statistics.activity_monthly
-        self.commits_by_month = repo_statistics.monthly_commits_timeline
-        self.commits_by_year = repo_statistics.yearly_commits_timeline
-        self.activity_by_year_week = repo_statistics.recent_activity_by_week
-        self.activity_by_year_week_peak = repo_statistics.recent_activity_peak
-        self.changes_by_date = repo_statistics.changes_history
-        self.total_lines_added = repo_statistics.total_lines_added
-        self.total_lines_removed = repo_statistics.total_lines_removed
-        self.total_lines = repo_statistics.total_lines_count
-        self.lines_added_by_year = repo_statistics.get_lines_insertions_by_year()
-        self.lines_removed_by_year = repo_statistics.get_lines_deletions_by_year()
-        self.lines_added_by_month = repo_statistics.get_lines_insertions_by_month()
-        self.lines_removed_by_month = repo_statistics.get_lines_deletions_by_month()
-        self.changes_by_date_by_author = repo_statistics.author_changes_history
+        self.authors = self.repo_statistics.authors
+        self.first_commit_stamp = self.repo_statistics.first_commit_timestamp
+        self.last_commit_stamp = self.repo_statistics.last_commit_timestamp
+
+        self.changes_by_date_by_author = self.repo_statistics.author_changes_history
 
         if 'files_in_tree' not in self.cache:
             self.cache['files_in_tree'] = {}
@@ -268,7 +200,7 @@ class GitDataCollector(DataCollector):
         revs_to_read = []
         # look up rev in cache and take info from cache if found
         # if not append rev to list of rev to read from repo
-        for ts, tree_id in repo_statistics.get_revisions():
+        for ts, tree_id in self.repo_statistics.get_revisions():
             # if cache empty then add time and rev to list of new rev's
             # otherwise try to read needed info from cache
             if tree_id in self.cache['files_in_tree'].keys():
@@ -278,7 +210,7 @@ class GitDataCollector(DataCollector):
 
         # update cache with new revisions and append then to general list
         for ts, rev in revs_to_read:
-            diff = repo_statistics.get_files_info(rev)
+            diff = self.repo_statistics.get_files_info(rev)
             count = len(diff)
             self.cache['files_in_tree'][rev] = count
             revs_cached.append((ts, count))
@@ -288,7 +220,7 @@ class GitDataCollector(DataCollector):
         self.total_commits = len(self.files_by_stamp)
 
         ext_dat = {}
-        for p in repo_statistics.get_files_info('HEAD'):
+        for p in self.repo_statistics.get_files_info('HEAD'):
             filename = os.path.basename(p.delta.old_file.path)
             basename_ext = filename.split('.')
             ext = basename_ext[1] if len(basename_ext) == 2 and basename_ext[0] else ''
@@ -302,7 +234,6 @@ class GitDataCollector(DataCollector):
             ext_dat[ext]['files'] += 1
         self.extensions = ext_dat
         self.total_files = sum(v['files'] for k, v in ext_dat.items())
-        self.total_size = repo_statistics.get_total_size('HEAD')
 
     def refine(self):
         # authors
@@ -323,15 +254,6 @@ class GitDataCollector(DataCollector):
             if 'lines_added' not in a: a['lines_added'] = 0
             if 'lines_removed' not in a: a['lines_removed'] = 0
 
-    def getActiveDays(self):
-        return self.active_days
-
-    def getActivityByDayOfWeek(self):
-        return self.activity_by_day_of_week
-
-    def getActivityByHourOfDay(self):
-        return self.activity_by_hour_of_day
-
     def getAuthorInfo(self, author):
         return self.authors[author]
 
@@ -343,20 +265,11 @@ class GitDataCollector(DataCollector):
     def getCommitDeltaDays(self):
         return (self.last_commit_stamp / 86400 - self.first_commit_stamp / 86400) + 1
 
-    def getDomainInfo(self, domain):
-        return self.domains[domain]
-
-    def getDomains(self):
-        return self.domains.keys()
-
     def getFirstCommitDate(self):
         return datetime.datetime.fromtimestamp(self.first_commit_stamp)
 
     def getLastCommitDate(self):
         return datetime.datetime.fromtimestamp(self.last_commit_stamp)
-
-    def getTotalAuthors(self):
-        return self.total_authors
 
     def getTotalCommits(self):
         return self.total_commits
@@ -364,18 +277,14 @@ class GitDataCollector(DataCollector):
     def getTotalFiles(self):
         return self.total_files
 
-    def getTotalLOC(self):
-        return self.total_lines
-
-    def getTotalSize(self):
-        return self.total_size
-
 
 class HTMLReportCreator(object):
     recent_activity_period_weeks = 32
+    repostat_root_dir = os.path.dirname(os.path.abspath(__file__))
 
-    def __init__(self):
-        self.repostat_root_dir = os.path.dirname(os.path.abspath(__file__))
+    def __init__(self, repo_stat):
+        self.git_repo_statistics = repo_stat
+
         templates_dir = os.path.join(self.repostat_root_dir, 'templates')
         self.j2_env = Environment(loader=FileSystemLoader(templates_dir), trim_blocks=True)
         self.j2_env.filters['to_month_name_abr'] = lambda im: calendar.month_abbr[im]
@@ -394,7 +303,7 @@ class HTMLReportCreator(object):
 
         with open(os.path.join(self.path, 'recent_activity.dat'), 'w') as f:
             for i in range(0, self.recent_activity_period_weeks):
-                commits = data.activity_by_year_week.get(weeks[i], 0)
+                commits = self.git_repo_statistics.recent_activity_by_week.get(weeks[i], 0)
                 f.write("%d %d\n" % (self.recent_activity_period_weeks - i - 1, commits))
 
     def create(self, data, path):
@@ -432,12 +341,12 @@ class HTMLReportCreator(object):
         with open(os.path.join(path, 'commits_by_year_month.dat'), 'w') as fg:
             for month in range(1, 13):
                 yymm = datetime.date(current_year, month, 1).strftime("%Y-%m")
-                fg.write('%s %s\n' % (yymm, data.commits_by_month.get(yymm, 0)))
+                fg.write('%s %s\n' % (yymm, self.git_repo_statistics.monthly_commits_timeline.get(yymm, 0)))
 
         # Commits by year
         with open(os.path.join(path, 'commits_by_year.dat'), 'w') as fg:
-            for yy in sorted(data.commits_by_year.keys()):
-                fg.write('%d %d\n' % (yy, data.commits_by_year[yy]))
+            for yy in sorted(self.git_repo_statistics.yearly_commits_timeline.keys()):
+                fg.write('%d %d\n' % (yy, self.git_repo_statistics.yearly_commits_timeline[yy]))
 
         ###
         # Authors
@@ -488,11 +397,11 @@ class HTMLReportCreator(object):
                 fgc.write('\n')
 
         # Domains
-        domains_by_commits = getkeyssortedbyvaluekey(data.domains, 'commits')
+        domains_by_commits = getkeyssortedbyvaluekey(self.git_repo_statistics.domains, 'commits')
         domains_by_commits.reverse()
         with open(os.path.join(path, 'domains.dat'), 'w') as fp:
             for i, domain in enumerate(domains_by_commits[:conf['max_domains']]):
-                info = data.getDomainInfo(domain)
+                info = self.git_repo_statistics.domains[domain]
                 fp.write('%s %d %d\n' % (domain, i, info['commits']))
 
         ###
@@ -506,8 +415,8 @@ class HTMLReportCreator(object):
                 fg.write('%d %d\n' % (timestamp, data.files_by_stamp[timestamp]))
 
         with open(os.path.join(path, 'lines_of_code.dat'), 'w') as fg:
-            for stamp in sorted(data.changes_by_date.keys()):
-                fg.write('%d %d\n' % (stamp, data.changes_by_date[stamp]['lines']))
+            for stamp in sorted(self.git_repo_statistics.changes_history.keys()):
+                fg.write('%d %d\n' % (stamp, self.git_repo_statistics.changes_history[stamp]['lines']))
 
         ###
         # tags.html
@@ -532,13 +441,13 @@ class HTMLReportCreator(object):
         project_data = {
             "name": data.projectname,
             "age": data.getCommitDeltaDays(),
-            "active_days_count": len(data.getActiveDays()),
+            "active_days_count": len(self.git_repo_statistics.active_days),
             "commits_count": data.getTotalCommits(),
-            "authors_count": data.getTotalAuthors(),
+            "authors_count": len(self.git_repo_statistics.authors),
             "files_count": data.getTotalFiles(),
-            "total_lines_count": data.getTotalLOC(),
-            "added_lines_count": data.total_lines_added,
-            "removed_lines_count": data.total_lines_removed,
+            "total_lines_count": self.git_repo_statistics.total_lines_count,
+            "added_lines_count": self.git_repo_statistics.total_lines_added,
+            "removed_lines_count": self.git_repo_statistics.total_lines_removed,
             "first_commit_date": data.getFirstCommitDate().strftime(date_format_str),
             "last_commit_date": data.getLastCommitDate().strftime(date_format_str)
         }
@@ -567,16 +476,16 @@ class HTMLReportCreator(object):
             'weekday_hourly_activity': {},
             'weekday_activity': {},
             'timezones_activity': [],
-            'month_in_year_activity': data.activity_by_month_of_year
+            'month_in_year_activity': self.git_repo_statistics.activity_monthly
         }
 
         self._save_recent_activity_data(data)
 
-        totalcommits = data.getTotalCommits()
-        hour_of_day = data.getActivityByHourOfDay()
+        hour_of_day = self.git_repo_statistics.get_hourly_activity()
+        hour_of_day_busiest = max(hour_of_day.values())
         for i in range(0, 24):
             if i in hour_of_day:
-                r = self.calculate_color_intensity(hour_of_day[i], data.activity_by_hour_of_day_busiest)
+                r = self.calculate_color_intensity(hour_of_day[i], hour_of_day_busiest)
                 project_data['hourly_activity'].append({'intensity': r, 'commits_count': hour_of_day[i]})
             else:
                 project_data['hourly_activity'].append({'intensity': 0, 'commits_count': 0})
@@ -586,12 +495,12 @@ class HTMLReportCreator(object):
             weekday_commits = 0
             for hour in range(0, 24):
                 try:
-                    commits = data.activity_by_hour_of_week[weekday][hour]
+                    commits = self.git_repo_statistics.activity_weekly_hourly[weekday][hour]
                     weekday_commits += commits
                 except KeyError:
                     commits = 0
                 if commits != 0:
-                    r = self.calculate_color_intensity(commits, data.activity_by_hour_of_week_busiest)
+                    r = self.calculate_color_intensity(commits, self.git_repo_statistics.max_weekly_hourly_activity)
                     project_data['weekday_hourly_activity'][weekday].append((r, commits))
                 else:
                     project_data['weekday_hourly_activity'][weekday].append((0, commits))
@@ -601,9 +510,9 @@ class HTMLReportCreator(object):
             r = self.calculate_color_intensity(commit_count, total_commits_by_busiest_weekday)
             project_data['weekday_activity'][weekday] = (r, commit_count)
 
-        max_commits_on_tz = max(data.commits_by_timezone.values())
-        for i in sorted(data.commits_by_timezone.keys(), key=lambda n: int(n)):
-            commits = data.commits_by_timezone[i]
+        max_commits_on_tz = max(self.git_repo_statistics.timezones.values())
+        for i in sorted(self.git_repo_statistics.timezones.keys(), key=lambda n: int(n)):
+            commits = self.git_repo_statistics.timezones[i]
             r = self.calculate_color_intensity(commits, max_commits_on_tz)
             project_data['timezones_activity'].append((i, r, commits))
 
@@ -630,35 +539,35 @@ class HTMLReportCreator(object):
 
         project_data['months'] = []
         # print out only recent conf['max_authors_of_months'] authors of the month
-        iter_months_with_authors = reversed(sorted(data.author_of_month.keys()))
+        iter_months_with_authors = reversed(sorted(self.git_repo_statistics.author_of_month.keys()))
         for yymm in itertools.islice(iter_months_with_authors, conf['max_authors_of_months']):
-            authordict = data.author_of_month[yymm]
+            authordict = self.git_repo_statistics.author_of_month[yymm]
             authors = getkeyssortedbyvalues(authordict)
             authors.reverse()
-            commits = data.author_of_month[yymm][authors[0]]
+            commits = self.git_repo_statistics.author_of_month[yymm][authors[0]]
             next = ', '.join(authors[1:conf['authors_top'] + 1])
 
             month_dict = {
                 'date': yymm,
                 'top_author': {'name': authors[0].decode('utf-8'), 'commits_count': commits},
                 'next_top_authors': next.decode('utf-8'),
-                'all_commits_count': data.commits_by_month[yymm]
+                'all_commits_count': self.git_repo_statistics.monthly_commits_timeline[yymm]
             }
             project_data['months'].append(month_dict)
 
         project_data['years'] = []
-        for yy in reversed(sorted(data.author_of_year.keys())):
-            authordict = data.author_of_year[yy]
+        for yy in reversed(sorted(self.git_repo_statistics.author_of_year.keys())):
+            authordict = self.git_repo_statistics.author_of_year[yy]
             authors = getkeyssortedbyvalues(authordict)
             authors.reverse()
-            commits = data.author_of_year[yy][authors[0]]
+            commits = self.git_repo_statistics.author_of_year[yy][authors[0]]
             next = ', '.join(authors[1:conf['authors_top'] + 1])
 
             year_dict = {
                 'date': yy,
                 'top_author': {'name': authors[0].decode('utf-8'), 'commits_count': commits},
                 'next_top_authors': next.decode('utf-8'),
-                'all_commits_count': data.commits_by_year[yy]
+                'all_commits_count': self.git_repo_statistics.yearly_commits_timeline[yy]
             }
             project_data['years'].append(year_dict)
 
@@ -688,8 +597,8 @@ class HTMLReportCreator(object):
         # TODO: this conversion from old 'data' to new 'project data' should perhaps be removed in future
         project_data = {
             'files_count': data.getTotalFiles(),
-            'lines_count': data.getTotalLOC(),
-            'size': data.getTotalSize(),
+            'lines_count': self.git_repo_statistics.total_lines_count,
+            'size': self.git_repo_statistics.get_total_size(),
             'files': []
         }
 
@@ -712,7 +621,7 @@ class HTMLReportCreator(object):
     def render_tags_page(self, data):
         # TODO: this conversion from old 'data' to new 'project data' should perhaps be removed in future
         project_data = {
-            'tags_count': len(data.tags),
+            'tags_count': len(self.git_repo_statistics.tags),
             'tags': []
         }
 
@@ -725,18 +634,18 @@ class HTMLReportCreator(object):
 
         # TODO: refactor the following code
         tags_sorted_by_date_desc = map(lambda el: el[1],
-                                       reversed(sorted(map(lambda el: (el[1]['date'], el[0]), data.tags.items()))))
+                                       reversed(sorted(map(lambda el: (el[1]['date'], el[0]), self.git_repo_statistics.tags.items()))))
         for tag in tags_sorted_by_date_desc:
             # there are tags containing no commits
-            if 'authors' in data.tags[tag].keys():
+            if 'authors' in self.git_repo_statistics.tags[tag].keys():
                 authorinfo = []
-                authors_by_commits = getkeyssortedbyvalues(data.tags[tag]['authors'])
+                authors_by_commits = getkeyssortedbyvalues(self.git_repo_statistics.tags[tag]['authors'])
                 for i in reversed(authors_by_commits):
-                    authorinfo.append('%s (%d)' % (i, data.tags[tag]['authors'][i]))
+                    authorinfo.append('%s (%d)' % (i, self.git_repo_statistics.tags[tag]['authors'][i]))
                 tag_dict = {
                     'name': tag,
-                    'date': data.tags[tag]['date'],
-                    'commits_count': data.tags[tag]['commits'],
+                    'date': self.git_repo_statistics.tags[tag]['date'],
+                    'commits_count': self.git_repo_statistics.tags[tag]['commits'],
                     'authors': ', '.join(authorinfo)
                 }
                 project_data['tags'].append(tag_dict)
@@ -755,8 +664,6 @@ class HTMLReportCreator(object):
             "tools": [GitStatistics.get_fetching_tool_info(),
                       get_jinja_version(),
                       get_gnuplot_version()],
-            # fixme: contributors evaluation is wrong for any other repo except repostat's one
-            # todo: introduce a way to fetch repostat's authors and save them in repostat's codebase
             "contributors": [author.decode('utf-8') for author in get_project_contributors()]
         }
 
@@ -853,7 +760,8 @@ class GitStats:
 
         os.chdir(rundir)
         print 'Generating report...'
-        report = HTMLReportCreator()
+        # fixme: pass GitStatistics object directly when obsolete GitDataCollector is removed
+        report = HTMLReportCreator(data.repo_statistics)
         report.create(data, outputpath)
 
         time_end = time.time()

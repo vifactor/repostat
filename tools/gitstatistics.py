@@ -309,7 +309,7 @@ class GitStatistics:
 
         return diff
 
-    def get_total_size(self, revision):
+    def get_total_size(self, revision='HEAD'):
         # FIXME: not the most elegant and effective function
         # TODO: check how it works for submodules
         tree = self.repo.revparse_single(revision)
