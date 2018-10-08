@@ -157,12 +157,6 @@ class DataCollector:
             self.cache = pickle.load(f)
         f.close()
 
-    def getFirstCommitDate(self):
-        return datetime.datetime.now()
-
-    def getLastCommitDate(self):
-        return datetime.datetime.now()
-
     def getStampCreated(self):
         return self.stamp_created
 
@@ -247,7 +241,7 @@ class GitDataCollector(DataCollector):
             a = self.authors[name]
             date_first = datetime.datetime.fromtimestamp(a['first_commit_stamp'])
             date_last = datetime.datetime.fromtimestamp(a['last_commit_stamp'])
-            delta = date_last - date_first
+            delta = (date_last - date_first).days
             a['date_first'] = date_first.strftime('%Y-%m-%d')
             a['date_last'] = date_last.strftime('%Y-%m-%d')
             a['timedelta'] = delta
@@ -262,8 +256,10 @@ class GitDataCollector(DataCollector):
         res.reverse()
         return res[:limit]
 
-    def getCommitDeltaDays(self):
-        return (self.last_commit_stamp / 86400 - self.first_commit_stamp / 86400) + 1
+    def get_development_period(self):
+        date1 = datetime.datetime.fromtimestamp(self.first_commit_stamp)
+        date2 = datetime.datetime.fromtimestamp(self.last_commit_stamp)
+        return (date2 - date1).days
 
     def getFirstCommitDate(self):
         return datetime.datetime.fromtimestamp(self.first_commit_stamp)
@@ -440,7 +436,7 @@ class HTMLReportCreator(object):
         # TODO: this conversion from old 'data' to new 'project data' should perhaps be removed in future
         project_data = {
             "name": data.projectname,
-            "age": data.getCommitDeltaDays(),
+            "age": data.get_development_period(),
             "active_days_count": len(self.git_repo_statistics.active_days),
             "commits_count": data.getTotalCommits(),
             "authors_count": len(self.git_repo_statistics.authors),
