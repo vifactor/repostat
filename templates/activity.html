@@ -22,9 +22,11 @@
         </tr>
         <tr>
             <th>Commits</th>
+            {% set max_commits_count = project.hourly_activity | max %}
             {% for activity in project.hourly_activity %}
-                {% if activity.commits_count > 0 %}
-                <td style="background-color: rgb({{activity.intensity}}, 0, 0)">{{activity.commits_count}}</td>
+                {% if activity > 0 %}
+                <td style="background-color: rgb({{activity|to_intensity(max_commits_count)}}, 0, 0)">
+                    {{activity}}</td>
                 {% else %}
                 <td>0</td>
                 {% endif %}
@@ -34,10 +36,12 @@
         </tr>
         <tr>
             <th>%</th>
-            {% set total_commits_count =  project.hourly_activity | sum(attribute='commits_count')%}
+            {% set total_commits_count = project.hourly_activity | sum %}
             {% for activity in project.hourly_activity %}
-                {% if activity.commits_count > 0 %}
-                <td style="background-color: rgb({{activity.intensity}}, 0, 0)">{{'%0.2f'| format(activity.commits_count|to_percentage(total_commits_count))}}</td>
+                {% if activity > 0 %}
+                <td style="background-color: rgb({{activity|to_intensity(max_commits_count)}}, 0, 0)">
+                    {{'%0.2f'| format(activity|to_percentage(total_commits_count))}}
+                </td>
                 {% else %}
                 <td>0.00</td>
                 {% endif %}
@@ -54,19 +58,22 @@
             <th></th>
             <th style="word-wrap: break-word">by weekday</th>
         </tr>
+        {% set weekday_max_commits_count = project.weekday_activity.values() | max %}
         {% for weekday in range(0, 7) %}
         <tr>
             <th>{{weekday|to_weekday_name}}</th>
-            {% for intensity, commits_count in project.weekday_hourly_activity[weekday] %}
+            {% for commits_count in project.weekday_hourly_activity[weekday] %}
                 {% if commits_count > 0 %}
-                <td style="background-color: rgb({{intensity}}, 0, 0)">{{commits_count}}</td>
+                <td style="background-color: rgb({{commits_count|to_intensity(project.weekday_hour_max_commits_count)}}, 0, 0)">
+                    {{commits_count}}</td>
                 {% else %}
                 <td>0</td>
                 {% endif %}
             {% endfor %}
             <td></td>
-            {% set intensity, commits_count = project.weekday_activity[weekday] %}
-            <td style="background-color: rgb({{intensity}}, 0, 0)">{{commits_count}}</td>
+            {% set commits_count = project.weekday_activity[weekday] %}
+            <td style="background-color: rgb({{commits_count|to_intensity(weekday_max_commits_count)}}, 0, 0)">
+                {{commits_count}}</td>
         </tr>
         {% endfor %}
     </table>
@@ -86,8 +93,8 @@
             {% for imonth in range(1, 13) %}
                 {% set commits_count = project.month_in_year_activity.get(imonth, 0) %}
                 {% if commits_count > 0 %}
-                    {% set red_intensity = 127 + (((commits_count) / max_commits_count) * 128) | int %}
-                    <td style="background-color: rgb({{red_intensity}}, 0, 0)">{{commits_count}}</td>
+                    <td style="background-color: rgb({{commits_count|to_intensity(max_commits_count)}}, 0, 0)">
+                        {{commits_count}}</td>
                 {% else %}
                     <td></td>
                 {% endif %}
@@ -100,15 +107,17 @@
     <table>
         <tr>
             <th>Timezone</th>
-            {% for timezone, _, _ in project.timezones_activity %}
+            {% for timezone in project.timezones_activity %}
             <th>{{timezone}}</th>
             {% endfor %}
         </tr>
         <tr>
             <th>Commits</th>
-            {% for _, intensity, commits_count in project.timezones_activity %}
+            {% set tz_max_commits_count = project.timezones_activity.values() | max %}
+            {% for commits_count in project.timezones_activity.values() %}
                 {% if commits_count > 0 %}
-                <td style="background-color: rgb({{intensity}}, 0, 0)">{{commits_count}}</td>
+                <td style="background-color: rgb({{commits_count|to_intensity(weekday_max_commits_count)}}, 0, 0)">
+                    {{commits_count}}</td>
                 {% else %}
                 <td></td>
                 {% endif %}

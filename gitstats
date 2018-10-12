@@ -13,6 +13,7 @@ import zlib
 import calendar
 import warnings
 import itertools
+import collections
 
 from jinja2 import Environment, FileSystemLoader
 from tools import GitStatistics
@@ -287,6 +288,7 @@ class HTMLReportCreator(object):
         self.j2_env.filters['to_weekday_name'] = lambda i: calendar.day_name[i]
         self.j2_env.filters['to_ratio'] = lambda val, max_val: float(val) / max_val
         self.j2_env.filters['to_percentage'] = lambda val, max_val: 100 * float(val) / max_val
+        self.j2_env.filters['to_intensity'] = lambda val, max_val: 127 + int((float(val) / max_val) * 128)
 
     def _save_recent_activity_data(self, data):
         # generate weeks to show (previous N weeks from now)
@@ -461,30 +463,25 @@ class HTMLReportCreator(object):
         )
         return template_rendered
 
-    @staticmethod
-    def calculate_color_intensity(value, extreme_value):
-        return 127 + int((float(value) / extreme_value) * 128)
-
     def render_activity_page(self, data):
         # TODO: this conversion from old 'data' to new 'project data' should perhaps be removed in future
         project_data = {
             'hourly_activity': [],
             'weekday_hourly_activity': {},
             'weekday_activity': {},
-            'timezones_activity': [],
-            'month_in_year_activity': self.git_repo_statistics.activity_monthly
+            'timezones_activity': collections.OrderedDict(sorted(self.git_repo_statistics.timezones.items(), key=lambda n: int(n[0]))),
+            'month_in_year_activity': self.git_repo_statistics.activity_monthly,
+            'weekday_hour_max_commits_count': self.git_repo_statistics.max_weekly_hourly_activity
         }
 
         self._save_recent_activity_data(data)
 
         hour_of_day = self.git_repo_statistics.get_hourly_activity()
-        hour_of_day_busiest = max(hour_of_day.values())
         for i in range(0, 24):
             if i in hour_of_day:
-                r = self.calculate_color_intensity(hour_of_day[i], hour_of_day_busiest)
-                project_data['hourly_activity'].append({'intensity': r, 'commits_count': hour_of_day[i]})
+                project_data['hourly_activity'].append(hour_of_day[i])
             else:
-                project_data['hourly_activity'].append({'intensity': 0, 'commits_count': 0})
+                project_data['hourly_activity'].append(0)
 
         for weekday in range(len(calendar.day_name)):
             project_data['weekday_hourly_activity'][weekday] = []
@@ -496,21 +493,10 @@ class HTMLReportCreator(object):
                 except KeyError:
                     commits = 0
                 if commits != 0:
-                    r = self.calculate_color_intensity(commits, self.git_repo_statistics.max_weekly_hourly_activity)
-                    project_data['weekday_hourly_activity'][weekday].append((r, commits))
+                    project_data['weekday_hourly_activity'][weekday].append(commits)
                 else:
-                    project_data['weekday_hourly_activity'][weekday].append((0, commits))
+                    project_data['weekday_hourly_activity'][weekday].append(commits)
             project_data['weekday_activity'][weekday] = weekday_commits
-        total_commits_by_busiest_weekday = max(cc for cc in project_data['weekday_activity'].values())
-        for weekday, commit_count in project_data['weekday_activity'].items():
-            r = self.calculate_color_intensity(commit_count, total_commits_by_busiest_weekday)
-            project_data['weekday_activity'][weekday] = (r, commit_count)
-
-        max_commits_on_tz = max(self.git_repo_statistics.timezones.values())
-        for i in sorted(self.git_repo_statistics.timezones.keys(), key=lambda n: int(n)):
-            commits = self.git_repo_statistics.timezones[i]
-            r = self.calculate_color_intensity(commits, max_commits_on_tz)
-            project_data['timezones_activity'].append((i, r, commits))
 
         # load and render template
         template_rendered = self.j2_env.get_template('activity.html').render(
