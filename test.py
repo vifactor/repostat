@@ -495,6 +495,7 @@ class TestPygitMethods(unittest.TestCase):
             self.assertEquals(len(expected_authors), len(actual_authors))
             self.assertEquals(expected_tags_dict[tagname]['commits'], actual_tags_dict[tagname]['commits'])
 
+    @unittest.skip("Kept for historical reasons.")
     def test_authors_info(self):
         expected_authors_dict = get_authors_info()
         actual_authors_dict = self.gs.authors
@@ -572,6 +573,7 @@ class TestPygitMethods(unittest.TestCase):
         self.assertDictEqual(expected_activity, self.gs.recent_activity_by_week)
         self.assertEquals(expected_activity_peak, self.gs.recent_activity_peak)
 
+    @unittest.skip("Kept for historical reasons.")
     def test_changes_history(self):
         expected_history, tla, tlr = get_total_changes_timeline()
         for t, expected_record in expected_history.iteritems():
@@ -580,6 +582,7 @@ class TestPygitMethods(unittest.TestCase):
         self.assertEquals(tla, self.gs.total_lines_added)
         self.assertEquals(tlr, self.gs.total_lines_removed)
 
+    @unittest.skip("Kept for historical reasons.")
     def test_authors_changes_history(self):
         expected_history = get_authors_history()
         actual_history = self.gs.author_changes_history
@@ -587,6 +590,7 @@ class TestPygitMethods(unittest.TestCase):
         for k, v in expected_history.items():
             self.assertDictEqual(v, actual_history[k])
 
+    @unittest.skip("Kept for historical reasons.")
     def test_rev_list(self):
         revlines = get_pipe_output([
             'git rev-list --pretty=format:"%%at %%T" %s' % getlogrange('HEAD'),
