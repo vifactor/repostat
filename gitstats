@@ -126,9 +126,6 @@ class DataCollector:
         self.total_files = 0
         self.authors_by_commits = 0
 
-        self.first_commit_stamp = 0
-        self.last_commit_stamp = 0
-
         self.files_by_stamp = {}  # stamp -> files
 
         # extensions
@@ -158,9 +155,6 @@ class DataCollector:
             self.cache = pickle.load(f)
         f.close()
 
-    def getStampCreated(self):
-        return self.stamp_created
-
     ##
     # Save cacheable data
     def saveCache(self, cachefile):
@@ -184,9 +178,6 @@ class GitDataCollector(DataCollector):
         self.repo_statistics = GitStatistics(project_directory)
 
         self.authors = self.repo_statistics.authors
-        self.first_commit_stamp = self.repo_statistics.first_commit_timestamp
-        self.last_commit_stamp = self.repo_statistics.last_commit_timestamp
-
         self.changes_by_date_by_author = self.repo_statistics.author_changes_history
 
         if 'files_in_tree' not in self.cache:
@@ -256,17 +247,6 @@ class GitDataCollector(DataCollector):
         res = getkeyssortedbyvaluekey(self.authors, 'commits')
         res.reverse()
         return res[:limit]
-
-    def get_development_period(self):
-        date1 = datetime.datetime.fromtimestamp(self.first_commit_stamp)
-        date2 = datetime.datetime.fromtimestamp(self.last_commit_stamp)
-        return (date2 - date1).days
-
-    def getFirstCommitDate(self):
-        return datetime.datetime.fromtimestamp(self.first_commit_stamp)
-
-    def getLastCommitDate(self):
-        return datetime.datetime.fromtimestamp(self.last_commit_stamp)
 
     def getTotalCommits(self):
         return self.total_commits
@@ -435,10 +415,12 @@ class HTMLReportCreator(object):
 
     def render_general_page(self, data):
         date_format_str = '%Y-%m-%d %H:%M'
+        first_commit_datetime = datetime.datetime.fromtimestamp(self.git_repo_statistics.first_commit_timestamp)
+        last_commit_datetime = datetime.datetime.fromtimestamp(self.git_repo_statistics.last_commit_timestamp)
         # TODO: this conversion from old 'data' to new 'project data' should perhaps be removed in future
         project_data = {
             "name": data.projectname,
-            "age": data.get_development_period(),
+            "age": (last_commit_datetime - first_commit_datetime).days,
             "active_days_count": len(self.git_repo_statistics.active_days),
             "commits_count": data.getTotalCommits(),
             "authors_count": len(self.git_repo_statistics.authors),
@@ -446,13 +428,13 @@ class HTMLReportCreator(object):
             "total_lines_count": self.git_repo_statistics.total_lines_count,
             "added_lines_count": self.git_repo_statistics.total_lines_added,
             "removed_lines_count": self.git_repo_statistics.total_lines_removed,
-            "first_commit_date": data.getFirstCommitDate().strftime(date_format_str),
-            "last_commit_date": data.getLastCommitDate().strftime(date_format_str)
+            "first_commit_date": first_commit_datetime.strftime(date_format_str),
+            "last_commit_date": last_commit_datetime.strftime(date_format_str)
         }
 
         generation_data = {
             "datetime": datetime.datetime.today().strftime(date_format_str),
-            "duration": "{0:.3f}".format(time.time() - data.getStampCreated())
+            "duration": "{0:.3f}".format(time.time() - data.stamp_created)
         }
 
         # load and render template
