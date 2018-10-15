@@ -133,7 +133,7 @@ def get_authors_info():
         yymmdd = date.strftime('%Y-%m-%d')
         if 'last_active_day' not in authors[author]:
             authors[author]['last_active_day'] = yymmdd
-            authors[author]['active_days'] = set([yymmdd])
+            authors[author]['active_days'] = {yymmdd}
         elif yymmdd != authors[author]['last_active_day']:
             authors[author]['last_active_day'] = yymmdd
             authors[author]['active_days'].add(yymmdd)
