@@ -1,9 +1,11 @@
 from __future__ import unicode_literals
+from __future__ import absolute_import
 import pygit2 as git
 from datetime import datetime, tzinfo, timedelta
 from collections import Counter
 import warnings
 from .timeit import Timeit
+from six.moves import filter
 
 
 class FixedOffset(tzinfo):
@@ -117,7 +119,7 @@ class GitStatistics:
 
     @Timeit("Fetching tags info")
     def fetch_tags_info(self):
-        tags = filter(lambda refobj: refobj.name.startswith('refs/tags'), self.repo.listall_reference_objects())
+        tags = [refobj for refobj in self.repo.listall_reference_objects() if refobj.name.startswith('refs/tags')]
         commit_tag = {refobj.peel().oid: refobj.shorthand for refobj in tags}
 
         result = {refobj.shorthand: {
