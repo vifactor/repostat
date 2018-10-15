@@ -4,6 +4,8 @@ import unittest
 import datetime
 import re
 
+from six import iteritems
+
 from tools import GitStatistics
 from tools import get_pipe_output
 
@@ -576,7 +578,7 @@ class TestPygitMethods(unittest.TestCase):
     @unittest.skip("Kept for historical reasons.")
     def test_changes_history(self):
         expected_history, tla, tlr = get_total_changes_timeline()
-        for t, expected_record in expected_history.iteritems():
+        for t, expected_record in iteritems(expected_history):
             self.assertDictEqual(expected_record, self.gs.changes_history[t], "{}: {} vs. {}".format(
                 t, expected_record, self.gs.changes_history[t]))
         self.assertEquals(tla, self.gs.total_lines_added)
