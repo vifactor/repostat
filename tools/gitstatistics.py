@@ -302,9 +302,9 @@ class GitStatistics:
         """
         obj = self.repo.revparse_single(revision)
         diff = None
-        if type(obj) is git.Tree:
+        if isinstance(obj, git.Tree):
             diff = obj.diff_to_tree()
-        elif type(obj) is git.Commit:
+        elif isinstance(obj, git.Commit):
             diff = obj.tree.diff_to_tree()
 
         return diff
@@ -313,7 +313,7 @@ class GitStatistics:
         # FIXME: not the most elegant and effective function
         # TODO: check how it works for submodules
         tree = self.repo.revparse_single(revision)
-        if type(tree) is git.Commit:
+        if isinstance(tree, git.Commit):
             tree = tree.tree
         s = [tree]
         res = 0
