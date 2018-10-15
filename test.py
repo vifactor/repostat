@@ -487,7 +487,7 @@ class TestPygitMethods(unittest.TestCase):
         expected_tags_dict = get_tags_info()
         actual_tags_dict = self.gs.tags
 
-        self.assertListEqual(expected_tags_dict.keys(), actual_tags_dict.keys(),
+        self.assertListEqual(list(expected_tags_dict.keys()), list(actual_tags_dict.keys()),
                              "Tags list is not same estimated by different methods")
         for tagname in expected_tags_dict.keys():
             expected_authors = expected_tags_dict[tagname]['authors']
