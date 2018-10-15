@@ -60,12 +60,12 @@ def getcommitrange(defaultrange='HEAD', end_only=False):
 
 
 def getkeyssortedbyvalues(a_dict):
-    return map(lambda el: el[1], sorted(map(lambda el: (el[1], el[0]), a_dict.items())))
+    return [el[1] for el in sorted([(el[1], el[0]) for el in a_dict.items()])]
 
 
 # dict['author'] = { 'commits': 512 } - ...key(dict, 'commits')
 def getkeyssortedbyvaluekey(d, key):
-    return map(lambda el: el[1], sorted(map(lambda el: (d[el][key], el), d.keys())))
+    return [el[1] for el in sorted([(d[el][key], el) for el in d.keys()])]
 
 
 def get_project_version():
@@ -597,8 +597,7 @@ class HTMLReportCreator(object):
         """
 
         # TODO: refactor the following code
-        tags_sorted_by_date_desc = map(lambda el: el[1],
-                                       reversed(sorted(map(lambda el: (el[1]['date'], el[0]), self.git_repo_statistics.tags.items()))))
+        tags_sorted_by_date_desc = [el[1] for el in reversed(sorted([(el[1]['date'], el[0]) for el in self.git_repo_statistics.tags.items()]))]
         for tag in tags_sorted_by_date_desc:
             # there are tags containing no commits
             if 'authors' in self.git_repo_statistics.tags[tag].keys():

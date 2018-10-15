@@ -66,8 +66,7 @@ def get_tags_info():
                          'authors': {}}
 
     # collect info on tags, starting from latest
-    tags_sorted_by_date_desc = map(lambda el: el[1],
-                                   reversed(sorted(map(lambda el: (el[1]['date'], el[0]), tags.items()))))
+    tags_sorted_by_date_desc = [el[1] for el in reversed(sorted([(el[1]['date'], el[0]) for el in tags.items()]))]
     prev = None
     for tag in reversed(tags_sorted_by_date_desc):
         cmd = 'git shortlog -s "%s"' % tag
@@ -171,7 +170,7 @@ def get_authors_info():
         else:
             numbers = get_stat_summary_counts(line)
             if len(numbers) == 3:
-                (files, inserted, deleted) = map(lambda el: int(el), numbers)
+                (files, inserted, deleted) = [int(el) for el in numbers]
             else:
                 print('Warning: failed to handle line "%s"' % line)
                 (files, inserted, deleted) = (0, 0, 0)
@@ -221,7 +220,7 @@ def get_authors_history():
         else:
             numbers = get_stat_summary_counts(line)
             if len(numbers) == 3:
-                (files, inserted, deleted) = map(lambda el: int(el), numbers)
+                (files, inserted, deleted) = [int(el) for el in numbers]
             else:
                 print('Warning: failed to handle line "%s"' % line)
                 (files, inserted, deleted) = (0, 0, 0)
@@ -465,7 +464,7 @@ def get_total_changes_timeline():
         else:
             numbers = get_stat_summary_counts(line)
             if len(numbers) == 3:
-                (files, inserted, deleted) = map(lambda el: int(el), numbers)
+                (files, inserted, deleted) = [int(el) for el in numbers]
                 total_lines += inserted
                 total_lines -= deleted
                 total_lines_added += inserted
