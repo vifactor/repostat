@@ -1,3 +1,4 @@
+from __future__ import print_function
 import os
 import platform
 import sys
@@ -28,7 +29,7 @@ def get_pipe_output(cmds, quiet=False):
     start = time.time()
 
     if not quiet and is_linux_tty:
-        print '>> ' + ' | '.join(cmds),
+        print('>> ' + ' | '.join(cmds), end=' ')
         sys.stdout.flush()
     p = subprocess.Popen(cmds[0], stdout=subprocess.PIPE, shell=True)
     processes = [p]
@@ -41,7 +42,7 @@ def get_pipe_output(cmds, quiet=False):
     end = time.time()
     if not quiet:
         if is_linux_tty:
-            print '\r',
-        print '[%.5f] >> %s' % (end - start, ' | '.join(cmds))
+            print('\r', end=' ')
+        print('[%.5f] >> %s' % (end - start, ' | '.join(cmds)))
     external_execution_time += (end - start)
     return output.rstrip('\n')

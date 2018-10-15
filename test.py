@@ -164,15 +164,15 @@ def get_authors_info():
                     authors[author]['lines_removed'] = authors[author].get('lines_removed', 0) + deleted
                     files, inserted, deleted = 0, 0, 0
                 except ValueError:
-                    print 'Warning: unexpected line "%s"' % line
+                    print('Warning: unexpected line "%s"' % line)
             else:
-                print 'Warning: unexpected line "%s"' % line
+                print('Warning: unexpected line "%s"' % line)
         else:
             numbers = get_stat_summary_counts(line)
             if len(numbers) == 3:
                 (files, inserted, deleted) = map(lambda el: int(el), numbers)
             else:
-                print 'Warning: failed to handle line "%s"' % line
+                print('Warning: failed to handle line "%s"' % line)
                 (files, inserted, deleted) = (0, 0, 0)
     return authors
 
@@ -214,15 +214,15 @@ def get_authors_history():
                     changes_by_date_by_author[stamp][author]['commits'] = tmp_authors[author]['commits']
                     files, inserted, deleted = 0, 0, 0
                 except ValueError:
-                    print 'Warning: unexpected line "%s"' % line
+                    print('Warning: unexpected line "%s"' % line)
             else:
-                print 'Warning: unexpected line "%s"' % line
+                print('Warning: unexpected line "%s"' % line)
         else:
             numbers = get_stat_summary_counts(line)
             if len(numbers) == 3:
                 (files, inserted, deleted) = map(lambda el: int(el), numbers)
             else:
-                print 'Warning: failed to handle line "%s"' % line
+                print('Warning: failed to handle line "%s"' % line)
                 (files, inserted, deleted) = (0, 0, 0)
 
     return changes_by_date_by_author
@@ -458,9 +458,9 @@ def get_total_changes_timeline():
 
                     files, inserted, deleted = 0, 0, 0
                 except ValueError:
-                    print 'Warning: unexpected line "%s"' % line
+                    print('Warning: unexpected line "%s"' % line)
             else:
-                print 'Warning: unexpected line "%s"' % line
+                print('Warning: unexpected line "%s"' % line)
         else:
             numbers = get_stat_summary_counts(line)
             if len(numbers) == 3:
@@ -470,7 +470,7 @@ def get_total_changes_timeline():
                 total_lines_added += inserted
                 total_lines_removed += deleted
             else:
-                print 'Warning: failed to handle line "%s"' % line
+                print('Warning: failed to handle line "%s"' % line)
                 (files, inserted, deleted) = (0, 0, 0)
     return changes_by_date, total_lines_added, total_lines_removed
 

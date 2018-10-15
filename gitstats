@@ -145,7 +145,7 @@ class DataCollector:
     def loadCache(self, cachefile):
         if not os.path.exists(cachefile):
             return
-        print 'Loading cache...'
+        print('Loading cache...')
         f = open(cachefile, 'rb')
         try:
             self.cache = pickle.loads(zlib.decompress(f.read()))
@@ -158,7 +158,7 @@ class DataCollector:
     ##
     # Save cacheable data
     def saveCache(self, cachefile):
-        print 'Saving cache...'
+        print('Saving cache...')
         tempfile = cachefile + '.tmp'
         f = open(tempfile, 'wb')
         # pickle.dump(self.cache, f)
@@ -299,7 +299,7 @@ class HTMLReportCreator(object):
                     shutil.copyfile(src, os.path.join(path, asset))
                     break
             else:
-                print 'Warning: "%s" not found, so not copied (searched: %s)' % (asset, basedirs)
+                print('Warning: "%s" not found, so not copied (searched: %s)' % (asset, basedirs))
 
         ###
         # General
@@ -408,7 +408,7 @@ class HTMLReportCreator(object):
         with open(os.path.join(path, "about.html"), 'w') as f:
             f.write(about_html)
 
-        print 'Generating graphs...'
+        print('Generating graphs...')
         self.process_gnuplot_scripts(scripts_path=os.path.join(self.repostat_root_dir, 'gnuplot'),
                                      data_path=path,
                                      output_images_path=path)
@@ -645,11 +645,11 @@ class HTMLReportCreator(object):
             gnuplot_command = '%s -e "data_folder=\'%s\'" "%s"' % (gnuplot_executable, data_path, script)
             out = get_pipe_output([gnuplot_command])
             if len(out) > 0:
-                print out
+                print(out)
 
 
 def usage():
-    print """
+    print("""
 Usage: gitstats [options] <gitpath..> <outputpath>
 
 Options:
@@ -659,7 +659,7 @@ Default config values:
 %s
 
 Please see the manual page for more details.
-""" % conf
+""" % conf)
 
 
 class GitStats:
@@ -701,29 +701,29 @@ class GitStats:
             warnings.warn('FATAL: Output path is not a directory or does not exist: %s' % outputpath)
             sys.exit(1)
 
-        print 'Output path: %s' % outputpath
+        print('Output path: %s' % outputpath)
         cachefile = os.path.join(outputpath, 'gitstats.cache')
 
         data = GitDataCollector()
         data.loadCache(cachefile)
 
         for gitpath in args[0:-1]:
-            print 'Git path: %s' % gitpath
+            print('Git path: %s' % gitpath)
 
             prevdir = os.getcwd()
             os.chdir(gitpath)
 
-            print 'Collecting data...'
+            print('Collecting data...')
             data.collect(gitpath)
 
             os.chdir(prevdir)
 
-        print 'Refining data...'
+        print('Refining data...')
         # data.saveCache(cachefile)
         data.refine()
 
         os.chdir(rundir)
-        print 'Generating report...'
+        print('Generating report...')
         # fixme: pass GitStatistics object directly when obsolete GitDataCollector is removed
         report = HTMLReportCreator(data.repo_statistics)
         report.create(data, outputpath)
@@ -731,13 +731,13 @@ class GitStats:
         time_end = time.time()
         exectime_internal = time_end - time_start
         exectime_external = get_external_execution_time()
-        print 'Execution time %.5f secs, %.5f secs (%.2f %%) in external commands)' \
-              % (exectime_internal, exectime_external, (100.0 * exectime_external) / exectime_internal)
+        print('Execution time %.5f secs, %.5f secs (%.2f %%) in external commands)' \
+              % (exectime_internal, exectime_external, (100.0 * exectime_external) / exectime_internal))
         if sys.stdin.isatty():
-            print 'You may now run:'
-            print
-            print '   sensible-browser \'%s\'' % os.path.join(outputpath, 'general.html').replace("'", "'\\''")
-            print
+            print('You may now run:')
+            print('')
+            print('   sensible-browser \'%s\'' % os.path.join(outputpath, 'general.html').replace("'", "'\\''"))
+            print('')
 
 
 if __name__ == '__main__':
