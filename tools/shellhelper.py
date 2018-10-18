@@ -36,7 +36,10 @@ def get_pipe_output(cmds, quiet=False):
     for x in cmds[1:]:
         p = subprocess.Popen(x, stdin=p.stdout, stdout=subprocess.PIPE, shell=True)
         processes.append(p)
-    output = p.communicate()[0]
+    if sys.version_info.major == 2:
+        output = p.communicate()[0]
+    else:
+        output = bytes.decode(p.communicate()[0])
     for p in processes:
         p.wait()
     end = time.time()

@@ -3,6 +3,7 @@ import os
 import unittest
 import datetime
 import re
+import sys
 
 from six import iteritems
 
@@ -243,7 +244,8 @@ def get_domain_info():
         if mail.find('@') != -1:
             domain = mail.rsplit('@', 1)[1]
 
-        domain = domain.decode('utf-8')
+        if sys.version_info.major == 2:
+            domain = domain.decode('utf-8')
         # domain stats
         if domain not in domains:
             domains[domain] = {}

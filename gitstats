@@ -241,7 +241,10 @@ class GitDataCollector(DataCollector):
             if 'lines_removed' not in a: a['lines_removed'] = 0
 
     def getAuthorInfo(self, author):
-        return self.authors[author]
+        if sys.version_info.major == 2:
+            return self.authors[author.encode("utf-8")]
+        else:
+            return self.authors[author]
 
     def getAuthors(self, limit=None):
         res = getkeyssortedbyvaluekey(self.authors, 'commits')
@@ -330,7 +333,10 @@ class HTMLReportCreator(object):
         # Authors
         authors_html = self.render_authors_page(data)
         with open(os.path.join(path, "authors.html"), 'w') as f:
-            f.write(authors_html)
+            if sys.version_info.major == 2:
+                f.write(authors_html)
+            else:
+                f.write(authors_html.decode('utf-8'))
 
         # cumulated added lines by
         # author. to save memory,
@@ -400,13 +406,19 @@ class HTMLReportCreator(object):
         # tags.html
         tags_html = self.render_tags_page(data)
         with open(os.path.join(path, "tags.html"), 'w') as f:
-            f.write(tags_html)
+            if sys.version_info.major == 2:
+                f.write(tags_html)
+            else:
+                f.write(tags_html.decode('utf-8'))
 
         ###
         # about.html
         about_html = self.render_about_page()
         with open(os.path.join(path, "about.html"), 'w') as f:
-            f.write(about_html)
+            if sys.version_info.major == 2:
+                f.write(about_html)
+            else:
+                f.write(about_html.decode('utf-8'))
 
         print('Generating graphs...')
         self.process_gnuplot_scripts(scripts_path=os.path.join(self.repostat_root_dir, 'gnuplot'),
@@ -496,7 +508,10 @@ class HTMLReportCreator(object):
         }
 
         all_authors = data.getAuthors()
-        all_authors = [author.decode('utf-8') for author in all_authors]
+        if sys.version_info.major == 2:
+            all_authors = [author.decode('utf-8') for author in all_authors]
+        else:
+            all_authors = [author for author in all_authors]
         if len(all_authors) > conf['max_authors']:
             rest = all_authors[conf['max_authors']:]
             project_data['non_top_authors'] = rest
@@ -511,12 +526,21 @@ class HTMLReportCreator(object):
             commits = self.git_repo_statistics.author_of_month[yymm][authors[0]]
             next = ', '.join(authors[1:conf['authors_top'] + 1])
 
-            month_dict = {
-                'date': yymm,
-                'top_author': {'name': authors[0].decode('utf-8'), 'commits_count': commits},
-                'next_top_authors': next.decode('utf-8'),
-                'all_commits_count': self.git_repo_statistics.monthly_commits_timeline[yymm]
-            }
+            if sys.version_info.major == 2:
+                month_dict = {
+                    'date': yymm,
+                    'top_author': {'name': authors[0].decode('utf-8'), 'commits_count': commits},
+                    'next_top_authors': next.decode('utf-8'),
+                    'all_commits_count': self.git_repo_statistics.monthly_commits_timeline[yymm]
+                }
+            else:
+                month_dict = {
+                    'date': yymm,
+                    'top_author': {'name': authors[0], 'commits_count': commits},
+                    'next_top_authors': next,
+                    'all_commits_count': self.git_repo_statistics.monthly_commits_timeline[yymm]
+                }
+
             project_data['months'].append(month_dict)
 
         project_data['years'] = []
@@ -527,12 +551,21 @@ class HTMLReportCreator(object):
             commits = self.git_repo_statistics.author_of_year[yy][authors[0]]
             next = ', '.join(authors[1:conf['authors_top'] + 1])
 
-            year_dict = {
-                'date': yy,
-                'top_author': {'name': authors[0].decode('utf-8'), 'commits_count': commits},
-                'next_top_authors': next.decode('utf-8'),
-                'all_commits_count': self.git_repo_statistics.yearly_commits_timeline[yy]
-            }
+            if sys.version_info.major == 2:
+                year_dict = {
+                    'date': yy,
+                    'top_author': {'name': authors[0].decode('utf-8'), 'commits_count': commits},
+                    'next_top_authors': next.decode('utf-8'),
+                    'all_commits_count': self.git_repo_statistics.yearly_commits_timeline[yy]
+                }
+            else:
+                year_dict = {
+                    'date': yy,
+                    'top_author': {'name': authors[0], 'commits_count': commits},
+                    'next_top_authors': next,
+                    'all_commits_count': self.git_repo_statistics.yearly_commits_timeline[yy]
+                }
+
             project_data['years'].append(year_dict)
 
         for author in all_authors[:conf['max_authors']]:
@@ -621,14 +654,24 @@ class HTMLReportCreator(object):
         return template_rendered.encode('utf-8')
 
     def render_about_page(self):
-        page_data = {
-            "url": "https://github.com/vifactor/repostat",
-            "version": get_project_version(),
-            "tools": [GitStatistics.get_fetching_tool_info(),
-                      get_jinja_version(),
-                      get_gnuplot_version()],
-            "contributors": [author.decode('utf-8') for author in get_project_contributors()]
-        }
+        if sys.version_info.major == 2:
+            page_data = {
+                "url": "https://github.com/vifactor/repostat",
+                "version": get_project_version(),
+                "tools": [GitStatistics.get_fetching_tool_info(),
+                          get_jinja_version(),
+                          get_gnuplot_version()],
+                "contributors": [author.decode('utf-8') for author in get_project_contributors()]
+            }
+        else:
+            page_data = {
+                "url": "https://github.com/vifactor/repostat",
+                "version": get_project_version(),
+                "tools": [GitStatistics.get_fetching_tool_info(),
+                          get_jinja_version(),
+                          get_gnuplot_version()],
+                "contributors": [author for author in get_project_contributors()]
+            }
 
         template_rendered = self.j2_env.get_template('about.html').render(
             repostat=page_data,

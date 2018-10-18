@@ -6,6 +6,7 @@ from collections import Counter
 import warnings
 from .timeit import Timeit
 from six.moves import filter
+import sys
 
 
 class FixedOffset(tzinfo):
@@ -87,7 +88,10 @@ class GitStatistics:
             else:  # if len(child_commit.parents) == 2 (merge commit)
                 is_merge_commit = True
             commit_day_str = datetime.fromtimestamp(child_commit.author.time).strftime('%Y-%m-%d')
-            author_name = child_commit.author.name.encode('utf-8')
+            if sys.version_info.major == 2:
+                author_name = child_commit.author.name.encode('utf-8')
+            else:
+                author_name = child_commit.author.name
             self._adjust_winners(author_name, child_commit.author.time)
             if author_name not in result:
                 result[author_name] = {
@@ -278,7 +282,10 @@ class GitStatistics:
 
     def _adjust_author_changes_history(self, commit, authors_info):
         ts = commit.author.time
-        author_name = commit.author.name.encode('utf-8')
+        if sys.version_info.major == 2:
+            author_name = commit.author.name.encode('utf-8')
+        else:
+            author_name = commit.author.name
         if ts not in self.author_changes_history:
             self.author_changes_history[ts] = {}
         if author_name not in self.author_changes_history[ts]:
