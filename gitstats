@@ -26,7 +26,7 @@ time_start = time.time()
 
 # By default, gnuplot is searched from path, but can be overridden with the
 # environment variable "GNUPLOT"
-gnuplot_executable = os.environ.get('GNUPLOT', failobj='gnuplot')
+gnuplot_executable = os.environ.get('GNUPLOT', 'gnuplot')
 
 conf = {
     'max_domains': 10,
@@ -60,12 +60,12 @@ def getcommitrange(defaultrange='HEAD', end_only=False):
 
 
 def getkeyssortedbyvalues(a_dict):
-    return map(lambda el: el[1], sorted(map(lambda el: (el[1], el[0]), a_dict.items())))
+    return [el[1] for el in sorted([(el[1], el[0]) for el in a_dict.items()])]
 
 
 # dict['author'] = { 'commits': 512 } - ...key(dict, 'commits')
 def getkeyssortedbyvaluekey(d, key):
-    return map(lambda el: el[1], sorted(map(lambda el: (d[el][key], el), d.keys())))
+    return [el[1] for el in sorted([(d[el][key], el) for el in d.keys()])]
 
 
 def get_project_version():
@@ -145,7 +145,7 @@ class DataCollector:
     def loadCache(self, cachefile):
         if not os.path.exists(cachefile):
             return
-        print 'Loading cache...'
+        print('Loading cache...')
         f = open(cachefile, 'rb')
         try:
             self.cache = pickle.loads(zlib.decompress(f.read()))
@@ -158,7 +158,7 @@ class DataCollector:
     ##
     # Save cacheable data
     def saveCache(self, cachefile):
-        print 'Saving cache...'
+        print('Saving cache...')
         tempfile = cachefile + '.tmp'
         f = open(tempfile, 'wb')
         # pickle.dump(self.cache, f)
@@ -241,7 +241,10 @@ class GitDataCollector(DataCollector):
             if 'lines_removed' not in a: a['lines_removed'] = 0
 
     def getAuthorInfo(self, author):
-        return self.authors[author.encode("utf-8")]
+        if sys.version_info.major == 2:
+            return self.authors[author.encode("utf-8")]
+        else:
+            return self.authors[author]
 
     def getAuthors(self, limit=None):
         res = getkeyssortedbyvaluekey(self.authors, 'commits')
@@ -299,7 +302,7 @@ class HTMLReportCreator(object):
                     shutil.copyfile(src, os.path.join(path, asset))
                     break
             else:
-                print 'Warning: "%s" not found, so not copied (searched: %s)' % (asset, basedirs)
+                print('Warning: "%s" not found, so not copied (searched: %s)' % (asset, basedirs))
 
         ###
         # General
@@ -330,7 +333,10 @@ class HTMLReportCreator(object):
         # Authors
         authors_html = self.render_authors_page(data)
         with open(os.path.join(path, "authors.html"), 'w') as f:
-            f.write(authors_html)
+            if sys.version_info.major == 2:
+                f.write(authors_html)
+            else:
+                f.write(authors_html.decode('utf-8'))
 
         # cumulated added lines by
         # author. to save memory,
@@ -400,15 +406,21 @@ class HTMLReportCreator(object):
         # tags.html
         tags_html = self.render_tags_page(data)
         with open(os.path.join(path, "tags.html"), 'w') as f:
-            f.write(tags_html)
+            if sys.version_info.major == 2:
+                f.write(tags_html)
+            else:
+                f.write(tags_html.decode('utf-8'))
 
         ###
         # about.html
         about_html = self.render_about_page()
         with open(os.path.join(path, "about.html"), 'w') as f:
-            f.write(about_html)
+            if sys.version_info.major == 2:
+                f.write(about_html)
+            else:
+                f.write(about_html.decode('utf-8'))
 
-        print 'Generating graphs...'
+        print('Generating graphs...')
         self.process_gnuplot_scripts(scripts_path=os.path.join(self.repostat_root_dir, 'gnuplot'),
                                      data_path=path,
                                      output_images_path=path)
@@ -496,7 +508,10 @@ class HTMLReportCreator(object):
         }
 
         all_authors = data.getAuthors()
-        all_authors = [author.decode('utf-8') for author in all_authors]
+        if sys.version_info.major == 2:
+            all_authors = [author.decode('utf-8') for author in all_authors]
+        else:
+            all_authors = [author for author in all_authors]
         if len(all_authors) > conf['max_authors']:
             rest = all_authors[conf['max_authors']:]
             project_data['non_top_authors'] = rest
@@ -511,12 +526,21 @@ class HTMLReportCreator(object):
             commits = self.git_repo_statistics.author_of_month[yymm][authors[0]]
             next = ', '.join(authors[1:conf['authors_top'] + 1])
 
-            month_dict = {
-                'date': yymm,
-                'top_author': {'name': authors[0].decode('utf-8'), 'commits_count': commits},
-                'next_top_authors': next.decode('utf-8'),
-                'all_commits_count': self.git_repo_statistics.monthly_commits_timeline[yymm]
-            }
+            if sys.version_info.major == 2:
+                month_dict = {
+                    'date': yymm,
+                    'top_author': {'name': authors[0].decode('utf-8'), 'commits_count': commits},
+                    'next_top_authors': next.decode('utf-8'),
+                    'all_commits_count': self.git_repo_statistics.monthly_commits_timeline[yymm]
+                }
+            else:
+                month_dict = {
+                    'date': yymm,
+                    'top_author': {'name': authors[0], 'commits_count': commits},
+                    'next_top_authors': next,
+                    'all_commits_count': self.git_repo_statistics.monthly_commits_timeline[yymm]
+                }
+
             project_data['months'].append(month_dict)
 
         project_data['years'] = []
@@ -527,12 +551,21 @@ class HTMLReportCreator(object):
             commits = self.git_repo_statistics.author_of_year[yy][authors[0]]
             next = ', '.join(authors[1:conf['authors_top'] + 1])
 
-            year_dict = {
-                'date': yy,
-                'top_author': {'name': authors[0].decode('utf-8'), 'commits_count': commits},
-                'next_top_authors': next.decode('utf-8'),
-                'all_commits_count': self.git_repo_statistics.yearly_commits_timeline[yy]
-            }
+            if sys.version_info.major == 2:
+                year_dict = {
+                    'date': yy,
+                    'top_author': {'name': authors[0].decode('utf-8'), 'commits_count': commits},
+                    'next_top_authors': next.decode('utf-8'),
+                    'all_commits_count': self.git_repo_statistics.yearly_commits_timeline[yy]
+                }
+            else:
+                year_dict = {
+                    'date': yy,
+                    'top_author': {'name': authors[0], 'commits_count': commits},
+                    'next_top_authors': next,
+                    'all_commits_count': self.git_repo_statistics.yearly_commits_timeline[yy]
+                }
+
             project_data['years'].append(year_dict)
 
         for author in all_authors[:conf['max_authors']]:
@@ -597,8 +630,7 @@ class HTMLReportCreator(object):
         """
 
         # TODO: refactor the following code
-        tags_sorted_by_date_desc = map(lambda el: el[1],
-                                       reversed(sorted(map(lambda el: (el[1]['date'], el[0]), self.git_repo_statistics.tags.items()))))
+        tags_sorted_by_date_desc = [el[1] for el in reversed(sorted([(el[1]['date'], el[0]) for el in self.git_repo_statistics.tags.items()]))]
         for tag in tags_sorted_by_date_desc:
             # there are tags containing no commits
             if 'authors' in self.git_repo_statistics.tags[tag].keys():
@@ -622,14 +654,24 @@ class HTMLReportCreator(object):
         return template_rendered.encode('utf-8')
 
     def render_about_page(self):
-        page_data = {
-            "url": "https://github.com/vifactor/repostat",
-            "version": get_project_version(),
-            "tools": [GitStatistics.get_fetching_tool_info(),
-                      get_jinja_version(),
-                      get_gnuplot_version()],
-            "contributors": [author.decode('utf-8') for author in get_project_contributors()]
-        }
+        if sys.version_info.major == 2:
+            page_data = {
+                "url": "https://github.com/vifactor/repostat",
+                "version": get_project_version(),
+                "tools": [GitStatistics.get_fetching_tool_info(),
+                          get_jinja_version(),
+                          get_gnuplot_version()],
+                "contributors": [author.decode('utf-8') for author in get_project_contributors()]
+            }
+        else:
+            page_data = {
+                "url": "https://github.com/vifactor/repostat",
+                "version": get_project_version(),
+                "tools": [GitStatistics.get_fetching_tool_info(),
+                          get_jinja_version(),
+                          get_gnuplot_version()],
+                "contributors": [author for author in get_project_contributors()]
+            }
 
         template_rendered = self.j2_env.get_template('about.html').render(
             repostat=page_data,
@@ -645,11 +687,11 @@ class HTMLReportCreator(object):
             gnuplot_command = '%s -e "data_folder=\'%s\'" "%s"' % (gnuplot_executable, data_path, script)
             out = get_pipe_output([gnuplot_command])
             if len(out) > 0:
-                print out
+                print(out)
 
 
 def usage():
-    print """
+    print("""
 Usage: gitstats [options] <gitpath..> <outputpath>
 
 Options:
@@ -659,13 +701,13 @@ Default config values:
 %s
 
 Please see the manual page for more details.
-""" % conf
+""" % conf)
 
 
 class GitStats:
     def run(self, args_orig):
-        if (3, 0) <= sys.version_info < (2, 6):
-            warnings.warn("Python 2.6+ (but <3.0) is required for repostat")
+        if sys.version_info < (2, 6):
+            warnings.warn("Python 2.6+ is required for repostat")
             sys.exit(1)
 
         if not get_gnuplot_version():
@@ -701,29 +743,29 @@ class GitStats:
             warnings.warn('FATAL: Output path is not a directory or does not exist: %s' % outputpath)
             sys.exit(1)
 
-        print 'Output path: %s' % outputpath
+        print('Output path: %s' % outputpath)
         cachefile = os.path.join(outputpath, 'gitstats.cache')
 
         data = GitDataCollector()
         data.loadCache(cachefile)
 
         for gitpath in args[0:-1]:
-            print 'Git path: %s' % gitpath
+            print('Git path: %s' % gitpath)
 
             prevdir = os.getcwd()
             os.chdir(gitpath)
 
-            print 'Collecting data...'
+            print('Collecting data...')
             data.collect(gitpath)
 
             os.chdir(prevdir)
 
-        print 'Refining data...'
+        print('Refining data...')
         # data.saveCache(cachefile)
         data.refine()
 
         os.chdir(rundir)
-        print 'Generating report...'
+        print('Generating report...')
         # fixme: pass GitStatistics object directly when obsolete GitDataCollector is removed
         report = HTMLReportCreator(data.repo_statistics)
         report.create(data, outputpath)
@@ -731,13 +773,13 @@ class GitStats:
         time_end = time.time()
         exectime_internal = time_end - time_start
         exectime_external = get_external_execution_time()
-        print 'Execution time %.5f secs, %.5f secs (%.2f %%) in external commands)' \
-              % (exectime_internal, exectime_external, (100.0 * exectime_external) / exectime_internal)
+        print('Execution time %.5f secs, %.5f secs (%.2f %%) in external commands)' \
+              % (exectime_internal, exectime_external, (100.0 * exectime_external) / exectime_internal))
         if sys.stdin.isatty():
-            print 'You may now run:'
-            print
-            print '   sensible-browser \'%s\'' % os.path.join(outputpath, 'general.html').replace("'", "'\\''")
-            print
+            print('You may now run:')
+            print('')
+            print('   sensible-browser \'%s\'' % os.path.join(outputpath, 'general.html').replace("'", "'\\''"))
+            print('')
 
 
 if __name__ == '__main__':

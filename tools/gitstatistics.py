@@ -1,9 +1,12 @@
 from __future__ import unicode_literals
+from __future__ import absolute_import
 import pygit2 as git
 from datetime import datetime, tzinfo, timedelta
 from collections import Counter
 import warnings
 from .timeit import Timeit
+from six.moves import filter
+import sys
 
 
 class FixedOffset(tzinfo):
@@ -85,7 +88,10 @@ class GitStatistics:
             else:  # if len(child_commit.parents) == 2 (merge commit)
                 is_merge_commit = True
             commit_day_str = datetime.fromtimestamp(child_commit.author.time).strftime('%Y-%m-%d')
-            author_name = child_commit.author.name.encode('utf-8')
+            if sys.version_info.major == 2:
+                author_name = child_commit.author.name.encode('utf-8')
+            else:
+                author_name = child_commit.author.name
             self._adjust_winners(author_name, child_commit.author.time)
             if author_name not in result:
                 result[author_name] = {
@@ -117,7 +123,7 @@ class GitStatistics:
 
     @Timeit("Fetching tags info")
     def fetch_tags_info(self):
-        tags = filter(lambda refobj: refobj.name.startswith('refs/tags'), self.repo.listall_reference_objects())
+        tags = [refobj for refobj in self.repo.listall_reference_objects() if refobj.name.startswith('refs/tags')]
         commit_tag = {refobj.peel().oid: refobj.shorthand for refobj in tags}
 
         result = {refobj.shorthand: {
@@ -276,7 +282,10 @@ class GitStatistics:
 
     def _adjust_author_changes_history(self, commit, authors_info):
         ts = commit.author.time
-        author_name = commit.author.name.encode('utf-8')
+        if sys.version_info.major == 2:
+            author_name = commit.author.name.encode('utf-8')
+        else:
+            author_name = commit.author.name
         if ts not in self.author_changes_history:
             self.author_changes_history[ts] = {}
         if author_name not in self.author_changes_history[ts]:
@@ -302,9 +311,9 @@ class GitStatistics:
         """
         obj = self.repo.revparse_single(revision)
         diff = None
-        if type(obj) is git.Tree:
+        if isinstance(obj, git.Tree):
             diff = obj.diff_to_tree()
-        elif type(obj) is git.Commit:
+        elif isinstance(obj, git.Commit):
             diff = obj.tree.diff_to_tree()
 
         return diff
@@ -313,7 +322,7 @@ class GitStatistics:
         # FIXME: not the most elegant and effective function
         # TODO: check how it works for submodules
         tree = self.repo.revparse_single(revision)
-        if type(tree) is git.Commit:
+        if isinstance(tree, git.Commit):
             tree = tree.tree
         s = [tree]
         res = 0

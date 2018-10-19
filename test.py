@@ -1,7 +1,11 @@
+from past.builtins import long
 import os
 import unittest
 import datetime
 import re
+import sys
+
+from six import iteritems
 
 from tools import GitStatistics
 from tools import get_pipe_output
@@ -65,8 +69,7 @@ def get_tags_info():
                          'authors': {}}
 
     # collect info on tags, starting from latest
-    tags_sorted_by_date_desc = map(lambda el: el[1],
-                                   reversed(sorted(map(lambda el: (el[1]['date'], el[0]), tags.items()))))
+    tags_sorted_by_date_desc = [el[1] for el in reversed(sorted([(el[1]['date'], el[0]) for el in tags.items()]))]
     prev = None
     for tag in reversed(tags_sorted_by_date_desc):
         cmd = 'git shortlog -s "%s"' % tag
@@ -132,7 +135,7 @@ def get_authors_info():
         yymmdd = date.strftime('%Y-%m-%d')
         if 'last_active_day' not in authors[author]:
             authors[author]['last_active_day'] = yymmdd
-            authors[author]['active_days'] = set([yymmdd])
+            authors[author]['active_days'] = {yymmdd}
         elif yymmdd != authors[author]['last_active_day']:
             authors[author]['last_active_day'] = yymmdd
             authors[author]['active_days'].add(yymmdd)
@@ -164,15 +167,15 @@ def get_authors_info():
                     authors[author]['lines_removed'] = authors[author].get('lines_removed', 0) + deleted
                     files, inserted, deleted = 0, 0, 0
                 except ValueError:
-                    print 'Warning: unexpected line "%s"' % line
+                    print('Warning: unexpected line "%s"' % line)
             else:
-                print 'Warning: unexpected line "%s"' % line
+                print('Warning: unexpected line "%s"' % line)
         else:
             numbers = get_stat_summary_counts(line)
             if len(numbers) == 3:
-                (files, inserted, deleted) = map(lambda el: int(el), numbers)
+                (files, inserted, deleted) = [int(el) for el in numbers]
             else:
-                print 'Warning: failed to handle line "%s"' % line
+                print('Warning: failed to handle line "%s"' % line)
                 (files, inserted, deleted) = (0, 0, 0)
     return authors
 
@@ -214,15 +217,15 @@ def get_authors_history():
                     changes_by_date_by_author[stamp][author]['commits'] = tmp_authors[author]['commits']
                     files, inserted, deleted = 0, 0, 0
                 except ValueError:
-                    print 'Warning: unexpected line "%s"' % line
+                    print('Warning: unexpected line "%s"' % line)
             else:
-                print 'Warning: unexpected line "%s"' % line
+                print('Warning: unexpected line "%s"' % line)
         else:
             numbers = get_stat_summary_counts(line)
             if len(numbers) == 3:
-                (files, inserted, deleted) = map(lambda el: int(el), numbers)
+                (files, inserted, deleted) = [int(el) for el in numbers]
             else:
-                print 'Warning: failed to handle line "%s"' % line
+                print('Warning: failed to handle line "%s"' % line)
                 (files, inserted, deleted) = (0, 0, 0)
 
     return changes_by_date_by_author
@@ -241,7 +244,8 @@ def get_domain_info():
         if mail.find('@') != -1:
             domain = mail.rsplit('@', 1)[1]
 
-        domain = domain.decode('utf-8')
+        if sys.version_info.major == 2:
+            domain = domain.decode('utf-8')
         # domain stats
         if domain not in domains:
             domains[domain] = {}
@@ -458,19 +462,19 @@ def get_total_changes_timeline():
 
                     files, inserted, deleted = 0, 0, 0
                 except ValueError:
-                    print 'Warning: unexpected line "%s"' % line
+                    print('Warning: unexpected line "%s"' % line)
             else:
-                print 'Warning: unexpected line "%s"' % line
+                print('Warning: unexpected line "%s"' % line)
         else:
             numbers = get_stat_summary_counts(line)
             if len(numbers) == 3:
-                (files, inserted, deleted) = map(lambda el: int(el), numbers)
+                (files, inserted, deleted) = [int(el) for el in numbers]
                 total_lines += inserted
                 total_lines -= deleted
                 total_lines_added += inserted
                 total_lines_removed += deleted
             else:
-                print 'Warning: failed to handle line "%s"' % line
+                print('Warning: failed to handle line "%s"' % line)
                 (files, inserted, deleted) = (0, 0, 0)
     return changes_by_date, total_lines_added, total_lines_removed
 
@@ -485,7 +489,7 @@ class TestPygitMethods(unittest.TestCase):
         expected_tags_dict = get_tags_info()
         actual_tags_dict = self.gs.tags
 
-        self.assertListEqual(expected_tags_dict.keys(), actual_tags_dict.keys(),
+        self.assertListEqual(list(expected_tags_dict.keys()), list(actual_tags_dict.keys()),
                              "Tags list is not same estimated by different methods")
         for tagname in expected_tags_dict.keys():
             expected_authors = expected_tags_dict[tagname]['authors']
@@ -576,7 +580,7 @@ class TestPygitMethods(unittest.TestCase):
     @unittest.skip("Kept for historical reasons.")
     def test_changes_history(self):
         expected_history, tla, tlr = get_total_changes_timeline()
-        for t, expected_record in expected_history.iteritems():
+        for t, expected_record in iteritems(expected_history):
             self.assertDictEqual(expected_record, self.gs.changes_history[t], "{}: {} vs. {}".format(
                 t, expected_record, self.gs.changes_history[t]))
         self.assertEquals(tla, self.gs.total_lines_added)
