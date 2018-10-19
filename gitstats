@@ -26,7 +26,7 @@ time_start = time.time()
 
 # By default, gnuplot is searched from path, but can be overridden with the
 # environment variable "GNUPLOT"
-gnuplot_executable = os.environ.get('GNUPLOT', failobj='gnuplot')
+gnuplot_executable = os.environ.get('GNUPLOT', 'gnuplot')
 
 conf = {
     'max_domains': 10,
