@@ -706,8 +706,8 @@ Please see the manual page for more details.
 
 class GitStats:
     def run(self, args_orig):
-        if (3, 0) <= sys.version_info < (2, 6):
-            warnings.warn("Python 2.6+ (but <3.0) is required for repostat")
+        if sys.version_info < (2, 6):
+            warnings.warn("Python 2.6+ is required for repostat")
             sys.exit(1)
 
         if not get_gnuplot_version():
