@@ -241,7 +241,7 @@ class GitDataCollector(DataCollector):
             if 'lines_removed' not in a: a['lines_removed'] = 0
 
     def getAuthorInfo(self, author):
-        return self.authors[author]
+        return self.authors[author.encode("utf-8")]
 
     def getAuthors(self, limit=None):
         res = getkeyssortedbyvaluekey(self.authors, 'commits')
