@@ -7,6 +7,7 @@ import warnings
 from .timeit import Timeit
 from six.moves import filter
 import sys
+import os
 
 
 class FixedOffset(tzinfo):
@@ -26,12 +27,90 @@ class FixedOffset(tzinfo):
         # we don't know about DST
         return timedelta(0)
 
-
 def split_email_address(email_address):
     parts = email_address.split('@')
     if len(parts) != 2:
         raise ValueError('Not an email passed: %s' % email_address)
     return parts[0], parts[1]
+
+class CommitDetail():
+    author = ''
+    linesAdded = 0
+    linesRemoved = 0
+    timeStamp = ""
+
+    def __init__(self, author, linesAdded, linesRemoved, timeStamp):
+        self.author = author
+        self.linesAdded = linesAdded
+        self.linesRemoved = linesRemoved
+        self.timestamp = timeStamp
+
+    def getAuthor(self):
+        return self.author
+    
+    def getLinesAdded(self):
+        return self.linesAdded
+
+    def getLinesRemoved(self):
+        return self.linesRemoved
+
+    def getTimeStamp(self):
+        return self.timeStamp
+
+class AuthorDictFactory():
+    AUTHOR_NAME = "author_name"
+    LINES_REMOVED = "lines_removed"
+    LINES_ADDED = "lines_added"
+    ACTIVE_DAYS = 'active_days'
+    COMMITS = 'commits'
+    FIRST_COMMIT = 'first_commit_stamp'
+    LAST_COMMIT = 'last_commit_stamp'
+    LAST_ACTIVE_DAY = 'last_active_day'
+    
+    @classmethod
+    def create_author(cls, author_name: str, lines_removed: int, lines_added: int, active_days: str, commits: int, first_commit_stamp, last_commit_stamp):
+        result = {
+            cls.AUTHOR_NAME : author_name,
+            cls.LINES_ADDED : lines_added,
+            cls.LINES_REMOVED : lines_removed,
+            cls.ACTIVE_DAYS : {active_days},
+            cls.COMMITS : commits,
+            cls.FIRST_COMMIT : first_commit_stamp,
+            cls.LAST_COMMIT : last_commit_stamp,
+            cls.LAST_ACTIVE_DAY  : datetime.fromtimestamp(last_commit_stamp).strftime('%Y-%m-%d')
+        }
+        return result
+
+    def _set_last_commit_stamp(self, time):
+        self.last_commit_stamp = time
+        # it seems that there is a mistake (or my misunderstanding) in 'last_active_day' value
+        # my calculations give are not the same as those done by Heikki Hokkanen for this parameter
+        self.last_active_day = datetime.fromtimestamp(time).strftime('%Y-%m-%d')
+
+    @classmethod
+    def addActiveDay(cls, author, activeDay):
+        author[cls.ACTIVE_DAYS].add(activeDay)
+    @classmethod
+    def addLinesAdded(cls, author, lines_added):
+        author[cls.LINES_ADDED]  += lines_added
+    @classmethod
+    def addLinesRemoved(cls, author, lines_removed):
+        author[cls.LINES_REMOVED]  += lines_removed
+    
+    @classmethod
+    def addCommit(cls, author, commitCount = 1):
+        author[cls.COMMITS]  += commitCount
+    
+    @classmethod
+    def checkFirstCommitStamp(cls, author: dict, time: datetime):
+        if author[cls.FIRST_COMMIT] > time:
+            author[cls.FIRST_COMMIT] = time
+    
+    @classmethod
+    def checkLastCommitStamp(cls, author: dict, time: datetime):
+        if author[cls.LAST_COMMIT]  < time:
+            author[cls.LAST_COMMIT] =  time
+            author[cls.LAST_ACTIVE_DAY] = datetime.fromtimestamp(time).strftime('%Y-%m-%d')
 
 
 class GitStatistics:
@@ -40,11 +119,13 @@ class GitStatistics:
         :param path: path to a repository
         """
         self.repo = git.Repository(path)
+        self.created_time_stamp = datetime.now().timestamp()
         self.author_of_year = {}
         self.author_of_month = {}
         self.yearly_commits_timeline = {}
         self.monthly_commits_timeline = {}
         self.author_changes_history = {}
+        self.commits = []
         self.authors = self.fetch_authors_info()
         self.tags = self.fetch_tags_info()
         self.domains = self.fetch_domains_info()
@@ -62,11 +143,20 @@ class GitStatistics:
         self.recent_activity_peak = max(activity for activity in self.recent_activity_by_week.values())
         self.changes_history, self.total_lines_added, self.total_lines_removed, self.total_lines_count \
             = self.fetch_total_history()
+        self.reponame = os.path.basename(os.path.abspath(path))
 
     @classmethod
     def get_fetching_tool_info(cls):
         # could be bare git-subprocess invokation, PythonGit package, etc.
         return '{} v.{}'.format(git.__name__, git.LIBGIT2_VERSION)
+    
+    def addCommit(self, author, lines_added, lines_removed, time):
+        commit_details={'author': author,
+            'lines_added': lines_added,
+            'lines_removed':lines_removed,
+            'timestamp': time,
+        }
+        self.commits.append(commit_details)
 
     @Timeit("Fetching authors info")
     def fetch_authors_info(self):
@@ -87,37 +177,39 @@ class GitStatistics:
                 st = self.repo.diff(parent_commit, child_commit).stats
             else:  # if len(child_commit.parents) == 2 (merge commit)
                 is_merge_commit = True
+            
             commit_day_str = datetime.fromtimestamp(child_commit.author.time).strftime('%Y-%m-%d')
             if sys.version_info.major == 2:
                 author_name = child_commit.author.name.encode('utf-8')
             else:
                 author_name = child_commit.author.name
+            lines_added = st.insertions if not is_merge_commit else 0
+            lines_removed = st.deletions if not is_merge_commit else 0
+
             self._adjust_winners(author_name, child_commit.author.time)
+            self.addCommit(author_name, lines_added, lines_removed, commit_day_str)
             if author_name not in result:
-                result[author_name] = {
-                    'lines_removed': st.deletions if not is_merge_commit else 0,
+                '''
+                result[author_name] = {st.deletions if not is_merge_commit else 0
+                    'lines_removed': ,
                     'lines_added': st.insertions if not is_merge_commit else 0,
                     'active_days': {commit_day_str},
                     'commits': 1,
                     'first_commit_stamp': child_commit.author.time,
                     'last_commit_stamp': child_commit.author.time,
                 }
+                '''
+                result[author_name] = AuthorDictFactory.create_author(
+                    author_name, lines_removed, lines_added, commit_day_str, 1, child_commit.author.time, child_commit.author.time)
             else:
-                result[author_name]['lines_removed'] += st.deletions if not is_merge_commit else 0
-                result[author_name]['lines_added'] += st.insertions if not is_merge_commit else 0
-                result[author_name]['active_days'].add(commit_day_str)
-                result[author_name]['commits'] += 1
-                if result[author_name]['first_commit_stamp'] > child_commit.author.time:
-                    result[author_name]['first_commit_stamp'] = child_commit.author.time
-                if result[author_name]['last_commit_stamp'] < child_commit.author.time:
-                    result[author_name]['last_commit_stamp'] = child_commit.author.time
-            self._adjust_author_changes_history(child_commit, result)
+                AuthorDictFactory.addLinesRemoved(result[author_name], st.deletions if not is_merge_commit else 0)
+                AuthorDictFactory.addLinesAdded(result[author_name], st.insertions if not is_merge_commit else 0)
+                AuthorDictFactory.addActiveDay(result[author_name], commit_day_str)
+                AuthorDictFactory.addCommit(result[author_name], 1)
+                AuthorDictFactory.checkFirstCommitStamp(result[author_name], child_commit.author.time)
+                AuthorDictFactory.checkLastCommitStamp(result[author_name], child_commit.author.time)
 
-        # it seems that there is a mistake (or my misunderstanding) in 'last_active_day' value
-        # my calculations give are not the same as those done by Heikki Hokkanen for this parameter
-        for author in result:
-            last_active_day = datetime.fromtimestamp(result[author]['last_commit_stamp']).strftime('%Y-%m-%d')
-            result[author]['last_active_day'] = last_active_day
+            self._adjust_author_changes_history(child_commit, result)
 
         return result
 
@@ -280,7 +372,7 @@ class GitStatistics:
         else:
             self.author_of_year[yy] = {author: 1}
 
-    def _adjust_author_changes_history(self, commit, authors_info):
+    def _adjust_author_changes_history(self, commit, authors_info: dict):
         ts = commit.author.time
         if sys.version_info.major == 2:
             author_name = commit.author.name.encode('utf-8')
@@ -290,8 +382,8 @@ class GitStatistics:
             self.author_changes_history[ts] = {}
         if author_name not in self.author_changes_history[ts]:
             self.author_changes_history[ts][author_name] = {}
-        self.author_changes_history[ts][author_name]['lines_added'] = authors_info[author_name]['lines_added']
-        self.author_changes_history[ts][author_name]['commits'] = authors_info[author_name]['commits']
+        self.author_changes_history[ts][author_name]['lines_added'] = authors_info[author_name][AuthorDictFactory.LINES_ADDED]
+        self.author_changes_history[ts][author_name]['commits'] = authors_info[author_name][AuthorDictFactory.COMMITS]
 
     def _adjust_commits_timeline(self, datetime_obj):
         """
@@ -333,6 +425,28 @@ class GitStatistics:
                 elif entry.type == 'tree':
                     s.append(self.repo[entry.id])
         return res
+    
+    def getCommitDeltaDays(self):
+        return (self.last_commit_timestamp / 86400 - self.first_commit_timestamp / 86400) + 1
+    
+    def getActiveDays(self):
+        return self.active_days
+    
+    def getTotalLineCount(self):
+        return self.total_lines_count
+
+    def getTotalAuthors(self):
+        return self.authors.__len__()
+    
+    def getTotalCommits(self):
+        return self.commits.__len__()
+    
+    def getStampCreated(self):
+        return self.created_time_stamp
+
+    #TODO: Implementation
+    def getTotalFiles(self):
+        return 0
 
     # TODO: too low level function for a GitStatistics class. Needed for fastest migration to pygit2
     def get_revisions(self):
