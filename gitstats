@@ -19,6 +19,7 @@ from jinja2 import Environment, FileSystemLoader
 from tools import GitStatistics
 from tools import get_external_execution_time, get_pipe_output
 from tools import generate_version_from, fetch_contributors_from
+from tools.csvreportcreator import CSVReportCreator
 
 os.environ['LC_ALL'] = 'C'
 
@@ -40,7 +41,8 @@ conf = {
     'linear_linestats': 1,
     'project_name': '',
     'processes': 8,
-    'start_date': ''
+    'start_date': '',
+    'output':'html'
 }
 
 
@@ -700,6 +702,7 @@ Options:
 Default config values:
 %s
 
+output option values: [html,csv]
 Please see the manual page for more details.
 """ % conf)
 
@@ -767,8 +770,16 @@ class GitStats:
         os.chdir(rundir)
         print('Generating report...')
         # fixme: pass GitStatistics object directly when obsolete GitDataCollector is removed
-        report = HTMLReportCreator(data.repo_statistics)
-        report.create(data, outputpath)
+        if conf['output'] == 'html':
+            print('Generating HTML report...')
+            report = HTMLReportCreator(data.repo_statistics)
+            report.create(data, outputpath)
+        elif conf['output'] == 'csv':
+            print('Generating CSV report...')
+            report = CSVReportCreator()
+            report.create(data.repo_statistics, outputpath, conf)
+        else:
+            print('Invalid output parameter: ' % conf['output'])
 
         time_end = time.time()
         exectime_internal = time_end - time_start
