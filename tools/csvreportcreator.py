@@ -3,6 +3,7 @@ import os
 import csv
 import datetime
 from .gitstatistics  import GitStatistics
+from .gitstatistics  import CommitDictFactory
 from .reportCreator import ReportCreator
 
 
@@ -19,6 +20,22 @@ class AuthorCsvExporter():
 			writer.writeheader()
 			for authorName, authorData in authors.items():
 				tmp = dict(authorData)
+				tmp.update(aditionalValues)
+				writer.writerow(tmp)
+			csvfile.close()
+
+class CommitCsvExporter():
+
+	@staticmethod
+	def exportCommits(fileName: str, commits: dict, aditionalValues: dict):
+		with open(fileName, 'w', newline='') as csvfile:
+			fieldnames = CommitDictFactory.FIELD_LIST + ['reponame', 'projectname']
+
+			writer = csv.DictWriter(csvfile, fieldnames=fieldnames, delimiter=';', quotechar='"')
+			
+			writer.writeheader()
+			for commit in commits:
+				tmp = dict(commit)
 				tmp.update(aditionalValues)
 				writer.writerow(tmp)
 			csvfile.close()
@@ -47,6 +64,8 @@ Total Files;Total Lines;Total Lines added;Total Lines removed;Total Commits;Auth
 		aditionalInfo={"projectname": self.projectname,
 			"reponame": data.reponame}
 		AuthorCsvExporter.exportAuthors(path + "/authors.csv", data.authors, aditionalInfo)
+		CommitCsvExporter.exportCommits(path + "/commits.csv", data.commits, aditionalInfo)
+
 		###
 		# Activity
 		return
