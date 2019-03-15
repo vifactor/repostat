@@ -33,29 +33,38 @@ def split_email_address(email_address):
         raise ValueError('Not an email passed: %s' % email_address)
     return parts[0], parts[1]
 
-class CommitDetail():
-    author = ''
-    linesAdded = 0
-    linesRemoved = 0
-    timeStamp = ""
+class CommitDictFactory():
+    AUTHOR_NAME = "author_name"
+    LINES_REMOVED = "lines_removed"
+    LINES_ADDED = "lines_added"
+    TIMESTAMP = "timestamp"
+    FIELD_LIST = [AUTHOR_NAME, LINES_REMOVED, LINES_ADDED, TIMESTAMP]
+        
+    @classmethod
+    def create_commit(cls, author, linesAdded, linesRemoved, timeStamp):
+        result = {
+            cls.AUTHOR_NAME : author,
+            cls.LINES_ADDED : linesAdded,
+            cls.LINES_REMOVED: linesRemoved,
+            cls.TIMESTAMP: timeStamp
+        }
+        return result
 
-    def __init__(self, author, linesAdded, linesRemoved, timeStamp):
-        self.author = author
-        self.linesAdded = linesAdded
-        self.linesRemoved = linesRemoved
-        self.timestamp = timeStamp
-
-    def getAuthor(self):
-        return self.author
+    @classmethod
+    def getAuthor(cls, commitDetail:dict): 
+        return commitDetail[cls.AUTHOR_NAME]
     
-    def getLinesAdded(self):
-        return self.linesAdded
-
-    def getLinesRemoved(self):
-        return self.linesRemoved
-
-    def getTimeStamp(self):
-        return self.timeStamp
+    @classmethod
+    def getLinesAdded(cls, commitDetail:dict):
+        return commitDetail[cls.LINES_ADDED]
+    
+    @classmethod
+    def getLinesRemoved(cls, commitDetail:dict):
+        return commitDetail[cls.LINES_REMOVED]
+    
+    @classmethod
+    def getTimeStamp(cls, commitDetail:dict):
+        return commitDetail[cls.TIMESTAMP]
 
 class AuthorDictFactory():
     AUTHOR_NAME = "author_name"
@@ -66,6 +75,7 @@ class AuthorDictFactory():
     FIRST_COMMIT = 'first_commit_stamp'
     LAST_COMMIT = 'last_commit_stamp'
     LAST_ACTIVE_DAY = 'last_active_day'
+    FIELD_LIST = [AUTHOR_NAME, LINES_ADDED, LINES_REMOVED, COMMITS, ACTIVE_DAYS, FIRST_COMMIT, LAST_COMMIT, LAST_ACTIVE_DAY]
     
     @classmethod
     def create_author(cls, author_name: str, lines_removed: int, lines_added: int, active_days: str, commits: int, first_commit_stamp, last_commit_stamp):
@@ -151,11 +161,7 @@ class GitStatistics:
         return '{} v.{}'.format(git.__name__, git.LIBGIT2_VERSION)
     
     def addCommit(self, author, lines_added, lines_removed, time):
-        commit_details={'author': author,
-            'lines_added': lines_added,
-            'lines_removed':lines_removed,
-            'timestamp': time,
-        }
+        commit_details= CommitDictFactory.create_commit(author, lines_added, lines_removed, time)
         self.commits.append(commit_details)
 
     @Timeit("Fetching authors info")
@@ -189,16 +195,6 @@ class GitStatistics:
             self._adjust_winners(author_name, child_commit.author.time)
             self.addCommit(author_name, lines_added, lines_removed, commit_day_str)
             if author_name not in result:
-                '''
-                result[author_name] = {st.deletions if not is_merge_commit else 0
-                    'lines_removed': ,
-                    'lines_added': st.insertions if not is_merge_commit else 0,
-                    'active_days': {commit_day_str},
-                    'commits': 1,
-                    'first_commit_stamp': child_commit.author.time,
-                    'last_commit_stamp': child_commit.author.time,
-                }
-                '''
                 result[author_name] = AuthorDictFactory.create_author(
                     author_name, lines_removed, lines_added, commit_day_str, 1, child_commit.author.time, child_commit.author.time)
             else:
