@@ -9,3 +9,5 @@ output/
 
 # pycharm project
 .idea
+.vscode/settings.json
+.vscode/launch.json
