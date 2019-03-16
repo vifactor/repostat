@@ -481,7 +481,7 @@ def get_total_changes_timeline():
 class TestPygitMethods(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        this_file_dir = os.path.dirname(os.path.abspath(__file__))
+        this_file_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
         cls.gs = GitStatistics(this_file_dir)
 
     def test_tags_info(self):

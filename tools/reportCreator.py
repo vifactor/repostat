@@ -12,7 +12,7 @@ class ReportCreator:
 		self.data = data
 		self.path = path
 		if len(config['project_name']) == 0:
-			self.projectname = os.path.basename(os.path.abspath(path))
+			self.projectname = data.reponame
 		else:
 			self.projectname = config['project_name']
 		self.title = self.projectname

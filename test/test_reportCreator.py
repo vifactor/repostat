@@ -21,11 +21,28 @@ conf = {
 
 class TestReportCreator(unittest.TestCase):
     gs = None
+    csv_outputdir = os.path.join(os.path.dirname(os.path.abspath(__file__)) , "csv_outs")
 
-    @classmethod
-    def setUp(cls):
-        this_file_dir = os.path.dirname(os.path.abspath(__file__))
-        cls.gs = GitStatistics(this_file_dir)
+    def setUp(self):
+        this_file_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
+        print('Init git repo. Path:' + this_file_dir)
+        self.gs = GitStatistics(this_file_dir)
+
+    def testReportCreatorRepoName(self):
+        report = ReportCreator()
+        conf['project_name'] = ''
+        report.create(self.gs, self.csv_outputdir, conf)
+        self.assertEqual(self.gs.reponame, "repostat")
+        self.assertEqual(self.gs.reponame, report.projectname)
+        self.assertEqual(report.title, report.projectname)
+
+    def testReportCreatorProjectName(self):
+        report = ReportCreator()
+        conf['project_name'] = 'New project name'
+        report.create(self.gs, self.csv_outputdir, conf)
+        self.assertEqual(self.gs.reponame, "repostat")
+        self.assertEqual(conf['project_name'], report.projectname)
+        self.assertEqual(report.title, report.projectname)
 
 if __name__ == '__main__':
     unittest.main()
