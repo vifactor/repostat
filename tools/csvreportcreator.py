@@ -45,6 +45,11 @@ class CSVReportCreator(ReportCreator):
 		return
 	def printNav(self, f):
 		return
+	
+	
+	def getAdditionalFields(self, data: GitStatistics):
+		return {"projectname": self.projectname,
+			"reponame": data.reponame}
 
 	def create(self, data: GitStatistics, path: str, config: dict):
 		
@@ -61,10 +66,9 @@ Total Files;Total Lines;Total Lines added;Total Lines removed;Total Commits;Auth
 			first_commit, last_commit, data.getCommitDeltaDays(), len(data.getActiveDays()),
 			data.getTotalFiles(), data.getTotalLineCount(), data.total_lines_added, data.total_lines_removed, data.getTotalCommits(), data.getTotalAuthors())) 
 		f.close()
-		aditionalInfo={"projectname": self.projectname,
-			"reponame": data.reponame}
-		AuthorCsvExporter.exportAuthors(path + "/authors.csv", data.authors, aditionalInfo)
-		CommitCsvExporter.exportCommits(path + "/commits.csv", data.commits, aditionalInfo)
+		aditionalInfo= self.getAdditionalFields(data)
+		AuthorCsvExporter.exportAuthors(os.path.join(path, "authors.csv"), data.authors, aditionalInfo)
+		CommitCsvExporter.exportCommits(os.path.join(path, "commits.csv"), data.commits, aditionalInfo)
 
 		###
 		# Activity
