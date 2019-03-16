@@ -7,7 +7,10 @@ venv/
 # generated files
 output/
 
+#csv export unittest output folder
+test/csv_outs
+
 # pycharm project
 .idea
-.vscode/settings.json
-.vscode/launch.json
+# Visual Studio files 
+.vscode
