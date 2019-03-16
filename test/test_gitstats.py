@@ -1,4 +1,3 @@
-#from past.builtins import long
 import os
 import unittest
 import datetime
@@ -64,7 +63,7 @@ def get_tags_info():
                 stamp = int(parts[0])
             except ValueError:
                 stamp = 0
-            tags[tag] = {'stamp': long(stamp), 'hash': hash,
+            tags[tag] = {'stamp': int(stamp), 'hash': hash,
                          'date': datetime.datetime.fromtimestamp(stamp).strftime('%Y-%m-%d'), 'commits': 0,
                          'authors': {}}
 
