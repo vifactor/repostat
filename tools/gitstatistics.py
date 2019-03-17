@@ -148,7 +148,7 @@ class GitStatistics:
         self.max_weekly_hourly_activity = max(
             commits_count for _, hourly_activity in self.activity_weekly_hourly.items()
             for _, commits_count in hourly_activity.items())
-        self.activity_monthly = self.fetch_monthly_activity()
+        self.activity_monthly, self.authors_monthly, self.activity_year_monthly, self.author_year_monthly = self.fetch_monthly_activity()
         self.recent_activity_by_week = self.fetch_recent_activity()
         self.recent_activity_peak = max(activity for activity in self.recent_activity_by_week.values())
         self.changes_history, self.total_lines_added, self.total_lines_removed, self.total_lines_count \
@@ -273,12 +273,26 @@ class GitStatistics:
     @Timeit("Fetching monthly activity info")
     def fetch_monthly_activity(self):
         activity = {}
+        authors = {}
+        activity_year_month = {}
+        authors_year_month = {}
         for commit in self.repo.walk(self.repo.head.target):
             date = datetime.fromtimestamp(commit.author.time)
-            month = date.month
+            month = date.month 
+            year_month = date.strftime('%Y-%m')
             activity[month] = activity.get(month, 0) + 1
+            activity_year_month[year_month] =  activity_year_month.get(year_month, 0) + 1
+            try:
+                authors[month].add(commit.author.name)
+            except KeyError:
+                authors[month] = {commit.author.name}
+            try:
+                authors_year_month[year_month].add(commit.author.name)
+            except KeyError:
+                authors_year_month[year_month] = {commit.author.name}
+            
             self._adjust_commits_timeline(date)
-        return activity
+        return activity, authors, activity_year_month, authors_year_month
 
     @Timeit("Fetching recent activity info")
     def fetch_recent_activity(self, weeks=None):
@@ -301,14 +315,16 @@ class GitStatistics:
             st = self.repo.diff(parent_commit, child_commit).stats
             history[child_commit.author.time] = {'files': st.files_changed,
                                                  'ins': st.insertions,
-                                                 'del': st.deletions}
+                                                 'del': st.deletions,
+                                                 'author': child_commit.author.name}
             timestamps.append(child_commit.author.time)
             child_commit = parent_commit
         # initial commit does not have parent, so we take diff to empty tree
         st = child_commit.tree.diff_to_tree(swap=True).stats
         history[child_commit.author.time] = {'files': st.files_changed,
                                              'ins': st.insertions,
-                                             'del': st.deletions}
+                                             'del': st.deletions,
+                                             'author': child_commit.author.name}
         timestamps.append(child_commit.author.time)
 
         lines_count = 0
