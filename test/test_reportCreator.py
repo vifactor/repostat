@@ -32,17 +32,17 @@ class TestReportCreator(unittest.TestCase):
         report = ReportCreator()
         conf['project_name'] = ''
         report.create(self.gs, self.csv_outputdir, conf)
-        self.assertEqual(self.gs.reponame, "repostat")
-        self.assertEqual(self.gs.reponame, report.projectname)
-        self.assertEqual(report.title, report.projectname)
+        self.assertEqual(self.gs.repo_name, "repostat")
+        self.assertEqual(self.gs.repo_name, report.project_name)
+        self.assertEqual(report.title, report.project_name)
 
     def testReportCreatorProjectName(self):
         report = ReportCreator()
         conf['project_name'] = 'New project name'
         report.create(self.gs, self.csv_outputdir, conf)
-        self.assertEqual(self.gs.reponame, "repostat")
-        self.assertEqual(conf['project_name'], report.projectname)
-        self.assertEqual(report.title, report.projectname)
+        self.assertEqual(self.gs.repo_name, "repostat")
+        self.assertEqual(conf['project_name'], report.project_name)
+        self.assertEqual(report.title, report.project_name)
 
 if __name__ == '__main__':
     unittest.main()

@@ -12,10 +12,10 @@ class ReportCreator:
 		self.data = data
 		self.path = path
 		if len(config['project_name']) == 0:
-			self.projectname = data.reponame
+			self.project_name = data.repo_name
 		else:
-			self.projectname = config['project_name']
-		self.title = self.projectname
+			self.project_name = config['project_name']
+		self.title = self.project_name
 
 	def getReportCreated(self):
 		return self.timestamp_created
