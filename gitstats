@@ -708,7 +708,16 @@ Please see the manual page for more details.
 
 
 class GitStats:
-    def run(self, args_orig):
+    optlist = None
+    args = None
+
+    def isHtmlOutput(self) -> bool:
+        return conf['output'] == 'html'
+
+    def isCsvOutput(self) -> bool:
+        return conf['output'] == 'csv'
+
+    def processAndValidateParams(self, args_orig):
         if sys.version_info < (2, 6):
             warnings.warn("Python 2.6+ is required for repostat")
             sys.exit(1)
@@ -731,13 +740,16 @@ class GitStats:
                 usage()
                 sys.exit()
 
-        if len(args) < 2:
+        if len(args) < 2 :
+            usage()
+            sys.exit(0)
+        
+        if (not self.isCsvOutput() and not self.isHtmlOutput()):
+            print('Invalid output parameter: %s' % conf['output'])
             usage()
             sys.exit(0)
 
         outputpath = os.path.abspath(args[-1])
-        rundir = os.getcwd()
-
         try:
             os.makedirs(outputpath)
         except OSError:
@@ -745,6 +757,19 @@ class GitStats:
         if not os.path.isdir(outputpath):
             warnings.warn('FATAL: Output path is not a directory or does not exist: %s' % outputpath)
             sys.exit(1)
+        
+        self.args = args
+        self.optlist = optlist
+
+        return optlist, args
+
+
+    def run(self, args_orig):
+
+        self.processAndValidateParams(args_orig)
+
+        outputpath = os.path.abspath(self.args[-1])
+        rundir = os.getcwd()
 
         print('Output path: %s' % outputpath)
         cachefile = os.path.join(outputpath, 'gitstats.cache')
@@ -752,7 +777,7 @@ class GitStats:
         data = GitDataCollector()
         data.loadCache(cachefile)
 
-        for gitpath in args[0:-1]:
+        for gitpath in self.args[0:-1]:
             print('Git path: %s' % gitpath)
 
             prevdir = os.getcwd()
@@ -770,23 +795,23 @@ class GitStats:
         os.chdir(rundir)
         print('Generating report...')
         # fixme: pass GitStatistics object directly when obsolete GitDataCollector is removed
-        if conf['output'] == 'html':
+        if self.isHtmlOutput():
             print('Generating HTML report...')
             report = HTMLReportCreator(data.repo_statistics)
             report.create(data, outputpath)
-        elif conf['output'] == 'csv':
+        elif self.isCsvOutput():
             print('Generating CSV report...')
             report = CSVReportCreator()
             report.create(data.repo_statistics, outputpath, conf)
         else:
-            print('Invalid output parameter: ' % conf['output'])
+            print('Invalid output parameter: %s' % conf['output'])
 
         time_end = time.time()
         exectime_internal = time_end - time_start
         exectime_external = get_external_execution_time()
         print('Execution time %.5f secs, %.5f secs (%.2f %%) in external commands)' \
               % (exectime_internal, exectime_external, (100.0 * exectime_external) / exectime_internal))
-        if sys.stdin.isatty():
+        if sys.stdin.isatty() and self.isHtmlOutput():
             print('You may now run:')
             print('')
             print('   sensible-browser \'%s\'' % os.path.join(outputpath, 'general.html').replace("'", "'\\''"))
