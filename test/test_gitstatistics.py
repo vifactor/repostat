@@ -9,23 +9,23 @@ class TestCommitDictFactory(unittest.TestCase):
 		pass
 
 	def testCreateCommitAuthorName(self):
-		commit = CommitDictFactory.create_commit('Test Author', 1, 2, datetime.datetime.now().timestamp())
+		commit = CommitDictFactory.create_commit('Test Author', 1, 2, '2019.03.15', datetime.datetime.now().timestamp())
 		self.assertEqual(commit[CommitDictFactory.AUTHOR_NAME], 'Test Author')
 		self.assertEqual(commit[CommitDictFactory.AUTHOR_NAME], CommitDictFactory.getAuthor(commit))
 
 	def testCreateCommitLinesAdded(self):
-		commit = CommitDictFactory.create_commit('Test Author', 1, 2, datetime.datetime.now().timestamp())
+		commit = CommitDictFactory.create_commit('Test Author', 1, 2, '2019.03.15', datetime.datetime.now().timestamp())
 		self.assertEqual(commit[CommitDictFactory.LINES_ADDED], 1)
 		self.assertEqual(commit[CommitDictFactory.LINES_ADDED], CommitDictFactory.getLinesAdded(commit))
 
 	def testCreateCommitLinesRemoved(self):
-		commit = CommitDictFactory.create_commit('Test Author', 1, 2, datetime.datetime.now().timestamp())
+		commit = CommitDictFactory.create_commit('Test Author', 1, 2, '2019.03.15', datetime.datetime.now().timestamp())
 		self.assertEqual(commit[CommitDictFactory.LINES_REMOVED], 2)
 		self.assertEqual(commit[CommitDictFactory.LINES_REMOVED], CommitDictFactory.getLinesRemoved(commit))
 
 	def testCreateCommitTimeStamp(self):
 		ts = datetime.datetime.now().timestamp()
-		commit = CommitDictFactory.create_commit('Test Author', 1, 2, ts)
+		commit = CommitDictFactory.create_commit('Test Author', 1, 2, '2019.03.15', ts)
 		self.assertEqual(commit[CommitDictFactory.TIMESTAMP], ts)
 		self.assertEqual(commit[CommitDictFactory.TIMESTAMP], CommitDictFactory.getTimeStamp(commit))
 
