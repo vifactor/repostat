@@ -40,6 +40,26 @@ class CommitCsvExporter():
 				writer.writerow(tmp)
 			csvfile.close()
 
+class GeneralDictionaryExport():
+	
+	@staticmethod
+	def export(fileName: str, data: dict, exportKeyAsField: bool = True, keyFieldName: str = 'key'):
+		with open(fileName, 'w', newline='') as csvfile:
+			fieldnames = list(data[list(data.keys())[0]].keys())
+			if exportKeyAsField:
+				fieldnames.append(keyFieldName)
+
+			writer = csv.DictWriter(csvfile, fieldnames=fieldnames, delimiter=';', quotechar='"')
+			
+			writer.writeheader()
+			for key, line in data.items():
+				print_line = line
+				if exportKeyAsField:
+					print_line = dict(line)
+					print_line[keyFieldName] = key
+				writer.writerow(print_line)
+			csvfile.close()
+
 class CSVReportCreator(ReportCreator):
 	def printHeader(self, f):
 		return
@@ -67,74 +87,27 @@ Total Files;Total Lines;Total Lines added;Total Lines removed;Total Commits;Auth
 			data.getTotalFiles(), data.getTotalLineCount(), data.total_lines_added, data.total_lines_removed, data.getTotalCommits(), data.getTotalAuthors())) 
 		f.close()
 		aditionalInfo= self.getAdditionalFields(data)
+		#export authors
 		AuthorCsvExporter.exportAuthors(os.path.join(path, "authors.csv"), data.authors, aditionalInfo)
+		#export commits
 		CommitCsvExporter.exportCommits(os.path.join(path, "commits.csv"), data.commits, aditionalInfo)
 
 		###
 		# Activity
-		return
-		#month of year
-		f = open(path + '/activity_month_of_year.csv', 'w')
-		f.write('Project Name;Repo name;Month;Commit count;Commit percentage\n')
-		for mm in range(1, 13):
-			commits = 0
-			if mm in data.activity_by_month_of_year:
-				commits = data.activity_by_month_of_year[mm]
-			f.write('%s;%s;%d;%d;%.2f\n' % (self.projectname, data.reponame, mm, commits, (100.0 * commits) / data.getTotalCommits()))
-		f.close()
-
-		# Commits by year/month
-		#export to CSV
-		f = open(path + "/activity_commit_year_month.csv", 'w')
-		f.write('Project name;Repo name;Month;Commits;Lines added;Lines removed\n')
-		for yymm in reversed(sorted(data.commits_by_month.keys())):
-			f.write('%s;%s;%s;%d;%d;%d\n' % (self.projectname, data.reponame, yymm, data.commits_by_month.get(yymm,0), data.lines_added_by_month.get(yymm,0), 
-				data.lines_removed_by_month.get(yymm,0)))
-		f.close()
-
-
-
-		# Commits by year
-		f = open(path + "/activity_commit_year.csv", 'w')
-		f.write('Project name;Repo name;Year;Commits; Commits percentage;Lines added;Lines removed\n')
-		for yy in reversed(sorted(data.commits_by_year.keys())):
-			f.write('%s;%s;%s;%d;%.2f;%d;%d\n' % (self.projectname, data.reponame, yy, data.commits_by_year.get(yy,0), (100.0 * data.commits_by_year.get(yy,0)) / data.getTotalCommits(), data.lines_added_by_year.get(yy,0), data.lines_removed_by_year.get(yy,0)))
-		f.close()
-
 		
-		###
-		# Authors
-		f = open(path + '/authors.html', 'w')
-		# Authors :: List of authors
-		f.write('Project name;Repo name;Author;Commits; Commits percentage (%);+ lines;- lines;First commit;Last commit;Age;Active days;# by commits\n')
-		for author in data.getAuthors():
-			info = data.getAuthorInfo(author)
-			f.write('%s;%s;%s;%d;%.2f;%d;%d;%s;%s;%s;%d;%d\n' % (self.projectname, data.reponame, author, info['commits'], info['commits_frac'], info['lines_added'], info['lines_removed'], info['date_first'], info['date_last'], info['timedelta'], len(info['active_days']), info['place_by_commits']))
-		f.close()
-
-		f = open(path + '/authors_lines_commits.csv', 'w')
-
-		lines_by_authors = {} # cumulated added lines by
-		# author. to save memory,
-		# changes_by_date_by_author[stamp][author] is defined
-		# only at points where author commits.
-		# lines_by_authors allows us to generate all the
-		# points in the .dat file.
-
-		# Don't rely on getAuthors to give the same order each
-		# time. Be robust and keep the list in a variable.
-		commits_by_authors = {} # cumulated added lines by
-
-		self.authors_to_plot = data.getAuthors()
-		for author in self.authors_to_plot:
-			lines_by_authors[author] = 0
-			commits_by_authors[author] = 0
-		f.write('Project name;Repo name;Author;Date,Lines added; Commits\n')
-		for stamp in sorted(data.changes_by_date_by_author.keys()):
-			for author in self.authors_to_plot:
-				if author in data.changes_by_date_by_author[stamp].keys():
-					lines_by_authors[author] = data.changes_by_date_by_author[stamp][author]['lines_added']
-					commits_by_authors[author] = data.changes_by_date_by_author[stamp][author]['commits']
-				f.write('%s;%s;%s;%s;%d;%d\n' % (self.projectname, data.reponame, author, datetime.datetime.fromtimestamp(float(stamp)), lines_by_authors[author], commits_by_authors[author]))
-		f.close()
+		#month of year
+		linesAddedMonthly = data.get_lines_insertions_by_month()
+		linesRemovedMonthly = data.get_lines_deletions_by_month()
+		monthStatistic = {}
+		for mm in data.author_year_monthly:
+			monthStatistic[mm]={
+				'Project Name': self.projectname,
+				'Repo name': data.reponame,
+				'Month': mm,
+				'Lines added': linesAddedMonthly.get(mm, 0),
+				'Lines removed': linesRemovedMonthly.get(mm, 0),
+				'Author count': len(data.author_year_monthly.get(mm, {})),
+				'Commits': data.activity_year_monthly.get(mm, 0)
+			}
+		GeneralDictionaryExport.export(path + '/activity_month_of_year.csv', monthStatistic, False)
 
