@@ -7,40 +7,36 @@ from .gitstatistics  import CommitDictFactory
 from .reportCreator import ReportCreator
 
 
-class AuthorCsvExporter():
+class DictionaryListCsvExporter():
+	"""Export dictionary values as List. Keys in dictionary doesn't exported or handled!"""
 
 	@staticmethod
-	def exportAuthors(fileName: str, authors: dict, aditionalValues: dict):
+	def export(fileName: str, data: dict, aditionalValues: dict = None):
 		with open(fileName, 'w', newline='') as csvfile:
-			fieldnames = ['projectname', 'reponame', 'author_name', 'lines_added', 'lines_removed', 'commits', 'first_commit_stamp', 'last_commit_stamp',
-				'last_active_day', 'timedelta', 'active_days', 'date_first', 'date_last', 'place_by_commits']
-			#
-			writer = csv.DictWriter(csvfile, fieldnames=fieldnames, delimiter=';', quotechar='"')
-			
-			writer.writeheader()
-			for authorName, authorData in authors.items():
-				tmp = dict(authorData)
-				tmp.update(aditionalValues)
-				writer.writerow(tmp)
-			csvfile.close()
-
-class CommitCsvExporter():
-
-	@staticmethod
-	def exportCommits(fileName: str, commits: dict, aditionalValues: dict):
-		with open(fileName, 'w', newline='') as csvfile:
-			fieldnames = CommitDictFactory.FIELD_LIST + ['reponame', 'projectname']
+			fieldnames = []
+			dataList = []
+			if aditionalValues == None:
+				aditionalValues = {}
+			is_list = type(data) is list
+			if not is_list:
+				fieldnames = list(data[list(data.keys())[0]].keys()) + list(aditionalValues.keys())
+				dataList = data.values()
+			if is_list:
+				fieldnames = list(data[0].keys()) + list(aditionalValues.keys())
+				dataList = data
 
 			writer = csv.DictWriter(csvfile, fieldnames=fieldnames, delimiter=';', quotechar='"')
 			
 			writer.writeheader()
-			for commit in commits:
-				tmp = dict(commit)
+			
+			for line in dataList:
+				tmp = dict(line)
 				tmp.update(aditionalValues)
 				writer.writerow(tmp)
 			csvfile.close()
 
-class GeneralDictionaryExport():
+class DictionaryCsvExporter():
+	"""Export dictionary values with or without keys. Able to export key-s as column!"""
 	
 	@staticmethod
 	def export(fileName: str, data: dict, exportKeyAsField: bool = True, keyFieldName: str = 'key'):
@@ -68,29 +64,43 @@ class CSVReportCreator(ReportCreator):
 	
 	
 	def getAdditionalFields(self, data: GitStatistics):
-		return {"projectname": self.projectname,
-			"reponame": data.reponame}
+		return {"Project name": self.projectname,
+			"Repo name": data.reponame}
 
 	def create(self, data: GitStatistics, path: str, config: dict):
 		
 		ReportCreator.create(self, data, path, config)
 
 		#General info
-		f = open(path + "/general.csv", 'w')
 		format = '%Y-%m-%d %H:%M:%S'
 		first_commit = datetime.datetime.fromtimestamp(data.first_commit_timestamp).strftime(format)
 		last_commit = datetime.datetime.fromtimestamp(data.last_commit_timestamp).strftime(format)
-		f.write('Project name;Repo name;Generated;Generation duration in seconds;Report Period Start (First commit);Report Period (Last commit);Age (days);Age (active days);\
-Total Files;Total Lines;Total Lines added;Total Lines removed;Total Commits;Authors\n')
-		f.write('%s;%s;%s;%d;%s;%s;%d;%d;%s;%s;%s;%s;%s;%s\n' % (self.projectname, data.reponame, datetime.datetime.now().strftime(format), time.time() - data.getStampCreated(), 
-			first_commit, last_commit, data.getCommitDeltaDays(), len(data.getActiveDays()),
-			data.getTotalFiles(), data.getTotalLineCount(), data.total_lines_added, data.total_lines_removed, data.getTotalCommits(), data.getTotalAuthors())) 
-		f.close()
-		aditionalInfo= self.getAdditionalFields(data)
+		generalInfo = {}
+		generalInfo['1'] ={
+			'Project name': self.projectname,
+			'Repo name': data.reponame,
+			'Generated date': datetime.datetime.now().strftime(format),
+			'Generation duration in seconds': time.time() - data.getStampCreated(), 
+			'Report Period Start (First commit)': first_commit,
+			'Report Period (Last commit)': last_commit,
+			'Age (days)': data.getCommitDeltaDays(),
+			'Age (active days)': len(data.getActiveDays()),
+			'Total lines': data.getTotalLineCount(),
+			'Total lines added': data.total_lines_added,
+			'Total lines removed': data.total_lines_removed,
+			'Total Commits': data.getTotalCommits(),
+			'Authors': data.getTotalAuthors()
+		}
+
+		aditionalInfo = self.getAdditionalFields(data)
+		#export general info
+		DictionaryCsvExporter.export(os.path.join(path, "general.csv"), generalInfo, False)
+
 		#export authors
-		AuthorCsvExporter.exportAuthors(os.path.join(path, "authors.csv"), data.authors, aditionalInfo)
+		DictionaryListCsvExporter.export(os.path.join(path, "authors.csv"), data.authors, aditionalInfo)
+
 		#export commits
-		CommitCsvExporter.exportCommits(os.path.join(path, "commits.csv"), data.commits, aditionalInfo)
+		DictionaryListCsvExporter.export(os.path.join(path, "commits.csv"), data.commits, aditionalInfo)
 
 		###
 		# Activity
@@ -109,5 +119,5 @@ Total Files;Total Lines;Total Lines added;Total Lines removed;Total Commits;Auth
 				'Author count': len(data.author_year_monthly.get(mm, {})),
 				'Commits': data.activity_year_monthly.get(mm, 0)
 			}
-		GeneralDictionaryExport.export(path + '/activity_month_of_year.csv', monthStatistic, False)
+		DictionaryCsvExporter.export(path + '/activity_month_of_year.csv', monthStatistic, False)
 
