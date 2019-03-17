@@ -42,7 +42,7 @@ class CommitDictFactory():
     FIELD_LIST = [AUTHOR_NAME, LINES_REMOVED, LINES_ADDED, TIMESTAMP]
         
     @classmethod
-    def create_commit(cls, author, linesAdded, linesRemoved, date, time_stamp):
+    def create_commit(cls, author, linesAdded, linesRemoved, date: str, time_stamp: float):
         result = {
             cls.AUTHOR_NAME : author,
             cls.LINES_ADDED : linesAdded,
