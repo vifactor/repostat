@@ -37,16 +37,18 @@ class CommitDictFactory():
     AUTHOR_NAME = "author_name"
     LINES_REMOVED = "lines_removed"
     LINES_ADDED = "lines_added"
+    DATE = 'date'
     TIMESTAMP = "timestamp"
     FIELD_LIST = [AUTHOR_NAME, LINES_REMOVED, LINES_ADDED, TIMESTAMP]
         
     @classmethod
-    def create_commit(cls, author, linesAdded, linesRemoved, timeStamp):
+    def create_commit(cls, author, linesAdded, linesRemoved, date, time_stamp):
         result = {
             cls.AUTHOR_NAME : author,
             cls.LINES_ADDED : linesAdded,
             cls.LINES_REMOVED: linesRemoved,
-            cls.TIMESTAMP: timeStamp
+            cls.DATE: date,
+            cls.TIMESTAMP: time_stamp
         }
         return result
 
@@ -65,6 +67,10 @@ class CommitDictFactory():
     @classmethod
     def getTimeStamp(cls, commitDetail:dict):
         return commitDetail[cls.TIMESTAMP]
+
+    @classmethod
+    def getDate(cls, commitDetail:dict):
+        return commitDetail[cls.DATE]
 
 class AuthorDictFactory():
     AUTHOR_NAME = "author_name"
@@ -153,15 +159,15 @@ class GitStatistics:
         self.recent_activity_peak = max(activity for activity in self.recent_activity_by_week.values())
         self.changes_history, self.total_lines_added, self.total_lines_removed, self.total_lines_count \
             = self.fetch_total_history()
-        self.reponame = os.path.basename(os.path.abspath(path))
+        self.repo_name = os.path.basename(os.path.abspath(path))
 
     @classmethod
     def get_fetching_tool_info(cls):
         # could be bare git-subprocess invokation, PythonGit package, etc.
         return '{} v.{}'.format(git.__name__, git.LIBGIT2_VERSION)
     
-    def addCommit(self, author, lines_added, lines_removed, time):
-        commit_details= CommitDictFactory.create_commit(author, lines_added, lines_removed, time)
+    def addCommit(self, author, lines_added, lines_removed, time: str, time_stamp):
+        commit_details= CommitDictFactory.create_commit(author, lines_added, lines_removed, time, time_stamp)
         self.commits.append(commit_details)
 
     @Timeit("Fetching authors info")
@@ -193,7 +199,7 @@ class GitStatistics:
             lines_removed = st.deletions if not is_merge_commit else 0
 
             self._adjust_winners(author_name, child_commit.author.time)
-            self.addCommit(author_name, lines_added, lines_removed, commit_day_str)
+            self.addCommit(author_name, lines_added, lines_removed, commit_day_str, child_commit.author.time)
             if author_name not in result:
                 result[author_name] = AuthorDictFactory.create_author(
                     author_name, lines_removed, lines_added, commit_day_str, 1, child_commit.author.time, child_commit.author.time)
