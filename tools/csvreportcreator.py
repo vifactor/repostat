@@ -12,7 +12,7 @@ class DictionaryListCsvExporter():
 
 	@staticmethod
 	def export(file_name: str, data: dict, aditional_values: dict = None):
-		with open(file_name, 'w', newline='') as csvfile:
+		with open(file_name, 'w', newline='', encoding = 'utf-8') as csvfile:
 			fieldnames = []
 			data_list = []
 			if aditional_values == None:
@@ -40,7 +40,7 @@ class DictionaryCsvExporter():
 	
 	@staticmethod
 	def export(file_name: str, data: dict, export_key_as_field: bool = True, key_field_name: str = 'key'):
-		with open(file_name, 'w', newline='') as csvfile:
+		with open(file_name, 'w', newline='', encoding='utf-8') as csvfile:
 			fieldnames = list(data[list(data.keys())[0]].keys())
 			if export_key_as_field:
 				fieldnames.append(key_field_name)
