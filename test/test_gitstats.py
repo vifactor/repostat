@@ -447,7 +447,7 @@ def get_total_changes_timeline():
             pos = line.find(' ')
             if pos != -1:
                 try:
-                    (stamp, author) = (long(line[:pos]), line[pos + 1:])
+                    (stamp, author) = (int(line[:pos]), line[pos + 1:])
                     changes_by_date[stamp] = {u'files': files, u'ins': inserted, u'del': deleted, u'lines': total_lines}
 
                     date = datetime.datetime.fromtimestamp(stamp)
@@ -601,7 +601,7 @@ class TestPygitMethods(unittest.TestCase):
         expected_data = []
         for line in revlines:
             ts, tree_id = line.split(' ')
-            expected_data.append((long(ts), tree_id))
+            expected_data.append((int(ts), tree_id))
 
         actual_data = []
         for t, r in self.gs.get_revisions():

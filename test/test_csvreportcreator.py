@@ -28,7 +28,7 @@ class TestDictionaryListCsvExporte(BasicTestExporter):
         additional = {'projectname': 'Project Name Unit test', 'reponame': 'repostat'}
         exporter.export(file_name, self.gs.authors, additional)
         self.assertTrue(os.path.isfile(file_name))
-        self.assertTrue('Viktor Kopp;4028;3238' in open(file_name).read())
+        self.assertTrue('Viktor Kopp;4028;3238' in open(file_name, encoding = 'utf-8').read())
 
     def testCommitListExport(self):
         #test with list
@@ -37,7 +37,7 @@ class TestDictionaryListCsvExporte(BasicTestExporter):
         additional = {'projectname': 'Project Name Unit test', 'reponame': 'repostat'}
         exporter.export(file_name, self.gs.commits, additional)
         self.assertTrue(os.path.isfile(file_name))
-        self.assertTrue('Viktor Kopp;8;5;2018-10-15' in open(file_name).read())
+        self.assertTrue('Viktor Kopp;8;5;2018-10-15' in open(file_name, encoding = 'utf-8').read())
 
 
 class TestGeneralDictionaryCsvExporter(BasicTestExporter):
@@ -50,18 +50,18 @@ class TestGeneralDictionaryCsvExporter(BasicTestExporter):
             test_data[i] = {'projectname': 'Project Name Unit test', 'reponame': 'repostat'}
         exporter.export(file_name, test_data, False)
         self.assertTrue(os.path.isfile(file_name))
-        self.assertTrue('projectname;reponame' in open(file_name).read())
+        self.assertTrue('projectname;reponame' in open(file_name, encoding = 'utf-8').read())
 
-    def testGeneralDictionaryCsvExporterWithKeyDefault(self):
+    def testGeneralDictionaryCsvExporterWithKeyDefaultAndSpecChars(self):
         exporter = DictionaryCsvExporter()
         file_name = os.path.join(self.csv_outputdir, 'general_dict_export_withkeydef.csv')
         test_data = {}
         for i in range (0, 10):
-            test_data[i] = {'projectname': 'Project Name Unit test', 'reponame': 'repostat'}
+            test_data[i] = {'projectname': 'Project Name Unit test', 'reponame': 'repostat', 'special-chars-hu': 'árvíztűrőtükörfúrógépÁRVÍZTŰRŐTÜKÖRFÚRÓGÉP', 'special-chars-de':'ẞÄÖÜäöüß'}
         exporter.export(file_name, test_data)
         self.assertTrue(os.path.isfile(file_name))
-        self.assertTrue('projectname;reponame;key' in open(file_name).read())
-        self.assertTrue('Project Name Unit test;repostat;0' in open(file_name).read())
+        self.assertTrue('projectname;reponame;special-chars-hu;special-chars-de;key' in open(file_name, encoding = 'utf-8').read())
+        self.assertTrue('Project Name Unit test;repostat;árvíztűrőtükörfúrógépÁRVÍZTŰRŐTÜKÖRFÚRÓGÉP;ẞÄÖÜäöüß;0' in open(file_name, encoding='utf-8').read())
 
     def testGeneralDictionaryCsvExporterWithKeyUnit(self):
         exporter = DictionaryCsvExporter()
@@ -71,5 +71,5 @@ class TestGeneralDictionaryCsvExporter(BasicTestExporter):
             test_data[i] = {'projectname': 'Project Name Unit test', 'reponame': 'repostat'}
         exporter.export(file_name, test_data, True, 'Key UnitTestField')
         self.assertTrue(os.path.isfile(file_name))
-        self.assertTrue('projectname;reponame;Key UnitTestField' in open(file_name).read())
-        self.assertTrue('Project Name Unit test;repostat;0' in open(file_name).read())
+        self.assertTrue('projectname;reponame;Key UnitTestField' in open(file_name, encoding = 'utf-8').read())
+        self.assertTrue('Project Name Unit test;repostat;0' in open(file_name, encoding = 'utf-8').read())
