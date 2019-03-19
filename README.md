@@ -1,4 +1,4 @@
-# gitstats 
+# gitstats
 Forked gitstats: git history statistics analizer
 
 The idea is to modernize the existing tool:
@@ -7,6 +7,11 @@ The idea is to modernize the existing tool:
  - embed good-looking (bokeh?, gnuplot html?) graphs instead of gnuplot ones
  - add author contribution plots
  
+ Requirements:
+ - pyton 3
+ - gnuplot
+ - jinja2
+ - pygit2
 ___
 ## gitstats Usage
 **Sample:**
