@@ -309,13 +309,13 @@ class HTMLReportCreator(object):
         ###
         # General
         general_html = self.render_general_page(data)
-        with open(os.path.join(path, "general.html"), 'w') as f:
+        with open(os.path.join(path, "general.html"), 'w', encoding = 'utf-8') as f:
             f.write(general_html)
 
         ###
         # Activity
         activity_html = self.render_activity_page(data)
-        with open(os.path.join(path, "activity.html"), 'w') as f:
+        with open(os.path.join(path, "activity.html"), 'w', encoding = 'utf-8') as f:
             f.write(activity_html)
 
         # Commits by current year's months
@@ -334,7 +334,7 @@ class HTMLReportCreator(object):
         ###
         # Authors
         authors_html = self.render_authors_page(data)
-        with open(os.path.join(path, "authors.html"), 'w') as f:
+        with open(os.path.join(path, "authors.html"), 'w', encoding = 'utf-8') as f:
             if sys.version_info.major == 2:
                 f.write(authors_html)
             else:
@@ -393,7 +393,7 @@ class HTMLReportCreator(object):
         ###
         # Files
         files_html = self.render_files_page(data)
-        with open(os.path.join(path, "files.html"), 'w') as f:
+        with open(os.path.join(path, "files.html"), 'w', encoding = 'utf-8') as f:
             f.write(files_html)
 
         with open(os.path.join(path, 'files_by_date.dat'), 'w') as fg:
@@ -407,7 +407,7 @@ class HTMLReportCreator(object):
         ###
         # tags.html
         tags_html = self.render_tags_page(data)
-        with open(os.path.join(path, "tags.html"), 'w') as f:
+        with open(os.path.join(path, "tags.html"), 'w', encoding = 'utf-8') as f:
             if sys.version_info.major == 2:
                 f.write(tags_html)
             else:
@@ -416,7 +416,7 @@ class HTMLReportCreator(object):
         ###
         # about.html
         about_html = self.render_about_page()
-        with open(os.path.join(path, "about.html"), 'w') as f:
+        with open(os.path.join(path, "about.html"), 'w', encoding = 'utf-8') as f:
             if sys.version_info.major == 2:
                 f.write(about_html)
             else:
