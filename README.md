@@ -1,4 +1,4 @@
-# gitstats
+# gitstats 
 Forked gitstats: git history statistics analizer
 
 The idea is to modernize the existing tool:
@@ -6,6 +6,7 @@ The idea is to modernize the existing tool:
  - replace self-made calls to git with calls to either PythonGit or pygit2 libraries
  - embed good-looking (bokeh?, gnuplot html?) graphs instead of gnuplot ones
  - add author contribution plots
+ 
 ___
 ## gitstats Usage
 **Sample:**
@@ -27,3 +28,56 @@ All CSV export files has "Project Name" and "Repo Name" columns. After csv impor
 This param is only used in csv export.  
 Repo's project name. A complex project has frontend repo, backend repo, DB repo...etc.  
 When export the repo statistic you can group the details with this field.   
+
+## export_repos Usage
+export_repos.py is a tool script to export well structured git repos.  
+Requiered folder structure:  
+
+* root  
+  * project1  
+    * GitRepo  
+    * GitRepo1  
+    * GitRepon  
+  * projet2  
+    * p2repo1  
+    * p2repo2  
+
+`pyton export_repos.py [root-folder] [output-folder]`
+
+### Args
+#### root-folder
+root folder location. This folder contain the project folders, and the project folder contain the project repositories.
+
+#### output-folder
+The script create same folder structure in the output folder as root-folder.  
+The repos folders will contain the csv export files.
+
+* root  
+  * project1  
+    * GitRepo  
+      * general.csv
+      * authors.csv
+      * commits.csv
+      * activity_month_of_year.csv
+    * GitRepo1  
+      * general.csv
+      * authors.csv
+      * commits.csv
+      * activity_month_of_year.csv
+    * GitRepon  
+      * general.csv
+      * authors.csv
+      * commits.csv
+      * activity_month_of_year.csv
+  * projet2  
+    * p2repo1  
+      * general.csv
+      * authors.csv
+      * commits.csv
+      * activity_month_of_year.csv
+    * p2repo2  
+      * general.csv
+      * authors.csv
+      * commits.csv
+      * activity_month_of_year.csv
+    
