@@ -308,6 +308,19 @@ class GitStatistics:
             activity[yyw] = activity.get(yyw, 0) + 1
         return activity
 
+    def build_history_item(self, child_commit, stat) -> dict:
+        return {
+            'files': stat.files_changed,
+            'ins': stat.insertions,
+            'del': stat.deletions,
+            'author': child_commit.author.name,
+            'author_mail': child_commit.author.email,
+            'is_merge': len(child_commit.parents) > 1,
+            'commit_time': child_commit.commit_time,
+            'oid': child_commit.oid,
+            'parent_ids': child_commit.parent_ids
+        }
+
     @Timeit("Fetching total history")
     def fetch_total_history(self):
         history = {}
@@ -317,18 +330,13 @@ class GitStatistics:
             # taking [0]-parent is equivalent of '--first-parent -m' options
             parent_commit = child_commit.parents[0]
             st = self.repo.diff(parent_commit, child_commit).stats
-            history[child_commit.author.time] = {'files': st.files_changed,
-                                                 'ins': st.insertions,
-                                                 'del': st.deletions,
-                                                 'author': child_commit.author.name}
+            history[child_commit.author.time] = self.build_history_item(child_commit, st)
             timestamps.append(child_commit.author.time)
             child_commit = parent_commit
         # initial commit does not have parent, so we take diff to empty tree
         st = child_commit.tree.diff_to_tree(swap=True).stats
-        history[child_commit.author.time] = {'files': st.files_changed,
-                                             'ins': st.insertions,
-                                             'del': st.deletions,
-                                             'author': child_commit.author.name}
+        history[child_commit.author.time] = self.build_history_item(child_commit, st)
+
         timestamps.append(child_commit.author.time)
 
         lines_count = 0

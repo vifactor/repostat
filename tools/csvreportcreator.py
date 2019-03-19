@@ -97,6 +97,9 @@ class CSVReportCreator(ReportCreator):
 		#export commits
 		DictionaryListCsvExporter.export(os.path.join(path, "commits.csv"), data.commits, aditional_info)
 
+		#export total_history
+		DictionaryListCsvExporter.export(os.path.join(path, "total_history.csv"), data.changes_history, aditional_info)
+
 		###
 		# Activity
 		
