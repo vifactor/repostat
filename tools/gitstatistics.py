@@ -246,7 +246,7 @@ class GitStatistics:
                 _, domain = split_email_address(commit.author.email)
                 result[domain] = result.get(domain, 0) + 1
             except ValueError as ex:
-                warnings.warn(ex.message)
+                warnings.warn(ex)
         # TODO: this is done to save compatibility with gitstats' structures
         result = {k: {'commits': v} for k, v in result.items()}
         return result
