@@ -8,7 +8,7 @@ The idea is to modernize the existing tool:
  - add author contribution plots
  
  Requirements:
- - pyton 3
+ - python 3
  - gnuplot
  - jinja2
  - pygit2
@@ -45,11 +45,11 @@ Requiered folder structure:
     * GitRepo  
     * GitRepo1  
     * GitRepon  
-  * projet2  
+  * project2  
     * p2repo1  
     * p2repo2  
 
-`pyton export_repos.py [root-folder] [output-folder]`
+`python export_repos.py [root-folder] [output-folder]`
 
 ### Args
 #### root-folder

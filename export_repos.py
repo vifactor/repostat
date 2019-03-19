@@ -14,8 +14,8 @@ def usage():
     print('Result generated in output folder as source folders structured')
     print('project folder name will be the project_name option in getstats cli command')
 
-PYTHON = "/usr/local/bin/python3.7"
-GITSTATS_SCRIPT = "/Users/gabor.bereczki/work/git/repostat/gitstats"
+PYTHON = sys.executable
+GITSTATS_SCRIPT = "gitstats"
 
 PYTHON_COMMAND = PYTHON + " " + GITSTATS_SCRIPT + " -coutput=csv \"-cproject_name=%s\" %s %s"
 
