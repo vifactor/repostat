@@ -108,14 +108,14 @@ class AuthorDictFactory():
         author[cls.ACTIVE_DAYS].add(activeDay)
     @classmethod
     def addLinesAdded(cls, author, lines_added):
-        author[cls.LINES_ADDED]  += lines_added
+        author[cls.LINES_ADDED] += lines_added
     @classmethod
     def addLinesRemoved(cls, author, lines_removed):
-        author[cls.LINES_REMOVED]  += lines_removed
+        author[cls.LINES_REMOVED] += lines_removed
     
     @classmethod
-    def addCommit(cls, author, commitCount = 1):
-        author[cls.COMMITS]  += commitCount
+    def addCommit(cls, author, commitCount=1):
+        author[cls.COMMITS] += commitCount
     
     @classmethod
     def checkFirstCommitStamp(cls, author: dict, time: datetime):
@@ -124,8 +124,8 @@ class AuthorDictFactory():
     
     @classmethod
     def checkLastCommitStamp(cls, author: dict, time: datetime):
-        if author[cls.LAST_COMMIT]  < time:
-            author[cls.LAST_COMMIT] =  time
+        if author[cls.LAST_COMMIT] < time:
+            author[cls.LAST_COMMIT] = time
             author[cls.LAST_ACTIVE_DAY] = datetime.fromtimestamp(time).strftime('%Y-%m-%d')
 
 
@@ -191,10 +191,8 @@ class GitStatistics:
                 is_merge_commit = True
             
             commit_day_str = datetime.fromtimestamp(child_commit.author.time).strftime('%Y-%m-%d')
-            if sys.version_info.major == 2:
-                author_name = child_commit.author.name.encode('utf-8')
-            else:
-                author_name = child_commit.author.name
+
+            author_name = child_commit.author.name
             lines_added = st.insertions if not is_merge_commit else 0
             lines_removed = st.deletions if not is_merge_commit else 0
 
@@ -400,10 +398,8 @@ class GitStatistics:
 
     def _adjust_author_changes_history(self, commit, authors_info: dict):
         ts = commit.author.time
-        if sys.version_info.major == 2:
-            author_name = commit.author.name.encode('utf-8')
-        else:
-            author_name = commit.author.name
+
+        author_name = commit.author.name
         if ts not in self.author_changes_history:
             self.author_changes_history[ts] = {}
         if author_name not in self.author_changes_history[ts]:
