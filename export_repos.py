@@ -1,6 +1,7 @@
 import sys
 import os
 import shutil
+import gitstats
 
 
 def usage():
@@ -13,11 +14,6 @@ def usage():
     print('')
     print('Result generated in output folder as source folders structured')
     print('project folder name will be the project_name option in getstats cli command')
-
-PYTHON = "/usr/local/bin/python3.7"
-GITSTATS_SCRIPT = "/Users/gabor.bereczki/work/git/repostat/gitstats"
-
-PYTHON_COMMAND = PYTHON + " " + GITSTATS_SCRIPT + " -coutput=csv \"-cproject_name=%s\" %s %s"
 
 for a in sys.argv[1:]:
     print("Args: " + a)
@@ -45,8 +41,8 @@ try:
 except OSError:
     pass
 os.makedirs(tmp_output)
+start_time = time.time()
 
-base_path = project_folder
 for d in os.listdir(base_path):
     abs_dir = os.path.join(base_path, d)
 
@@ -58,9 +54,8 @@ for d in os.listdir(base_path):
                 target_dir = os.path.join(output_folder, d, gd)
                 os.makedirs(target_dir)
                 #call generator export to tmp folder
-                cli_line = format(PYTHON_COMMAND % (d, abs_gdir, tmp_output))
-                print(cli_line)
-                os.system(cli_line)
+                g = gitstats.GitStats()
+                g.run(['-coutput=csv', format("-cproject_name=%s" % d), abs_gdir + ' ', tmp_output + ' '])
                 #move result csv from tmp folder to target dir
                 move_csv(target_dir)
                 #shutil.move(os.path.join(tmp_output, "*.csv"), os.path.join(target_dir, "*.csv"))
