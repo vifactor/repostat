@@ -41,8 +41,7 @@ try:
 except OSError:
     pass
 os.makedirs(tmp_output)
-start_time = time.time()
-
+base_path = project_folder
 for d in os.listdir(base_path):
     abs_dir = os.path.join(base_path, d)
 
