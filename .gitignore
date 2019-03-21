@@ -1,5 +1,6 @@
 # virtual environment
 venv/
+venv3
 
 # compiled python
 *.pyc
