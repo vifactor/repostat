@@ -8,6 +8,10 @@ venv3
 # generated files
 output/
 
+# package installation files
+repo_stat.egg-info/
+
+
 #csv export unittest output folder
 test/csv_outs
 

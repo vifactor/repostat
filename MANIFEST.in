@@ -1,0 +1,5 @@
+include gnuplot/*.plot
+include templates/*.html
+include *.gif
+include sortable.js
+include gitstats.css
