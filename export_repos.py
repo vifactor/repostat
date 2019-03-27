@@ -1,14 +1,18 @@
+#!/usr/bin/env python3
+
 import sys
 import os
 import shutil
 import gitstats
 import warnings
 
+
 class ExportProjectRepos():
     def __init__(self):
-        project_folder = None
-        output_folder = None
-        tmp_output_folder = None
+        # FIXME: pass args to the constructor and initialize required variables here
+        self.project_folder = None
+        self.output_folder = None
+        self.tmp_output_folder = None
 
     def usage(self):
         print('cli usafe:  export_repos.py [root] [output folder]')
@@ -22,7 +26,7 @@ class ExportProjectRepos():
         print('project folder name will be the project_name option in getstats cli command')
 
     def process_params(self, args):
-        if (len(args) != 3):
+        if len(args) != 3:
             self.usage()
             sys.exit(1)
 
@@ -40,37 +44,40 @@ class ExportProjectRepos():
         for f in files:
             shutil.move(os.path.join(self.tmp_output_folder, f), target)
 
-    def _execute_gitstat(self, args):
-        g = gitstats.GitStats()
-        g.run(args)
+    @staticmethod
+    def _execute_gitstat(args):
+        gitstats.GitStats().run(args)
 
     def before_export(self):
-        #Prepare export folder structure
-
-        #delete output folder (after create an empty new one)
+        # Prepare export folder structure
+        # delete output folder (after create an empty new one)
         try:
             shutil.rmtree(self.output_folder)
         except OSError as ex:
             warnings.warn(ex)
 
-        #create the tmp output folder (inside ov target output folder, so create target output folder also)
+        # create the tmp output folder (inside ov target output folder, so create target output folder also)
         os.makedirs(self.tmp_output_folder)
 
     def after_export(self):
         # After export delete the tmp output folder. CSV Already moved to the right destination folder
-
         try:
             shutil.rmtree(self.tmp_output_folder)
         except OSError as ex:
             warnings.warn(ex)
 
     def create_project_repo_folder(self, project_name, repo_name) -> str:
-        #create the folder and return folder path
+        """
+        Create the folder and return folder path
+        :param project_name: 
+        :param repo_name: 
+        :return: path
+        """
+        result = os.path.join(self.output_folder, project_name, repo_name)
         try:
-            result = os.path.join(self.output_folder, project_name, repo_name)
             os.makedirs(result)
         except Exception as ex:
-            warnings.warn("Create fodler failed: %s" % result)
+            warnings.warn("Folder %s could not be created: %s" % (result, ex))
             raise ex
         return result
 
@@ -95,13 +102,13 @@ class ExportProjectRepos():
                         except Exception as ex:
                             warnings.warn(format("%s Project %s repo export failed!" % (project_dir, repo_dir)))
                             warnings.warn(ex)
-                            
 
     def run(self):
         self.process_params(sys.argv)
         self.before_export()
         self.export()
         self.after_export()
+
 
 if __name__ == '__main__':
     export = ExportProjectRepos()

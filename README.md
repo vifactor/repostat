@@ -1,8 +1,19 @@
-# gitstats
-Forked gitstats: git history statistics analizer
+# [repostat](https://github.com/vifactor/repostat)
 
-The idea is to modernize the existing tool:
- - refactor by using Jinja templates
- - replace self-made calls to git with calls to either PythonGit or pygit2 libraries
- - embed good-looking (bokeh?, gnuplot html?) graphs instead of gnuplot ones
- - add author contribution plots
+Modernized forked [gitstats](https://github.com/hoxu/gitstats) tool:
+ - some visualizations added, plots and tables improved
+ - code refactored by using Jinja templates
+ - git output text parsing replaced with pygit2 library calls 
+ - added "About" page
+
+# Install
+### Local version can be installed running
+```bash
+sudo python3 setup.py install [--record files.txt]
+```
+
+### Local develop version can be uninstalled running
+```bash
+sudo cat files.txt | sudo xargs rm -rf
+```
+if previously option "--record files.txt" was used at previous installation.
