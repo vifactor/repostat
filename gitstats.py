@@ -154,6 +154,7 @@ class GitDataCollector(DataCollector):
         DataCollector.collect(self, project_directory)
         self.repo_statistics = GitStatistics(project_directory)
 
+        self.analysed_branch = self.repo_statistics.repo.head.shorthand
         self.authors = self.repo_statistics.authors
         self.changes_by_date_by_author = self.repo_statistics.author_changes_history
 
@@ -405,6 +406,7 @@ class HTMLReportCreator(object):
         # TODO: this conversion from old 'data' to new 'project data' should perhaps be removed in future
         project_data = {
             "name": data.projectname,
+            "branch": data.analysed_branch,
             "age": (last_commit_datetime - first_commit_datetime).days,
             "active_days_count": len(self.git_repo_statistics.active_days),
             "commits_count": data.getTotalCommits(),
