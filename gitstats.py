@@ -15,12 +15,12 @@ import zlib
 import calendar
 import warnings
 import itertools
+import json
 import collections
 
 from jinja2 import Environment, FileSystemLoader
 from tools import GitStatistics
 from tools import get_external_execution_time, get_pipe_output
-from tools import generate_version_from, fetch_contributors_from
 from tools.csvreportcreator import CSVReportCreator
 
 os.environ['LC_ALL'] = 'C'
@@ -70,33 +70,6 @@ def getkeyssortedbyvalues(a_dict):
 # dict['author'] = { 'commits': 512 } - ...key(dict, 'commits')
 def getkeyssortedbyvaluekey(d, key):
     return [el[1] for el in sorted([(d[el][key], el) for el in d.keys()])]
-
-
-def get_project_version():
-    try:
-        with open('VERSION', 'r') as f:
-            version_string = f.readline()
-    except IOError as e:
-        warnings.warn('This is not a release version of the project?: %s' % e)
-        import pygit2 as git
-        head_commit = git.Repository(os.getcwd()).head.peel()
-        version_string = generate_version_from(head_commit)
-
-    return version_string
-
-
-def get_project_contributors():
-    try:
-        with open('CONTRIBUTORS', 'r') as f:
-            contributors_list = f.readlines()
-    except IOError as e:
-        warnings.warn('This is not a release version of the project?: %s' % e)
-        import pygit2 as git
-        repo = git.Repository(os.getcwd())
-        head_commit = repo.head.peel()
-        contributors_list = fetch_contributors_from(repo, head_commit)
-
-    return contributors_list
 
 
 def get_jinja_version():
@@ -273,6 +246,14 @@ class HTMLReportCreator(object):
         self.j2_env.filters['to_ratio'] = lambda val, max_val: float(val) / max_val
         self.j2_env.filters['to_percentage'] = lambda val, max_val: 100 * float(val) / max_val
         self.j2_env.filters['to_intensity'] = lambda val, max_val: 127 + int((float(val) / max_val) * 128)
+
+        self.release_data = self._read_release_data()
+
+    def _read_release_data(self):
+        RELEASE_DATA_FILE = os.path.join(self.repostat_root_dir, 'git_hooks', 'release_data.json')
+        with open(RELEASE_DATA_FILE) as release_json_file:
+            release_data = json.load(release_json_file)
+            return release_data
 
     def _save_recent_activity_data(self, data):
         # generate weeks to show (previous N weeks from now)
@@ -628,11 +609,11 @@ class HTMLReportCreator(object):
     def render_about_page(self):
         page_data = {
             "url": "https://github.com/vifactor/repostat",
-            "version": get_project_version(),
+            "version": self.release_data['user_version'],
             "tools": [GitStatistics.get_fetching_tool_info(),
                       get_jinja_version(),
                       get_gnuplot_version()],
-            "contributors": [author for author in get_project_contributors()]
+            "contributors": [author for author in self.release_data['contributors']]
         }
 
         template_rendered = self.j2_env.get_template('about.html').render(
