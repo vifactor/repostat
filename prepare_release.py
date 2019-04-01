@@ -7,7 +7,7 @@ This script is supposed to be run before each release to update information like
 """
 import pygit2 as git
 import os
-from tools import generate_version_from, fetch_contributors_from
+from tools import generate_version_from
 
 
 if __name__ == '__main__':
@@ -18,8 +18,3 @@ if __name__ == '__main__':
     with open('VERSION', 'w') as f:
         version = generate_version_from(head_commit)
         f.write(version)
-
-    with open('CONTRIBUTORS', 'w') as f:
-        contributors = fetch_contributors_from(repostat_repo, head_commit)
-        for contributor in contributors:
-            f.write(contributor)
