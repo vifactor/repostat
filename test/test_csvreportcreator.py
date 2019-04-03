@@ -28,10 +28,11 @@ class TestDictionaryListCsvExporte(BasicTestExporter):
         additional = {'projectname': 'Project Name Unit test', 'reponame': 'repostat'}
         exporter.export(file_name, self.gs.authors, additional)
         self.assertTrue(os.path.isfile(file_name))
-        self.assertTrue('Viktor Kopp;4028;3238' in open(file_name, encoding = 'utf-8').read())
+        # Pekka Enberg an old contributor with one commit. These test data maybe will not change in the future
+        self.assertTrue('Pekka Enberg;1;1;' in open(file_name, encoding = 'utf-8').read())
 
     def testCommitListExport(self):
-        #test with list
+        # test with list
         exporter = DictionaryListCsvExporter()
         file_name = os.path.join(self.csv_outputdir, 'commits.csv')
         additional = {'projectname': 'Project Name Unit test', 'reponame': 'repostat'}

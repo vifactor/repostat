@@ -5,8 +5,6 @@ from datetime import datetime, tzinfo, timedelta
 from collections import Counter
 import warnings
 from .timeit import Timeit
-from six.moves import filter
-import sys
 import os
 
 
