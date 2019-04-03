@@ -22,6 +22,6 @@ setup(name='repo_stat',
       ],
       test_suite='nose.collector',
       tests_require=['nose'],
-      scripts=['gitstats'],
+      scripts=['gitstats.py', 'export_repos.py'],
       include_package_data=True,
       zip_safe=False)
