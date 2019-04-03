@@ -158,6 +158,8 @@ class GitDataCollector(DataCollector):
         self.authors = self.repo_statistics.authors
         self.changes_by_date_by_author = self.repo_statistics.author_changes_history
 
+        self.submodules = [s for s in self.repo_statistics.repo.listall_submodules()]
+
         if 'files_in_tree' not in self.cache:
             self.cache['files_in_tree'] = {}
         revs_cached = []
@@ -407,6 +409,7 @@ class HTMLReportCreator(object):
         project_data = {
             "name": data.projectname,
             "branch": data.analysed_branch,
+            "submodules": data.submodules,
             "age": (last_commit_datetime - first_commit_datetime).days,
             "active_days_count": len(self.git_repo_statistics.active_days),
             "commits_count": data.getTotalCommits(),

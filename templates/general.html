@@ -11,6 +11,10 @@
     <dt>Project age</dt>
         <dd>{{project.age}} days, {{project.active_days_count}} active days
             ({{'%0.2f'|format(project.active_days_count|to_percentage(project.age))}}%)</dd>
+    <dt>Submodules ({{project.submodules|length}})</dt>
+    {% for submodule in project.submodules %}
+        <dd>{{submodule}}</dd>
+    {% endfor %}
     <dt>Total Commits</dt>
         <dd>{{project.commits_count}}
             (average {{'%0.2f'|format(project.commits_count|to_ratio(project.active_days_count))}} commits per active day,
