@@ -123,15 +123,15 @@ class AuthorDictFactory:
         author[cls.COMMITS] += commit_count
 
     @classmethod
-    def check_first_commit_stamp(cls, author: dict, time: datetime):
-        if author[cls.FIRST_COMMIT] > time:
-            author[cls.FIRST_COMMIT] = time
+    def check_first_commit_stamp(cls, author: dict, timestamp: float):
+        if author[cls.FIRST_COMMIT] > timestamp:
+            author[cls.FIRST_COMMIT] = timestamp
 
     @classmethod
-    def check_last_commit_stamp(cls, author: dict, time: datetime):
-        if author[cls.LAST_COMMIT] < time:
-            author[cls.LAST_COMMIT] = time
-            author[cls.LAST_ACTIVE_DAY] = time.strftime('%Y-%m-%d')
+    def check_last_commit_stamp(cls, author: dict, timestamp: float):
+        if author[cls.LAST_COMMIT] < timestamp:
+            author[cls.LAST_COMMIT] = timestamp
+            author[cls.LAST_ACTIVE_DAY] = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d')
 
 
 class GitStatistics:
