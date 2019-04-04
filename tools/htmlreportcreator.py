@@ -126,7 +126,7 @@ class HTMLReportCreator(object):
         commits_by_authors = {}
 
         others_column_name = 'others'
-        authors_to_plot = data.getAuthors(self.conf['max_authors'])
+        authors_to_plot = data.get_authors(self.conf['max_authors'])
         with open(os.path.join(path, 'lines_of_code_by_author.dat'), 'w') as fgl, \
                 open(os.path.join(path, 'commits_by_author.dat'), 'w') as fgc:
             header_row = '"timestamp" ' + ' '.join('"{0}"'.format(w) for w in authors_to_plot) + ' ' \
@@ -156,7 +156,7 @@ class HTMLReportCreator(object):
                 fgc.write('\n')
 
         # Domains
-        domains_by_commits = GitDataCollector.getkeyssortedbyvaluekey(self.git_repo_statistics.domains, 'commits')
+        domains_by_commits = GitDataCollector.get_keys_sorted_by_value_key(self.git_repo_statistics.domains, 'commits')
         domains_by_commits.reverse()
         with open(os.path.join(path, 'domains.dat'), 'w') as fp:
             for i, domain in enumerate(domains_by_commits[:self.conf['max_domains']]):
@@ -204,9 +204,9 @@ class HTMLReportCreator(object):
             "branch": data.analysed_branch,
             "age": (last_commit_datetime - first_commit_datetime).days,
             "active_days_count": len(self.git_repo_statistics.active_days),
-            "commits_count": data.getTotalCommits(),
+            "commits_count": data.get_total_commits(),
             "authors_count": len(self.git_repo_statistics.authors),
-            "files_count": data.getTotalFiles(),
+            "files_count": data.get_total_files(),
             "total_lines_count": self.git_repo_statistics.total_lines_count,
             "added_lines_count": self.git_repo_statistics.total_lines_added,
             "removed_lines_count": self.git_repo_statistics.total_lines_removed,
@@ -274,10 +274,10 @@ class HTMLReportCreator(object):
         project_data = {
             'top_authors': [],
             'non_top_authors': [],
-            'total_commits_count': data.getTotalCommits()
+            'total_commits_count': data.get_total_commits()
         }
 
-        all_authors = data.getAuthors()
+        all_authors = data.get_authors()
         if len(all_authors) > self.conf['max_authors']:
             rest = all_authors[self.conf['max_authors']:]
             project_data['non_top_authors'] = rest
@@ -319,7 +319,7 @@ class HTMLReportCreator(object):
             project_data['years'].append(year_dict)
 
         for author in all_authors[:self.conf['max_authors']]:
-            info = data.getAuthorInfo(author)
+            info = data.get_author_info(author)
             author_dict = {
                 'name': author,
                 'commits_count': info['commits'],
@@ -343,7 +343,7 @@ class HTMLReportCreator(object):
     def render_files_page(self, data):
         # TODO: this conversion from old 'data' to new 'project data' should perhaps be removed in future
         project_data = {
-            'files_count': data.getTotalFiles(),
+            'files_count': data.get_total_files(),
             'lines_count': self.git_repo_statistics.total_lines_count,
             'size': self.git_repo_statistics.get_total_size(),
             'files': []
