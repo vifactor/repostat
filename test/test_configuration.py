@@ -71,8 +71,8 @@ class TestConfiguration(unittest.TestCase):
         # Check options override init configuration
         self.assertEqual(config.get_conf()['project_name'], "UTEST Project")
         self.assertEqual(config.get_conf()['output'], "csv")
-        self.assertTrue(config.isCsvOutput())
-        self.assertFalse(config.isHtmlOutput())
+        self.assertTrue(config.is_csv_output())
+        self.assertFalse(config.is_html_output())
 
     def test_process_and_validate_params_html_success(self):
         expected_project_name = "UTEST HTML Project"
@@ -99,8 +99,8 @@ class TestConfiguration(unittest.TestCase):
         self.assertEqual(config.get_conf()['project_name'], expected_project_name)
         # html is the default output format
         self.assertEqual(config.get_conf()['output'], "html")
-        self.assertTrue(config.isHtmlOutput())
-        self.assertFalse(config.isCsvOutput())
+        self.assertTrue(config.is_html_output())
+        self.assertFalse(config.is_csv_output())
 
 
 

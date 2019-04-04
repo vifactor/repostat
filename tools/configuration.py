@@ -29,15 +29,17 @@ class UsageException(Exception):
     pass
 
 
-class Configuration():
+class Configuration:
     conf: dict = None
     GNUPLOT_VERSION_STRING = None
     # By default, gnuplot is searched from path, but can be overridden with the
     # environment variable "GNUPLOT"
     gnuplot_executable = os.environ.get('GNUPLOT', 'gnuplot')
 
-    def __init__(self, config: dict == None):
-        if config == None:
+    def __init__(self, config: dict = None):
+        self.args = None
+        self.optlist = None
+        if config is None:
             self.conf = dict(default_conf)
         else:
             self.conf = config
@@ -55,10 +57,10 @@ class Configuration():
         import jinja2 as j2
         return '{} v.{}'.format(j2.__name__, j2.__version__)
 
-    def isHtmlOutput(self) -> bool:
+    def is_html_output(self) -> bool:
         return self.conf['output'] == 'html'
 
-    def isCsvOutput(self) -> bool:
+    def is_csv_output(self) -> bool:
         return self.conf['output'] == 'csv'
 
     def _check_pre_reqs(self):
@@ -90,7 +92,7 @@ class Configuration():
         if len(args) < 2:
             raise UsageException("Too little args")
 
-        if not self.isCsvOutput() and not self.isHtmlOutput():
+        if not self.is_csv_output() and not self.is_html_output():
             raise UsageException(format('Invalid output parameter: %s' % self.conf['output']))
 
         outputpath = os.path.abspath(args[-1])

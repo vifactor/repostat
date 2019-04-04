@@ -5,15 +5,18 @@ import pickle
 import datetime
 from .gitstatistics import GitStatistics
 
+
 class DataCollector:
     """Manages data collection from a revision control repository."""
-    
+
     conf: dict = None
 
-    def __init__(self, config):
+    def __init__(self, config: dict):
         self.stamp_created = time.time()
         self.cache = {}
         self.conf = config
+        self.dir = None
+        self.projectname = ""
 
         # name -> {commits, first_commit_stamp, last_commit_stamp, last_active_day, active_days,
         #  lines_added,
@@ -40,14 +43,14 @@ class DataCollector:
 
     ##
     # Load cacheable data
-    def loadCache(self, cachefile):
+    def load_cache(self, cachefile):
         if not os.path.exists(cachefile):
             return
         print('Loading cache...')
         f = open(cachefile, 'rb')
         try:
             self.cache = pickle.loads(zlib.decompress(f.read()))
-        except:
+        except OSError:
             # temporary hack to upgrade non-compressed caches
             f.seek(0)
             self.cache = pickle.load(f)
@@ -55,28 +58,33 @@ class DataCollector:
 
     ##
     # Save cacheable data
-    def saveCache(self, cachefile):
+    def save_cache(self, cache_file):
         print('Saving cache...')
-        tempfile = cachefile + '.tmp'
-        f = open(tempfile, 'wb')
+        temp_file = cache_file + '.tmp'
+        f = open(temp_file, 'wb')
         # pickle.dump(self.cache, f)
         data = zlib.compress(pickle.dumps(self.cache))
         f.write(data)
         f.close()
         try:
-            os.remove(cachefile)
+            os.remove(cache_file)
         except OSError:
             pass
-        os.rename(tempfile, cachefile)
+        os.rename(temp_file, cache_file)
 
 
 class GitDataCollector(DataCollector):
 
     # dict['author'] = { 'commits': 512 } - ...key(dict, 'commits')
     @staticmethod
-    def getkeyssortedbyvaluekey(d, key):
+    def get_keys_sorted_by_value_key(d, key):
         return [el[1] for el in sorted([(d[el][key], el) for el in d.keys()])]
 
+    def __init__(self, config: dict):
+        DataCollector.__init__(self, config)
+        self.repo_statistics: GitStatistics = None
+        self.analysed_branch = ""
+        self.changes_by_date_by_author = None
 
     def collect(self, project_directory):
         DataCollector.collect(self, project_directory)
@@ -130,7 +138,7 @@ class GitDataCollector(DataCollector):
     def refine(self):
         # authors
         # name -> {place_by_commits, date_first, date_last, timedelta}
-        self.authors_by_commits = GitDataCollector.getkeyssortedbyvaluekey(self.authors, 'commits')
+        self.authors_by_commits = GitDataCollector.get_keys_sorted_by_value_key(self.authors, 'commits')
         self.authors_by_commits.reverse()  # most first
         for i, name in enumerate(self.authors_by_commits):
             self.authors[name]['place_by_commits'] = i + 1
@@ -143,19 +151,21 @@ class GitDataCollector(DataCollector):
             a['date_first'] = date_first.strftime('%Y-%m-%d')
             a['date_last'] = date_last.strftime('%Y-%m-%d')
             a['timedelta'] = delta
-            if 'lines_added' not in a: a['lines_added'] = 0
-            if 'lines_removed' not in a: a['lines_removed'] = 0
+            if 'lines_added' not in a:
+                a['lines_added'] = 0
+            if 'lines_removed' not in a:
+                a['lines_removed'] = 0
 
-    def getAuthorInfo(self, author):
-            return self.authors[author]
+    def get_author_info(self, author):
+        return self.authors[author]
 
-    def getAuthors(self, limit=None):
-        res = GitDataCollector.getkeyssortedbyvaluekey(self.authors, 'commits')
+    def get_authors(self, limit=None):
+        res = GitDataCollector.get_keys_sorted_by_value_key(self.authors, 'commits')
         res.reverse()
         return res[:limit]
 
-    def getTotalCommits(self):
+    def get_total_commits(self):
         return self.total_commits
 
-    def getTotalFiles(self):
+    def get_total_files(self):
         return self.total_files
