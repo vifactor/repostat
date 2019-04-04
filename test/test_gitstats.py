@@ -395,7 +395,8 @@ def get_activity_by_year_week():
     activity_by_year_week = {}
     activity_by_year_week_peak = 0
     lines = get_pipe_output(
-        ['git rev-list --pretty=format:"%%at %%ai %%aN <%%aE>" %s' % getlogrange('HEAD'), 'grep -v ^commit']).split('\n')
+        ['git rev-list --pretty=format:"%%at %%ai %%aN <%%aE>" %s' % getlogrange('HEAD'), 'grep -v ^commit']).split(
+        '\n')
     for line in lines:
         parts = line.split(' ', 4)
         try:
@@ -482,19 +483,25 @@ class TestPygitMethods(unittest.TestCase):
         this_file_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
         cls.gs = GitStatistics(this_file_dir)
 
+    # TODO: Test fix needed (commit count)
+    # @unittest.skip("Test fix needed! (commit count)")
     def test_tags_info(self):
         expected_tags_dict = get_tags_info()
         actual_tags_dict = self.gs.tags
-
-        self.assertListEqual(list(expected_tags_dict.keys()), list(actual_tags_dict.keys()),
+        expected_tag_list = list(expected_tags_dict.keys())
+        expected_tag_list.sort()
+        actual_tag_list = list(actual_tags_dict.keys())
+        actual_tag_list.sort()
+        self.assertListEqual(expected_tag_list, actual_tag_list,
                              "Tags list is not same estimated by different methods")
+
         for tagname in expected_tags_dict.keys():
             expected_authors = expected_tags_dict[tagname]['authors']
             actual_authors = actual_tags_dict[tagname]['authors']
             # direct comparison of the two dicts is problematic
             # due to difference in unicode strings parsing via command line and pygit2
-            self.assertEquals(len(expected_authors), len(actual_authors))
-            self.assertEquals(expected_tags_dict[tagname]['commits'], actual_tags_dict[tagname]['commits'])
+            self.assertEqual(len(expected_authors), len(actual_authors))
+            self.assertEqual(expected_tags_dict[tagname]['commits'], actual_tags_dict[tagname]['commits'])
 
     @unittest.skip("Kept for historical reasons.")
     def test_authors_info(self):

@@ -5,8 +5,6 @@ from datetime import datetime, tzinfo, timedelta
 from collections import Counter
 import warnings
 from .timeit import Timeit
-from six.moves import filter
-import sys
 import os
 
 
@@ -27,11 +25,13 @@ class FixedOffset(tzinfo):
         # we don't know about DST
         return timedelta(0)
 
+
 def split_email_address(email_address):
     parts = email_address.split('@')
     if len(parts) != 2:
         raise ValueError('Not an email passed: %s' % email_address)
     return parts[0], parts[1]
+
 
 class CommitDictFactory():
     AUTHOR_NAME = "author_name"
@@ -40,12 +40,12 @@ class CommitDictFactory():
     DATE = 'date'
     TIMESTAMP = "timestamp"
     FIELD_LIST = [AUTHOR_NAME, LINES_REMOVED, LINES_ADDED, TIMESTAMP]
-        
+
     @classmethod
     def create_commit(cls, author, linesAdded, linesRemoved, date: str, time_stamp: float):
         result = {
-            cls.AUTHOR_NAME : author,
-            cls.LINES_ADDED : linesAdded,
+            cls.AUTHOR_NAME: author,
+            cls.LINES_ADDED: linesAdded,
             cls.LINES_REMOVED: linesRemoved,
             cls.DATE: date,
             cls.TIMESTAMP: time_stamp
@@ -53,24 +53,25 @@ class CommitDictFactory():
         return result
 
     @classmethod
-    def getAuthor(cls, commitDetail:dict): 
+    def getAuthor(cls, commitDetail: dict):
         return commitDetail[cls.AUTHOR_NAME]
-    
+
     @classmethod
-    def getLinesAdded(cls, commitDetail:dict):
+    def getLinesAdded(cls, commitDetail: dict):
         return commitDetail[cls.LINES_ADDED]
-    
+
     @classmethod
-    def getLinesRemoved(cls, commitDetail:dict):
+    def getLinesRemoved(cls, commitDetail: dict):
         return commitDetail[cls.LINES_REMOVED]
-    
+
     @classmethod
-    def getTimeStamp(cls, commitDetail:dict):
+    def getTimeStamp(cls, commitDetail: dict):
         return commitDetail[cls.TIMESTAMP]
 
     @classmethod
-    def getDate(cls, commitDetail:dict):
+    def getDate(cls, commitDetail: dict):
         return commitDetail[cls.DATE]
+
 
 class AuthorDictFactory():
     AUTHOR_NAME = "author_name"
@@ -81,19 +82,21 @@ class AuthorDictFactory():
     FIRST_COMMIT = 'first_commit_stamp'
     LAST_COMMIT = 'last_commit_stamp'
     LAST_ACTIVE_DAY = 'last_active_day'
-    FIELD_LIST = [AUTHOR_NAME, LINES_ADDED, LINES_REMOVED, COMMITS, ACTIVE_DAYS, FIRST_COMMIT, LAST_COMMIT, LAST_ACTIVE_DAY]
-    
+    FIELD_LIST = [AUTHOR_NAME, LINES_ADDED, LINES_REMOVED, COMMITS, ACTIVE_DAYS, FIRST_COMMIT, LAST_COMMIT,
+                  LAST_ACTIVE_DAY]
+
     @classmethod
-    def create_author(cls, author_name: str, lines_removed: int, lines_added: int, active_days: str, commits: int, first_commit_stamp, last_commit_stamp):
+    def create_author(cls, author_name: str, lines_removed: int, lines_added: int, active_days: str, commits: int,
+                      first_commit_stamp, last_commit_stamp):
         result = {
-            cls.AUTHOR_NAME : author_name,
-            cls.LINES_ADDED : lines_added,
-            cls.LINES_REMOVED : lines_removed,
-            cls.ACTIVE_DAYS : {active_days},
-            cls.COMMITS : commits,
-            cls.FIRST_COMMIT : first_commit_stamp,
-            cls.LAST_COMMIT : last_commit_stamp,
-            cls.LAST_ACTIVE_DAY  : datetime.fromtimestamp(last_commit_stamp).strftime('%Y-%m-%d')
+            cls.AUTHOR_NAME: author_name,
+            cls.LINES_ADDED: lines_added,
+            cls.LINES_REMOVED: lines_removed,
+            cls.ACTIVE_DAYS: {active_days},
+            cls.COMMITS: commits,
+            cls.FIRST_COMMIT: first_commit_stamp,
+            cls.LAST_COMMIT: last_commit_stamp,
+            cls.LAST_ACTIVE_DAY: datetime.fromtimestamp(last_commit_stamp).strftime('%Y-%m-%d')
         }
         return result
 
@@ -106,22 +109,24 @@ class AuthorDictFactory():
     @classmethod
     def addActiveDay(cls, author, activeDay):
         author[cls.ACTIVE_DAYS].add(activeDay)
+
     @classmethod
     def addLinesAdded(cls, author, lines_added):
         author[cls.LINES_ADDED] += lines_added
+
     @classmethod
     def addLinesRemoved(cls, author, lines_removed):
         author[cls.LINES_REMOVED] += lines_removed
-    
+
     @classmethod
     def addCommit(cls, author, commitCount=1):
         author[cls.COMMITS] += commitCount
-    
+
     @classmethod
     def checkFirstCommitStamp(cls, author: dict, time: datetime):
         if author[cls.FIRST_COMMIT] > time:
             author[cls.FIRST_COMMIT] = time
-    
+
     @classmethod
     def checkLastCommitStamp(cls, author: dict, time: datetime):
         if author[cls.LAST_COMMIT] < time:
@@ -165,9 +170,9 @@ class GitStatistics:
     def get_fetching_tool_info(cls):
         # could be bare git-subprocess invokation, PythonGit package, etc.
         return '{} v.{}'.format(git.__name__, git.LIBGIT2_VERSION)
-    
+
     def addCommit(self, author, lines_added, lines_removed, time: str, time_stamp):
-        commit_details= CommitDictFactory.create_commit(author, lines_added, lines_removed, time, time_stamp)
+        commit_details = CommitDictFactory.create_commit(author, lines_added, lines_removed, time, time_stamp)
         self.commits.append(commit_details)
 
     @Timeit("Fetching authors info")
@@ -189,7 +194,7 @@ class GitStatistics:
                 st = self.repo.diff(parent_commit, child_commit).stats
             else:  # if len(child_commit.parents) == 2 (merge commit)
                 is_merge_commit = True
-            
+
             commit_day_str = datetime.fromtimestamp(child_commit.author.time).strftime('%Y-%m-%d')
 
             author_name = child_commit.author.name
@@ -200,7 +205,8 @@ class GitStatistics:
             self.addCommit(author_name, lines_added, lines_removed, commit_day_str, child_commit.author.time)
             if author_name not in result:
                 result[author_name] = AuthorDictFactory.create_author(
-                    author_name, lines_removed, lines_added, commit_day_str, 1, child_commit.author.time, child_commit.author.time)
+                    author_name, lines_removed, lines_added, commit_day_str, 1, child_commit.author.time,
+                    child_commit.author.time)
             else:
                 AuthorDictFactory.addLinesRemoved(result[author_name], st.deletions if not is_merge_commit else 0)
                 AuthorDictFactory.addLinesAdded(result[author_name], st.insertions if not is_merge_commit else 0)
@@ -282,10 +288,10 @@ class GitStatistics:
         authors_year_month = {}
         for commit in self.repo.walk(self.repo.head.target):
             date = datetime.fromtimestamp(commit.author.time)
-            month = date.month 
+            month = date.month
             year_month = date.strftime('%Y-%m')
             activity[month] = activity.get(month, 0) + 1
-            activity_year_month[year_month] =  activity_year_month.get(year_month, 0) + 1
+            activity_year_month[year_month] = activity_year_month.get(year_month, 0) + 1
             try:
                 authors[month].add(commit.author.name)
             except KeyError:
@@ -294,7 +300,7 @@ class GitStatistics:
                 authors_year_month[year_month].add(commit.author.name)
             except KeyError:
                 authors_year_month[year_month] = {commit.author.name}
-            
+
             self._adjust_commits_timeline(date)
         return activity, authors, activity_year_month, authors_year_month
 
@@ -404,7 +410,8 @@ class GitStatistics:
             self.author_changes_history[ts] = {}
         if author_name not in self.author_changes_history[ts]:
             self.author_changes_history[ts][author_name] = {}
-        self.author_changes_history[ts][author_name]['lines_added'] = authors_info[author_name][AuthorDictFactory.LINES_ADDED]
+        self.author_changes_history[ts][author_name]['lines_added'] = authors_info[author_name][
+            AuthorDictFactory.LINES_ADDED]
         self.author_changes_history[ts][author_name]['commits'] = authors_info[author_name][AuthorDictFactory.COMMITS]
 
     def _adjust_commits_timeline(self, datetime_obj):
@@ -447,26 +454,26 @@ class GitStatistics:
                 elif entry.type == 'tree':
                     s.append(self.repo[entry.id])
         return res
-    
+
     def getCommitDeltaDays(self):
         return (self.last_commit_timestamp / 86400 - self.first_commit_timestamp / 86400) + 1
-    
+
     def getActiveDays(self):
         return self.active_days
-    
+
     def getTotalLineCount(self):
         return self.total_lines_count
 
     def getTotalAuthors(self):
         return self.authors.__len__()
-    
+
     def getTotalCommits(self):
         return self.commits.__len__()
-    
+
     def getStampCreated(self):
         return self.created_time_stamp
 
-    #TODO: Implementation
+    # TODO: Implementation
     def getTotalFiles(self):
         return 0
 
