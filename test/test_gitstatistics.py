@@ -11,23 +11,23 @@ class TestCommitDictFactory(unittest.TestCase):
 	def testCreateCommitAuthorName(self):
 		commit = CommitDictFactory.create_commit('Test Author', 1, 2, '2019.03.15', datetime.datetime.now().timestamp())
 		self.assertEqual(commit[CommitDictFactory.AUTHOR_NAME], 'Test Author')
-		self.assertEqual(commit[CommitDictFactory.AUTHOR_NAME], CommitDictFactory.getAuthor(commit))
+		self.assertEqual(commit[CommitDictFactory.AUTHOR_NAME], CommitDictFactory.get_author(commit))
 
 	def testCreateCommitLinesAdded(self):
 		commit = CommitDictFactory.create_commit('Test Author', 1, 2, '2019.03.15', datetime.datetime.now().timestamp())
 		self.assertEqual(commit[CommitDictFactory.LINES_ADDED], 1)
-		self.assertEqual(commit[CommitDictFactory.LINES_ADDED], CommitDictFactory.getLinesAdded(commit))
+		self.assertEqual(commit[CommitDictFactory.LINES_ADDED], CommitDictFactory.get_lines_added(commit))
 
 	def testCreateCommitLinesRemoved(self):
 		commit = CommitDictFactory.create_commit('Test Author', 1, 2, '2019.03.15', datetime.datetime.now().timestamp())
 		self.assertEqual(commit[CommitDictFactory.LINES_REMOVED], 2)
-		self.assertEqual(commit[CommitDictFactory.LINES_REMOVED], CommitDictFactory.getLinesRemoved(commit))
+		self.assertEqual(commit[CommitDictFactory.LINES_REMOVED], CommitDictFactory.get_lines_removed(commit))
 
 	def testCreateCommitTimeStamp(self):
 		ts = datetime.datetime.now().timestamp()
 		commit = CommitDictFactory.create_commit('Test Author', 1, 2, '2019.03.15', ts)
 		self.assertEqual(commit[CommitDictFactory.TIMESTAMP], ts)
-		self.assertEqual(commit[CommitDictFactory.TIMESTAMP], CommitDictFactory.getTimeStamp(commit))
+		self.assertEqual(commit[CommitDictFactory.TIMESTAMP], CommitDictFactory.get_time_stamp(commit))
 
 class TestAuthorDictFactory(unittest.TestCase):
 	testData = {}
@@ -68,26 +68,26 @@ class TestAuthorDictFactory(unittest.TestCase):
 		author = self.getTestAuthor()
 		activeDays = author[AuthorDictFactory.ACTIVE_DAYS]
 		dayCount = activeDays.__len__()
-		AuthorDictFactory.addActiveDay(author, '2000.01.01')
+		AuthorDictFactory.add_active_day(author, '2000.01.01')
 		self.assertEqual(author[AuthorDictFactory.ACTIVE_DAYS].__len__(), dayCount+1)
 		self.assertTrue('2000.01.01' in author[AuthorDictFactory.ACTIVE_DAYS])
 
 	def testAuthorLinesAdd(self):
 		author = self.getTestAuthor()
 		init = author[AuthorDictFactory.LINES_ADDED]
-		AuthorDictFactory.addLinesAdded(author, 10)
+		AuthorDictFactory.add_lines_added(author, 10)
 		self.assertEqual(author[AuthorDictFactory.LINES_ADDED], init + 10)
 
 	def testAuthorLinesRemoved(self):
 		author = self.getTestAuthor()
 		init = author[AuthorDictFactory.LINES_REMOVED]
-		AuthorDictFactory.addLinesRemoved(author, 13)
+		AuthorDictFactory.add_lines_removed(author, 13)
 		self.assertEqual(author[AuthorDictFactory.LINES_REMOVED], init + 13)
 
 	def testAuthorLinesCommit(self):
 		author = self.getTestAuthor()
 		init = author[AuthorDictFactory.COMMITS]
-		AuthorDictFactory.addCommit(author, 10)
+		AuthorDictFactory.add_commit(author, 10)
 		self.assertEqual(author[AuthorDictFactory.COMMITS], init + 10)
 
 	def testAuthorCheckFirstCommit(self):
@@ -95,11 +95,11 @@ class TestAuthorDictFactory(unittest.TestCase):
 		init = author[AuthorDictFactory.FIRST_COMMIT]
 		
 		# expected: first_commit not change
-		AuthorDictFactory.checkFirstCommitStamp(author, init + 1000)
+		AuthorDictFactory.check_first_commit_stamp(author, init + 1000)
 		self.assertEqual(author[AuthorDictFactory.FIRST_COMMIT], init)
 
 		# expected: first_commit change to the earlier timestamp
-		AuthorDictFactory.checkFirstCommitStamp(author, init - 1000)
+		AuthorDictFactory.check_first_commit_stamp(author, init - 1000)
 		self.assertEqual(author[AuthorDictFactory.FIRST_COMMIT], init - 1000)
 		
 	def testAuthorLastCommit(self):
@@ -109,11 +109,11 @@ class TestAuthorDictFactory(unittest.TestCase):
 		lastCommit_before = datetime.datetime.strptime('2019-03-10', '%Y-%m-%d')
 
 		# expected: first_commit not change
-		AuthorDictFactory.checkLastCommitStamp(author, lastCommit_before.timestamp())
+		AuthorDictFactory.check_last_commit_stamp(author, lastCommit_before.timestamp())
 		self.assertEqual(author[AuthorDictFactory.LAST_COMMIT], init)
 
 		# expected: first_commit change to the earlier timestamp
-		AuthorDictFactory.checkLastCommitStamp(author, lastCommit_after.timestamp())
+		AuthorDictFactory.check_last_commit_stamp(author, lastCommit_after.timestamp())
 		self.assertEqual(author[AuthorDictFactory.LAST_COMMIT], lastCommit_after.timestamp())
 		self.assertEqual(author[AuthorDictFactory.LAST_ACTIVE_DAY], '2019-03-20')
 
