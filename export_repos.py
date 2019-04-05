@@ -7,14 +7,15 @@ import gitstats
 import warnings
 
 
-class ExportProjectRepos():
-    def __init__(self):
-        # FIXME: pass args to the constructor and initialize required variables here
+class ExportProjectRepos:
+    def __init__(self, args):
         self.project_folder = None
         self.output_folder = None
         self.tmp_output_folder = None
+        self._process_params(args)
 
-    def usage(self):
+    @staticmethod
+    def usage():
         print('cli usafe:  export_repos.py [root] [output folder]')
         print('Export git repos!')
         print('Expected root folder structure:')
@@ -25,7 +26,7 @@ class ExportProjectRepos():
         print('Result generated in output folder as source folders structured')
         print('project folder name will be the project_name option in getstats cli command')
 
-    def process_params(self, args):
+    def _process_params(self, args):
         if len(args) != 3:
             self.usage()
             sys.exit(1)
@@ -82,7 +83,7 @@ class ExportProjectRepos():
         return result
 
     def export(self):
-        #run the export
+        # run the export
 
         base_path = self.project_folder
         for project_dir in os.listdir(base_path):
@@ -93,23 +94,25 @@ class ExportProjectRepos():
                     abs_gdir = os.path.join(abs_dir, repo_dir)
                     if os.path.isdir(abs_gdir):
                         try:
-                            #create target folder
+                            # create target folder
                             target_dir = self.create_project_repo_folder(project_dir, repo_dir)
-                            #call generator export to tmp folder
-                            self._execute_gitstat(['-coutput=csv', format("-cproject_name=%s" % project_dir), abs_gdir, self.tmp_output_folder])
-                            #move result csv from tmp folder to target dir
+                            # call generator export to tmp folder
+                            self._execute_gitstat(['-coutput=csv',
+                                                   format("-cproject_name=%s" % project_dir),
+                                                   abs_gdir,
+                                                   self.tmp_output_folder])
+                            # move result csv from tmp folder to target dir
                             self._move_csv(target_dir)
                         except Exception as ex:
                             warnings.warn(format("%s Project %s repo export failed!" % (project_dir, repo_dir)))
                             warnings.warn(ex)
 
     def run(self):
-        self.process_params(sys.argv)
         self.before_export()
         self.export()
         self.after_export()
 
 
 if __name__ == '__main__':
-    export = ExportProjectRepos()
+    export = ExportProjectRepos(sys.argv)
     export.run()

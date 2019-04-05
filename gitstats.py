@@ -99,7 +99,7 @@ class GitStats:
         time_end = time.time()
         exectime_internal = time_end - time_start
         exectime_external = get_external_execution_time()
-        print('Execution time %.5f secs, %.5f secs (%.2f %%) in external commands)' \
+        print('Execution time %.5f secs, %.5f secs (%.2f %%) in external commands)'
               % (exectime_internal, exectime_external, (100.0 * exectime_external) / exectime_internal))
 
 
