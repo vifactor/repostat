@@ -1,5 +1,5 @@
 import unittest
-from tools.configuration import Configuration, ConfigurationException
+from tools.configuration import Configuration
 
 
 class TestConfiguration(unittest.TestCase):
