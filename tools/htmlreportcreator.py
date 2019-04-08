@@ -31,7 +31,7 @@ class HTMLReportCreator(object):
         self.path = None
         self.title = None
         self.configuration = config
-        self.conf = config.get_conf()
+        self.conf = config.get_args_dict()
 
         self.git_repo_statistics = repo_stat
 

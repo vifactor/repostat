@@ -1,24 +1,40 @@
 import os
 import sys
-import getopt
+import argparse
 
 from tools import get_pipe_output
 
-default_conf = {
-    'max_domains': 10,
-    'max_ext_length': 10,
-    'style': 'gitstats.css',
-    'max_authors': 7,
-    'max_authors_of_months': 6,
-    'authors_top': 5,
-    'commit_begin': '',
-    'commit_end': 'HEAD',
-    'linear_linestats': 1,
-    'project_name': '',
-    'processes': 8,
-    'start_date': '',
-    'output': 'html'
-}
+GITSTAT_VERSION = '0.91'
+
+
+def get_gitstat_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(prog='repo_stat',
+                                     description='Git repository desktop analyzer. Analyze and generate git statistics '
+                                                 'in HTML format, or export into csv files for further analysis.')
+    parser.add_argument('--max_domains', default=10, type=int, help="Display statistic about top active domains")
+    parser.add_argument('--max_ext_length', default=10, type=int, help="Collect statistic from files has shorter "
+                                                                       "extension as max_ext_length")
+    parser.add_argument('--style', default='gitstats.css', type=str, help="css used as generated html result style")
+    parser.add_argument('--max_authors', default=7, type=int, help="Display statistic about top active authors")
+    parser.add_argument('--max_authors_of_months', default=6, type=int, help="Display statistic about top "
+                                                                             "active authors in monthly statistic")
+    parser.add_argument('--authors_top', default=5, type=int,
+                        help="Display statistic about top active authors in total")
+    parser.add_argument('--commit_begin', default="", type=str, help="Analysis starts from this commit date")
+    parser.add_argument('--commit_end', default="HEAD", type=str, help="Analysis ends on this commit date")
+    parser.add_argument('--linear_linestats', default=1, type=int, help="????")
+    parser.add_argument('--project_name', default="", type=str,
+                        help="Display name of the project git repo contain. "
+                             "This param currently used in csv output format.")
+    parser.add_argument('--processes', default=8, type=int, help="????")
+    parser.add_argument('--start_date', default='', type=str, help="????")
+    parser.add_argument('--output', default='html', type=str, choices=['html', 'csv'],
+                        help="Statistic output format. Valid values: [html, csv]")
+    parser.add_argument('--version', action='version', version='%(prog)s ' + GITSTAT_VERSION)
+
+    parser.add_argument('git_repo', type=str)
+    parser.add_argument('output_path', default=os.path.abspath(sys.argv[-1]), type=str)
+    return parser
 
 
 class ConfigurationException(Exception):
@@ -30,19 +46,15 @@ class UsageException(Exception):
 
 
 class Configuration:
-    conf: dict = None
+
     GNUPLOT_VERSION_STRING = None
     # By default, gnuplot is searched from path, but can be overridden with the
     # environment variable "GNUPLOT"
     gnuplot_executable = os.environ.get('GNUPLOT', 'gnuplot')
 
-    def __init__(self, config: dict = None):
-        if config is None:
-            self.conf = dict(default_conf)
-        else:
-            self.conf = config
-        self.args: list = None
-        self.optlist: dict = None
+    def __init__(self, args_orig=None):
+        self.conf = None
+        self.args = self._process_and_validate_params(args_orig)
 
     def get_gnuplot_version(self):
         if self.GNUPLOT_VERSION_STRING is None:
@@ -58,10 +70,10 @@ class Configuration:
         return '{} v.{}'.format(j2.__name__, j2.__version__)
 
     def is_html_output(self) -> bool:
-        return self.conf['output'] == 'html'
+        return self.args.output == 'html'
 
     def is_csv_output(self) -> bool:
-        return self.conf['output'] == 'csv'
+        return self.args.output == 'csv'
 
     def _check_pre_reqs(self):
         # Py version check
@@ -71,49 +83,27 @@ class Configuration:
         if not self.get_gnuplot_version():
             raise ConfigurationException("gnuplot not found")
 
-    def process_and_validate_params(self, args_orig):
+    def _process_and_validate_params(self, args_orig=None):
         self._check_pre_reqs()
 
-        optlist, args = getopt.getopt(args_orig, 'hc:', ["help"])
-        result_opt = {}
-        for o, v in optlist:
-            if o == '-c':
-                key, value = v.split('=', 1)
-                if key not in self.conf:
-                    raise KeyError('no such key "%s" in config' % key)
-                result_opt[key] = value
-                if isinstance(self.conf[key], int):
-                    self.conf[key] = int(value)
-                else:
-                    self.conf[key] = value
-            elif o in ('-h', '--help'):
-                raise UsageException()
+        args = get_gitstat_parser().parse_args(args_orig)
 
-        if len(args) < 2:
-            raise UsageException("Too little args")
-
-        if not self.is_csv_output() and not self.is_html_output():
-            raise UsageException(format('Invalid output parameter: %s' % self.conf['output']))
-
-        outputpath = os.path.abspath(args[-1])
         try:
-            os.makedirs(outputpath)
+            os.makedirs(args.output_path)
         except OSError:
             pass
-        if not os.path.isdir(outputpath):
+        if not os.path.isdir(args.output_path):
             ConfigurationException(
-                'FATAL:Can\'t create Output path. Output path is not a directory or does not exist: %s' % outputpath)
+                'FATAL:Can\'t create Output path. Output path is not a directory ' 
+                'or does not exist: %s' % args.output_path)
 
-        self.args = args
-        self.optlist = result_opt
+        return args
 
-        return result_opt, args
-
-    def get_conf(self) -> dict:
-        return self.conf
-
-    def get_args(self) -> list:
+    def get_args(self):
         return self.args
 
-    def get_optlist(self) -> dict:
-        return self.optlist
+    def get_args_dict(self):
+        return self.args.__dict__
+
+    def get_run_dir(self):
+        return os.getcwd()
