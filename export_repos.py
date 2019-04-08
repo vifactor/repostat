@@ -97,8 +97,8 @@ class ExportProjectRepos:
                             # create target folder
                             target_dir = self.create_project_repo_folder(project_dir, repo_dir)
                             # call generator export to tmp folder
-                            self._execute_gitstat(['-coutput=csv',
-                                                   format("-cproject_name=%s" % project_dir),
+                            self._execute_gitstat(['--output=csv',
+                                                   format("--project_name=%s" % project_dir),
                                                    abs_gdir,
                                                    self.tmp_output_folder])
                             # move result csv from tmp folder to target dir
