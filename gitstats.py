@@ -18,21 +18,6 @@ os.environ['LC_ALL'] = 'C'
 time_start = time.time()
 
 
-def usage(conf: dict):
-    print("""
-Usage: gitstats [options] <gitpath..> <outputpath>
-
-Options:
--c key=value     Override configuration value
-
-Default config values:
-%s
-
-output option values: [html,csv]
-Please see the manual page for more details.
-""" % conf)
-
-
 class GitStats:
 
     def run(self, args_orig):

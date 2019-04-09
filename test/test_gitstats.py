@@ -9,7 +9,6 @@ from tools import get_pipe_output
 conf = {
     'max_domains': 10,
     'max_ext_length': 10,
-    'style': 'gitstats.css',
     'max_authors': 20,
     'authors_top': 5,
     'commit_begin': '',
