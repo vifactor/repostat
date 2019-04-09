@@ -56,7 +56,7 @@ class GitStats:
         cachefile = os.path.join(outputpath, 'gitstats.cache')
 
         data = GitDataCollector(config.get_conf())
-        data.loadCache(cachefile)
+        data.load_cache(cachefile)
 
         for gitpath in args[0:-1]:
             print('Git path: %s' % gitpath)
@@ -76,7 +76,7 @@ class GitStats:
         os.chdir(rundir)
         print('Generating report...')
         # fixme: pass GitStatistics object directly when obsolete GitDataCollector is removed
-        if config.isHtmlOutput():
+        if config.is_html_output():
             print('Generating HTML report...')
             report = HTMLReportCreator(config, data.repo_statistics)
             report.create(data, outputpath)
@@ -87,7 +87,7 @@ class GitStats:
                 print('   sensible-browser \'%s\'' % os.path.join(outputpath, 'general.html').replace("'", "'\\''"))
                 print('')
             self.get_times()
-        elif config.isCsvOutput():
+        elif config.is_csv_output():
             print('Generating CSV report...')
             report = CSVReportCreator()
             report.create(data.repo_statistics, outputpath, config.get_conf())
@@ -99,7 +99,7 @@ class GitStats:
         time_end = time.time()
         exectime_internal = time_end - time_start
         exectime_external = get_external_execution_time()
-        print('Execution time %.5f secs, %.5f secs (%.2f %%) in external commands)' \
+        print('Execution time %.5f secs, %.5f secs (%.2f %%) in external commands)'
               % (exectime_internal, exectime_external, (100.0 * exectime_external) / exectime_internal))
 
 

@@ -2,10 +2,7 @@ import os
 import unittest
 import datetime
 import re
-import sys
-
 from six import iteritems
-
 from tools import GitStatistics
 from tools import get_pipe_output
 
