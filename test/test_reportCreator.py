@@ -6,7 +6,6 @@ from tools.gitstatistics import GitStatistics
 conf = {
     'max_domains': 10,
     'max_ext_length': 10,
-    'style': 'gitstats.css',
     'max_authors': 7,
     'max_authors_of_months': 6,
     'authors_top': 5,
@@ -16,8 +15,9 @@ conf = {
     'project_name': '',
     'processes': 8,
     'start_date': '',
-    'output':'html'
+    'output_format':'html'
 }
+
 
 class TestReportCreator(unittest.TestCase):
     gs = None

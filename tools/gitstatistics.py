@@ -316,7 +316,7 @@ class GitStatistics:
             if weeks is None:
                 activity[yyw] = activity.get(yyw, 0) + 1
             elif yyw in weeks:
-                activity[yyw] = activity.get(yyw, 0) + 1
+                actstyleivity[yyw] = activity.get(yyw, 0) + 1
 
         return activity
 

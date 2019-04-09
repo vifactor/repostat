@@ -1,40 +1,22 @@
 import os
 import sys
 import argparse
+import json
 
 from tools import get_pipe_output
 
 GITSTAT_VERSION = '0.91'
 
 
-def get_gitstat_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog='repo_stat',
-                                     description='Git repository desktop analyzer. Analyze and generate git statistics '
-                                                 'in HTML format, or export into csv files for further analysis.')
-    parser.add_argument('--max_domains', default=10, type=int, help="Display statistic about top active domains")
-    parser.add_argument('--max_ext_length', default=10, type=int, help="Collect statistic from files has shorter "
-                                                                       "extension as max_ext_length")
-    parser.add_argument('--style', default='gitstats.css', type=str, help="css used as generated html result style")
-    parser.add_argument('--max_authors', default=7, type=int, help="Display statistic about top active authors")
-    parser.add_argument('--max_authors_of_months', default=6, type=int, help="Display statistic about top "
-                                                                             "active authors in monthly statistic")
-    parser.add_argument('--authors_top', default=5, type=int,
-                        help="Display statistic about top active authors in total")
-    parser.add_argument('--commit_begin', default="", type=str, help="Analysis starts from this commit date")
-    parser.add_argument('--commit_end', default="HEAD", type=str, help="Analysis ends on this commit date")
-    parser.add_argument('--linear_linestats', default=1, type=int, help="????")
-    parser.add_argument('--project_name', default="", type=str,
-                        help="Display name of the project git repo contain. "
-                             "This param currently used in csv output format.")
-    parser.add_argument('--processes', default=8, type=int, help="????")
-    parser.add_argument('--start_date', default='', type=str, help="????")
-    parser.add_argument('--output', default='html', type=str, choices=['html', 'csv'],
-                        help="Statistic output format. Valid values: [html, csv]")
-    parser.add_argument('--version', action='version', version='%(prog)s ' + GITSTAT_VERSION)
-
-    parser.add_argument('git_repo', type=str)
-    parser.add_argument('output_path', default=os.path.abspath(sys.argv[-1]), type=str)
-    return parser
+class ReadableDir(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        prospective_dir=values
+        if not os.path.isdir(prospective_dir):
+            raise argparse.ArgumentTypeError("readable_dir:{0} is not a valid path".format(prospective_dir))
+        if os.access(prospective_dir, os.R_OK):
+            setattr(namespace,self.dest,prospective_dir)
+        else:
+            raise argparse.ArgumentTypeError("readable_dir:{0} is not a readable dir".format(prospective_dir))
 
 
 class ConfigurationException(Exception):
@@ -51,6 +33,43 @@ class Configuration:
     # By default, gnuplot is searched from path, but can be overridden with the
     # environment variable "GNUPLOT"
     gnuplot_executable = os.environ.get('GNUPLOT', 'gnuplot')
+
+    @staticmethod
+    def get_release_data_info():
+        release_data_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../git_hooks/release_data.json')
+        with open(release_data_file, "r") as release_file:
+            release_data = json.load(release_file)
+        return release_data
+
+    @staticmethod
+    def get_gitstat_parser() -> argparse.ArgumentParser:
+        release_info = Configuration.get_release_data_info()
+        parser = argparse.ArgumentParser(prog='repo_stat',
+                                         description='Git repository desktop analyzer. '
+                                                     'Analyze and generate git statistics '
+                                                     'in HTML format, or export into csv files for further analysis.')
+
+        parser.add_argument('--max_domains', default=10, type=int, help="Display statistic about top active domains")
+        parser.add_argument('--max_ext_length', default=10, type=int, help="Collect statistic from files has shorter "
+                                                                           "extension as max_ext_length")
+        parser.add_argument('--max_authors', default=7, type=int, help="Display statistic about top active authors")
+        parser.add_argument('--max_authors_of_months', default=6, type=int, help="Display statistic about top "
+                                                                                 "active authors in monthly statistic")
+        parser.add_argument('--authors_top', default=5, type=int,
+                            help="Display statistic about top active authors in total")
+        parser.add_argument('--linear_linestats', default=1, type=int, help="????")
+        parser.add_argument('--project_name', default="", type=str,
+                            help="Display name of the project git repo contain. "
+                                 "This param currently used in csv output format.")
+        parser.add_argument('--processes', default=8, type=int, help="????")
+        parser.add_argument('--start_date', default='', type=str, help="????")
+        parser.add_argument('--output_format', default='html', type=str, choices=['html', 'csv'],
+                            help="Statistic output format. Valid values: [html, csv]")
+        parser.add_argument('--version', action='version', version='%(prog)s ' + release_info['develop_version'])
+
+        parser.add_argument('git_repo', type=str)
+        parser.add_argument('output_path', type=str, action=ReadableDir)
+        return parser
 
     def __init__(self, args_orig=None):
         self.conf = None
@@ -70,10 +89,10 @@ class Configuration:
         return '{} v.{}'.format(j2.__name__, j2.__version__)
 
     def is_html_output(self) -> bool:
-        return self.args.output == 'html'
+        return self.args.output_format == 'html'
 
     def is_csv_output(self) -> bool:
-        return self.args.output == 'csv'
+        return self.args.output_format == 'csv'
 
     def _check_pre_reqs(self):
         # Py version check
@@ -86,7 +105,7 @@ class Configuration:
     def _process_and_validate_params(self, args_orig=None):
         self._check_pre_reqs()
 
-        args = get_gitstat_parser().parse_args(args_orig)
+        args = self.get_gitstat_parser().parse_args(args_orig)
 
         try:
             os.makedirs(args.output_path)
@@ -105,5 +124,6 @@ class Configuration:
     def get_args_dict(self):
         return self.args.__dict__
 
-    def get_run_dir(self):
+    @staticmethod
+    def get_run_dir():
         return os.getcwd()

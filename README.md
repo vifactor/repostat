@@ -22,12 +22,12 @@ ___
 ## gitstats Usage
 **Sample:**
 ```bash
-python3 gitstats -coutput=[csv,html] -cproject_name=ProjectNameSample [git-repo-folder] [output-folder]
+python3 gitstats --output_format=[csv,html] --project_name=ProjectNameSample [git-repo-folder] [output-folder]
 ```
 
 
 ### Args
-#### output
+#### output_format
 **valid values**: csv, html  
 **csv**: export basics repo statistic to csv files:  
     - activity_month_of_year.csv : monthly statistic  
