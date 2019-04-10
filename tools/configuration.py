@@ -5,18 +5,57 @@ import json
 
 from tools import get_pipe_output
 
-GITSTAT_VERSION = '0.91'
-
 
 class ReadableDir(argparse.Action):
+
     def __call__(self, parser, namespace, values, option_string=None):
-        prospective_dir=values
+        prospective_dir = values
         if not os.path.isdir(prospective_dir):
             raise argparse.ArgumentTypeError("readable_dir:{0} is not a valid path".format(prospective_dir))
         if os.access(prospective_dir, os.R_OK):
-            setattr(namespace,self.dest,prospective_dir)
+            setattr(namespace, self.dest, prospective_dir)
         else:
             raise argparse.ArgumentTypeError("readable_dir:{0} is not a readable dir".format(prospective_dir))
+
+
+DEFAULT_CONFIG = {
+    "max_domains": 10,
+    "max_ext_length": 10,
+    "max_authors": 7,
+    "max_authors_of_months": 6,
+    "authors_top": 5
+}
+
+
+class LoadConfigJsonFile(argparse.Action):
+
+    @staticmethod
+    def setup_config(namespace, config):
+        for key, value in config.items():
+            setattr(namespace, key, value)
+
+    @staticmethod
+    def load_config_from_file(namespace, file_name):
+        config = dict(DEFAULT_CONFIG)
+        # try to read json object
+        try:
+            with open(file_name, "r") as json_file:
+                input_conf = json.load(json_file)
+                config.update(input_conf)
+                LoadConfigJsonFile.setup_config(namespace, config)
+        except Exception as ex:
+            raise argparse.ArgumentTypeError(
+                "file:{0} is not a valid json file. Read error: {1}".format(file_name, ex))
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        file_name = values
+        if not os.path.exists(file_name):
+            raise argparse.ArgumentTypeError("file:{0} is not exists".format(file_name))
+        if os.access(file_name, os.R_OK):
+            self.load_config_from_file(namespace, file_name)
+            setattr(namespace, self.dest, file_name)
+        else:
+            raise argparse.ArgumentTypeError("file:{0} is not a readable file".format(file_name))
 
 
 class ConfigurationException(Exception):
@@ -49,31 +88,24 @@ class Configuration:
                                                      'Analyze and generate git statistics '
                                                      'in HTML format, or export into csv files for further analysis.')
 
-        parser.add_argument('--max_domains', default=10, type=int, help="Display statistic about top active domains")
-        parser.add_argument('--max_ext_length', default=10, type=int, help="Collect statistic from files has shorter "
-                                                                           "extension as max_ext_length")
-        parser.add_argument('--max_authors', default=7, type=int, help="Display statistic about top active authors")
-        parser.add_argument('--max_authors_of_months', default=6, type=int, help="Display statistic about top "
-                                                                                 "active authors in monthly statistic")
-        parser.add_argument('--authors_top', default=5, type=int,
-                            help="Display statistic about top active authors in total")
-        parser.add_argument('--linear_linestats', default=1, type=int, help="????")
         parser.add_argument('--project_name', default="", type=str,
                             help="Display name of the project git repo contain. "
                                  "This param currently used in csv output format.")
-        parser.add_argument('--processes', default=8, type=int, help="????")
-        parser.add_argument('--start_date', default='', type=str, help="????")
         parser.add_argument('--output_format', default='html', type=str, choices=['html', 'csv'],
                             help="Statistic output format. Valid values: [html, csv]")
         parser.add_argument('--version', action='version', version='%(prog)s ' + release_info['develop_version'])
+        parser.add_argument('--config_file', action=LoadConfigJsonFile, default="-")
 
         parser.add_argument('git_repo', type=str)
         parser.add_argument('output_path', type=str, action=ReadableDir)
+
         return parser
 
     def __init__(self, args_orig=None):
         self.conf = None
         self.args = self._process_and_validate_params(args_orig)
+        if self.args.config_file == "-":
+            LoadConfigJsonFile.setup_config(self.args, DEFAULT_CONFIG)
 
     def get_gnuplot_version(self):
         if self.GNUPLOT_VERSION_STRING is None:

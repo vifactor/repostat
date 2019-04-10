@@ -160,11 +160,11 @@ class GitStatistics:
             commits_count for _, hourly_activity in self.activity_weekly_hourly.items()
             for _, commits_count in hourly_activity.items())
         self.activity_monthly, self.authors_monthly, \
-        self.activity_year_monthly, self.author_year_monthly = self.fetch_monthly_activity()
+            self.activity_year_monthly, self.author_year_monthly = self.fetch_monthly_activity()
         self.recent_activity_by_week = self.fetch_recent_activity()
         self.recent_activity_peak = max(activity for activity in self.recent_activity_by_week.values())
         self.changes_history, self.total_lines_added, \
-        self.total_lines_removed, self.total_lines_count = self.fetch_total_history()
+            self.total_lines_removed, self.total_lines_count = self.fetch_total_history()
         self.repo_name = os.path.basename(os.path.abspath(path))
 
     @classmethod
@@ -316,7 +316,7 @@ class GitStatistics:
             if weeks is None:
                 activity[yyw] = activity.get(yyw, 0) + 1
             elif yyw in weeks:
-                actstyleivity[yyw] = activity.get(yyw, 0) + 1
+                activity[yyw] = activity.get(yyw, 0) + 1
 
         return activity
 
