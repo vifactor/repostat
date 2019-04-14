@@ -31,7 +31,7 @@ class HTMLReportCreator(object):
         self.path = None
         self.title = None
         self.configuration = config
-        self.conf = config.get_conf()
+        self.conf = config.get_args_dict()
 
         self.git_repo_statistics = repo_stat
 
@@ -73,7 +73,7 @@ class HTMLReportCreator(object):
         # copy static files. Looks in the binary directory, ../share/gitstats and /usr/share/gitstats
         secondarypath = os.path.join(self.repostat_root_dir, '..', 'share', 'gitstats')
         basedirs = [self.repostat_root_dir, secondarypath, '/usr/share/gitstats']
-        for asset in (self.conf['style'], 'sortable.js', 'arrow-up.gif', 'arrow-down.gif', 'arrow-none.gif'):
+        for asset in ('gitstats.css', 'sortable.js', 'arrow-up.gif', 'arrow-down.gif', 'arrow-none.gif'):
             for base in basedirs:
                 src = os.path.join(base, asset)
                 if os.path.exists(src):

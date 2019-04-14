@@ -1,24 +1,61 @@
 import os
 import sys
-import getopt
+import argparse
+import json
 
 from tools import get_pipe_output
 
-default_conf = {
-    'max_domains': 10,
-    'max_ext_length': 10,
-    'style': 'gitstats.css',
-    'max_authors': 7,
-    'max_authors_of_months': 6,
-    'authors_top': 5,
-    'commit_begin': '',
-    'commit_end': 'HEAD',
-    'linear_linestats': 1,
-    'project_name': '',
-    'processes': 8,
-    'start_date': '',
-    'output': 'html'
+
+class ReadableDir(argparse.Action):
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        prospective_dir = values
+        if not os.path.isdir(prospective_dir):
+            raise argparse.ArgumentTypeError("readable_dir:{0} is not a valid path".format(prospective_dir))
+        if os.access(prospective_dir, os.R_OK):
+            setattr(namespace, self.dest, prospective_dir)
+        else:
+            raise argparse.ArgumentTypeError("readable_dir:{0} is not a readable dir".format(prospective_dir))
+
+
+DEFAULT_CONFIG = {
+    "max_domains": 10,
+    "max_ext_length": 10,
+    "max_authors": 7,
+    "max_authors_of_months": 6,
+    "authors_top": 5
 }
+
+
+class LoadConfigJsonFile(argparse.Action):
+
+    @staticmethod
+    def setup_config(namespace, config):
+        for key, value in config.items():
+            setattr(namespace, key, value)
+
+    @staticmethod
+    def load_config_from_file(namespace, file_name):
+        config = dict(DEFAULT_CONFIG)
+        # try to read json object
+        try:
+            with open(file_name, "r") as json_file:
+                input_conf = json.load(json_file)
+                config.update(input_conf)
+                LoadConfigJsonFile.setup_config(namespace, config)
+        except Exception as ex:
+            raise argparse.ArgumentTypeError(
+                "file:{0} is not a valid json file. Read error: {1}".format(file_name, ex))
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        file_name = values
+        if not os.path.exists(file_name):
+            raise argparse.ArgumentTypeError("file:{0} is not exists".format(file_name))
+        if os.access(file_name, os.R_OK):
+            self.load_config_from_file(namespace, file_name)
+            setattr(namespace, self.dest, file_name)
+        else:
+            raise argparse.ArgumentTypeError("file:{0} is not a readable file".format(file_name))
 
 
 class ConfigurationException(Exception):
@@ -30,19 +67,45 @@ class UsageException(Exception):
 
 
 class Configuration:
-    conf: dict = None
+
     GNUPLOT_VERSION_STRING = None
     # By default, gnuplot is searched from path, but can be overridden with the
     # environment variable "GNUPLOT"
     gnuplot_executable = os.environ.get('GNUPLOT', 'gnuplot')
 
-    def __init__(self, config: dict = None):
-        if config is None:
-            self.conf = dict(default_conf)
-        else:
-            self.conf = config
-        self.args: list = None
-        self.optlist: dict = None
+    @staticmethod
+    def get_release_data_info():
+        release_data_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../git_hooks/release_data.json')
+        with open(release_data_file, "r") as release_file:
+            release_data = json.load(release_file)
+        return release_data
+
+    @staticmethod
+    def get_gitstat_parser() -> argparse.ArgumentParser:
+        release_info = Configuration.get_release_data_info()
+        parser = argparse.ArgumentParser(prog='repo_stat',
+                                         description='Git repository desktop analyzer. '
+                                                     'Analyze and generate git statistics '
+                                                     'in HTML format, or export into csv files for further analysis.')
+
+        parser.add_argument('--project_name', default="", type=str,
+                            help="Display name of the project git repo contain. "
+                                 "This param currently used in csv output format.")
+        parser.add_argument('--output_format', default='html', type=str, choices=['html', 'csv'],
+                            help="Statistic output format. Valid values: [html, csv]")
+        parser.add_argument('--version', action='version', version='%(prog)s ' + release_info['develop_version'])
+        parser.add_argument('--config_file', action=LoadConfigJsonFile, default="-")
+
+        parser.add_argument('git_repo', type=str)
+        parser.add_argument('output_path', type=str, action=ReadableDir)
+
+        return parser
+
+    def __init__(self, args_orig=None):
+        self.conf = None
+        self.args = self._process_and_validate_params(args_orig)
+        if self.args.config_file == "-":
+            LoadConfigJsonFile.setup_config(self.args, DEFAULT_CONFIG)
 
     def get_gnuplot_version(self):
         if self.GNUPLOT_VERSION_STRING is None:
@@ -58,10 +121,10 @@ class Configuration:
         return '{} v.{}'.format(j2.__name__, j2.__version__)
 
     def is_html_output(self) -> bool:
-        return self.conf['output'] == 'html'
+        return self.args.output_format == 'html'
 
     def is_csv_output(self) -> bool:
-        return self.conf['output'] == 'csv'
+        return self.args.output_format == 'csv'
 
     def _check_pre_reqs(self):
         # Py version check
@@ -71,49 +134,28 @@ class Configuration:
         if not self.get_gnuplot_version():
             raise ConfigurationException("gnuplot not found")
 
-    def process_and_validate_params(self, args_orig):
+    def _process_and_validate_params(self, args_orig=None):
         self._check_pre_reqs()
 
-        optlist, args = getopt.getopt(args_orig, 'hc:', ["help"])
-        result_opt = {}
-        for o, v in optlist:
-            if o == '-c':
-                key, value = v.split('=', 1)
-                if key not in self.conf:
-                    raise KeyError('no such key "%s" in config' % key)
-                result_opt[key] = value
-                if isinstance(self.conf[key], int):
-                    self.conf[key] = int(value)
-                else:
-                    self.conf[key] = value
-            elif o in ('-h', '--help'):
-                raise UsageException()
+        args = self.get_gitstat_parser().parse_args(args_orig)
 
-        if len(args) < 2:
-            raise UsageException("Too little args")
-
-        if not self.is_csv_output() and not self.is_html_output():
-            raise UsageException(format('Invalid output parameter: %s' % self.conf['output']))
-
-        outputpath = os.path.abspath(args[-1])
         try:
-            os.makedirs(outputpath)
+            os.makedirs(args.output_path)
         except OSError:
             pass
-        if not os.path.isdir(outputpath):
+        if not os.path.isdir(args.output_path):
             ConfigurationException(
-                'FATAL:Can\'t create Output path. Output path is not a directory or does not exist: %s' % outputpath)
+                'FATAL:Can\'t create Output path. Output path is not a directory ' 
+                'or does not exist: %s' % args.output_path)
 
-        self.args = args
-        self.optlist = result_opt
+        return args
 
-        return result_opt, args
-
-    def get_conf(self) -> dict:
-        return self.conf
-
-    def get_args(self) -> list:
+    def get_args(self):
         return self.args
 
-    def get_optlist(self) -> dict:
-        return self.optlist
+    def get_args_dict(self):
+        return self.args.__dict__
+
+    @staticmethod
+    def get_run_dir():
+        return os.getcwd()

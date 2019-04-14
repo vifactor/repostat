@@ -11,87 +11,69 @@ from tools.csvreportcreator import CSVReportCreator
 from tools.htmlreportcreator import HTMLReportCreator
 from tools import GitDataCollector
 from tools import get_external_execution_time
-from tools import Configuration, ConfigurationException, UsageException
+from tools import Configuration, ConfigurationException
 
 os.environ['LC_ALL'] = 'C'
 
 time_start = time.time()
 
 
-def usage(conf: dict):
-    print("""
-Usage: gitstats [options] <gitpath..> <outputpath>
-
-Options:
--c key=value     Override configuration value
-
-Default config values:
-%s
-
-output option values: [html,csv]
-Please see the manual page for more details.
-""" % conf)
-
-
 class GitStats:
 
     def run(self, args_orig):
-        args = None
-        config = Configuration(None)
         try:
-            optlist, args = config.process_and_validate_params(args_orig)
+            config = Configuration(args_orig)
+            args = config.get_args()
         except ConfigurationException as ce:
             warnings.warn("Configuration exception occured:")
             warnings.warn(ce)
             sys.exit(1)
-        except UsageException as ue:
-            warnings.warn("Usage exception occured:")
-            warnings.warn(ue)
-            sys.exit(1)
 
-        outputpath = os.path.abspath(args[-1])
-        rundir = os.getcwd()
+        output_path = args.output_path
+        run_dir = config.get_run_dir()
 
-        print('Output path: %s' % outputpath)
-        cachefile = os.path.join(outputpath, 'gitstats.cache')
+        print('Output path: %s' % output_path)
+        cachefile = os.path.join(output_path, 'gitstats.cache')
 
-        data = GitDataCollector(config.get_conf())
+        data = GitDataCollector(config.get_args_dict())
         data.load_cache(cachefile)
 
-        for gitpath in args[0:-1]:
-            print('Git path: %s' % gitpath)
+        # todo: Check loop result. It seems every loop rewrite the collected information in data object.
+        #  Is this loop really needed?
+        # for git_repo in args.git_repo:
+        print('Git path: %s' % args.git_repo)
 
-            prevdir = os.getcwd()
-            os.chdir(gitpath)
+        prevdir = os.getcwd()
+        os.chdir(args.git_repo)
 
-            print('Collecting data...')
-            data.collect(gitpath)
+        print('Collecting data...')
+        data.collect(args.git_repo)
 
-            os.chdir(prevdir)
+        os.chdir(prevdir)
 
         print('Refining data...')
         # data.saveCache(cachefile)
         data.refine()
 
-        os.chdir(rundir)
+        os.chdir(run_dir)
         print('Generating report...')
         # fixme: pass GitStatistics object directly when obsolete GitDataCollector is removed
         if config.is_html_output():
             print('Generating HTML report...')
             report = HTMLReportCreator(config, data.repo_statistics)
-            report.create(data, outputpath)
+            report.create(data, output_path)
             self.get_times()
             if sys.stdin.isatty():
                 print('You may now run:')
                 print('')
-                print('   sensible-browser \'%s\'' % os.path.join(outputpath, 'general.html').replace("'", "'\\''"))
+                print('   sensible-browser \'%s\'' % os.path.join(output_path, 'general.html').replace("'", "'\\''"))
                 print('')
             self.get_times()
         elif config.is_csv_output():
             print('Generating CSV report...')
             report = CSVReportCreator()
-            report.create(data.repo_statistics, outputpath, config.get_conf())
-            print('CSV report created here: %s' % outputpath)
+            report.create(data.repo_statistics, output_path, config.get_args_dict())
+            print('CSV report created here: %s' % output_path)
             self.get_times()
 
     @staticmethod
