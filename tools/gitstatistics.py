@@ -34,12 +34,46 @@ def split_email_address(email_address):
 
 
 class CommitDictFactory:
+    FILES = "files"
     AUTHOR_NAME = "author_name"
+    AUTHOR_MAIL = "author_mail"
     LINES_REMOVED = "lines_removed"
     LINES_ADDED = "lines_added"
+    LINE_COUNT = "lines"
     DATE = 'date'
-    TIMESTAMP = "timestamp"
-    FIELD_LIST = [AUTHOR_NAME, LINES_REMOVED, LINES_ADDED, TIMESTAMP]
+    IS_MERGE = "is_merge"
+    TIMESTAMP = "commit_time"
+    ID = "oid"
+    PARENT_IDS = "parent_ids"
+    BRANCH = "branch"
+    FIELD_LIST = [ID, AUTHOR_NAME, AUTHOR_MAIL, LINES_REMOVED, LINES_ADDED, DATE, TIMESTAMP, IS_MERGE, PARENT_IDS, BRANCH]
+
+    @classmethod
+    def build_commit_item(cls, child_commit, repo: git.Repository, branch_name: str):
+        if len(child_commit.parents) > 0:
+            st = repo.diff(child_commit.parents[0], child_commit).stats
+        else:
+            st = child_commit.tree.diff_to_tree(swap=True).stats
+        return cls.build_commit_item_dict(child_commit, st, branch_name)
+
+    @classmethod
+    def build_commit_item_dict(cls, child_commit, stat, branch_name=None) -> dict:
+        datetime_format = '%Y-%m-%d %H:%M:%S'
+        commit_datetime = datetime.fromtimestamp(child_commit.commit_time).strftime(datetime_format)
+        return {
+            cls.ID: str(child_commit.oid),
+            cls.BRANCH: branch_name,
+            cls.AUTHOR_NAME: child_commit.author.name,
+            cls.AUTHOR_MAIL: child_commit.author.email,
+            cls.LINES_ADDED: stat.insertions,
+            cls.LINES_REMOVED: stat.deletions,
+            cls.IS_MERGE: len(child_commit.parents) > 1,
+            cls.TIMESTAMP: child_commit.commit_time,
+            cls.DATE: commit_datetime,
+            cls.FILES: stat.files_changed,
+            cls.PARENT_IDS: child_commit.parent_ids,
+            cls.LINE_COUNT: 0
+        }
 
     @classmethod
     def create_commit(cls, author, lines_added, lines_removed, date: str, time_stamp: float):
@@ -146,8 +180,10 @@ class GitStatistics:
         self.yearly_commits_timeline = {}
         self.monthly_commits_timeline = {}
         self.author_changes_history = {}
-        self.commits = []
-        self.authors = self.fetch_authors_info()
+        self.all_commits = dict()
+        self.authors = dict()
+        self.fetch_authors_info(self.authors, self.all_commits)
+        self.fetch_all_commits(self.all_commits)
         self.tags = self.fetch_tags_info()
         self.domains = self.fetch_domains_info()
         self.timezones = self.fetch_timezone_info()
@@ -172,20 +208,35 @@ class GitStatistics:
         # could be bare git-subprocess invokation, PythonGit package, etc.
         return '{} v.{}'.format(git.__name__, git.LIBGIT2_VERSION)
 
-    def add_commit(self, author, lines_added, lines_removed, time: str, time_stamp):
-        commit_details = CommitDictFactory.create_commit(author, lines_added, lines_removed, time, time_stamp)
-        self.commits.append(commit_details)
+    @Timeit("Fetch commits on branch: {2}")
+    def fetch_commit_on_branch(self, all_commits: dict, branch_name: str):
+        for child_commit in self.repo.walk(self.repo.branches[branch_name].peel().id,
+                                           git.GIT_SORT_TIME | git.GIT_SORT_TOPOLOGICAL):
+            if str(child_commit.id) in all_commits.keys():
+                continue
+            all_commits[str(child_commit.id)] = CommitDictFactory.build_commit_item(child_commit, self.repo, branch_name)
 
-    @Timeit("Fetching authors info")
-    def fetch_authors_info(self):
+
+    @Timeit("Fetching all commits")
+    def fetch_all_commits(self, commits):
+        for branch in self.repo.branches.remote:
+            if str.startswith(branch, 'origin'):
+                self.fetch_commit_on_branch(commits, branch)
+
+    @Timeit("Fetching authors")
+    def fetch_authors_info(self, authors_stats, commits):
         """
         e.g.
         {'Stefano Mosconi': {'lines_removed': 1, 'last_commit_stamp': 1302027851, 'active_days': set(['2011-04-05']),
                              'lines_added': 1, 'commits': 1, 'first_commit_stamp': 1302027851,
                              'last_active_day': '2011-04-05'}
         """
-        result = {}
+        result = authors_stats
+        branch_name = self.repo.head.name
         for child_commit in self.repo.walk(self.repo.head.target, git.GIT_SORT_TIME | git.GIT_SORT_REVERSE):
+            # skip already processed commits
+            if str(child_commit.id) in commits:
+                continue
             is_merge_commit = False
             st = None
             if len(child_commit.parents) == 0:
@@ -195,6 +246,8 @@ class GitStatistics:
                 parent_commit = child_commit.parents[0]
                 st = self.repo.diff(parent_commit, child_commit).stats
             else:  # if len(child_commit.parents) == 2 (merge commit)
+                parent_commit = child_commit.parents[0]
+                st = self.repo.diff(parent_commit, child_commit).stats
                 is_merge_commit = True
 
             commit_day_str = datetime.fromtimestamp(child_commit.author.time).strftime('%Y-%m-%d')
@@ -204,7 +257,8 @@ class GitStatistics:
             lines_removed = st.deletions if not is_merge_commit else 0
 
             self._adjust_winners(author_name, child_commit.author.time)
-            self.add_commit(author_name, lines_added, lines_removed, commit_day_str, child_commit.author.time)
+            # self.add_commit(author_name, lines_added, lines_removed, commit_day_str, child_commit.author.time)
+            commits[str(child_commit.id)] = CommitDictFactory.build_commit_item_dict(child_commit, st, branch_name)
             if author_name not in result:
                 result[author_name] = AuthorDictFactory.create_author(
                     author_name, lines_removed, lines_added, commit_day_str, 1, child_commit.author.time,
@@ -320,35 +374,22 @@ class GitStatistics:
 
         return activity
 
-    @staticmethod
-    def build_history_item(child_commit, stat) -> dict:
-        return {
-            'files': stat.files_changed,
-            'ins': stat.insertions,
-            'del': stat.deletions,
-            'author': child_commit.author.name,
-            'author_mail': child_commit.author.email,
-            'is_merge': len(child_commit.parents) > 1,
-            'commit_time': child_commit.commit_time,
-            'oid': child_commit.oid,
-            'parent_ids': child_commit.parent_ids
-        }
-
     @Timeit("Fetching total history")
     def fetch_total_history(self):
         history = {}
         child_commit = self.repo.head.peel()
+        branch_name = self.repo.head.name
         timestamps = []
         while len(child_commit.parents) != 0:
             # taking [0]-parent is equivalent of '--first-parent -m' options
             parent_commit = child_commit.parents[0]
             st = self.repo.diff(parent_commit, child_commit).stats
-            history[child_commit.author.time] = self.build_history_item(child_commit, st)
+            history[child_commit.author.time] = CommitDictFactory.build_commit_item_dict(child_commit, st, branch_name)
             timestamps.append(child_commit.author.time)
             child_commit = parent_commit
         # initial commit does not have parent, so we take diff to empty tree
         st = child_commit.tree.diff_to_tree(swap=True).stats
-        history[child_commit.author.time] = self.build_history_item(child_commit, st)
+        history[child_commit.author.time] = CommitDictFactory.build_commit_item_dict(child_commit, st, branch_name)
 
         timestamps.append(child_commit.author.time)
 
@@ -357,10 +398,10 @@ class GitStatistics:
         lines_removed = 0
         timestamps.reverse()
         for t in timestamps:
-            lines_added += history[t]['ins']
-            lines_removed += history[t]['del']
-            lines_count += history[t]['ins'] - history[t]['del']
-            history[t]['lines'] = lines_count
+            lines_added += history[t][CommitDictFactory.LINES_ADDED]
+            lines_removed += history[t][CommitDictFactory.LINES_REMOVED]
+            lines_count += history[t][CommitDictFactory.LINES_ADDED] - history[t][CommitDictFactory.LINES_REMOVED]
+            history[t][CommitDictFactory.LINE_COUNT] = lines_count
         return history, lines_added, lines_removed, lines_count
 
     def get_weekly_activity(self):
@@ -475,7 +516,7 @@ class GitStatistics:
         return self.authors.__len__()
 
     def get_total_commits(self):
-        return self.commits.__len__()
+        return self.all_commits.__len__()
 
     def get_stamp_created(self):
         return self.created_time_stamp
