@@ -38,9 +38,9 @@ class TestDictionaryListCsvExporte(BasicTestExporter):
         exporter = DictionaryListCsvExporter()
         file_name = os.path.join(self.csv_outputdir, 'commits.csv')
         additional = {'projectname': 'Project Name Unit test', 'reponame': 'repostat'}
-        exporter.export(file_name, self.gs.commits, additional)
+        exporter.export(file_name, self.gs.all_commits, additional)
         self.assertTrue(os.path.isfile(file_name))
-        self.assertTrue('Viktor Kopp;8;5;2018-10-15' in open(file_name, encoding='utf-8').read())
+        self.assertTrue('4;0;False;1539590122;2018-10-15 09:55:22' in open(file_name, encoding='utf-8').read())
 
 
 class TestGeneralDictionaryCsvExporter(BasicTestExporter):

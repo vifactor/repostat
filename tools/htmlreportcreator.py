@@ -12,6 +12,7 @@ import json
 from jinja2 import Environment, FileSystemLoader
 from tools.datacollector import GitDataCollector
 from tools.gitstatistics import GitStatistics
+from tools.gitstatistics import CommitDictFactory
 from tools import get_pipe_output
 from tools import Configuration
 
@@ -175,7 +176,8 @@ class HTMLReportCreator(object):
 
         with open(os.path.join(path, 'lines_of_code.dat'), 'w') as fg:
             for stamp in sorted(self.git_repo_statistics.changes_history.keys()):
-                fg.write('%d %d\n' % (stamp, self.git_repo_statistics.changes_history[stamp]['lines']))
+                fg.write(
+                    '%d %d\n' % (stamp, self.git_repo_statistics.changes_history[stamp][CommitDictFactory.LINE_COUNT]))
 
         ###
         # tags.html
