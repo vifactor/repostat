@@ -47,7 +47,7 @@ class ExportProjectRepos:
 
         self.project_folder = ns.project_folder
         self.output_folder = ns.output_folder
-        self.git_pull = ns.pull_repos
+        self.pull_repos = ns.pull_repos
         self.tmp_output_folder = os.path.join(self.output_folder, 'tmp')
 
         print("Project folder: " + self.project_folder)
@@ -111,6 +111,10 @@ class ExportProjectRepos:
                         try:
                             # create target folder
                             target_dir = self.create_project_repo_folder(project_dir, repo_dir)
+                            if self.pull_repos:
+                                print("Pull repo: {}".format(abs_gdir))
+                                os.chdir(abs_gdir)
+                                os.system("git pull")
                             # call generator export to tmp folder
                             self._execute_gitstat(['--output_format=csv',
                                                    format("--project_name=%s" % project_dir),
