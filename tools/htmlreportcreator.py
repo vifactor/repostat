@@ -411,7 +411,7 @@ class HTMLReportCreator(object):
             "version": self.release_data['user_version'],
             "tools": [GitStatistics.get_fetching_tool_info(),
                       self.configuration.get_jinja_version(),
-                      self.configuration.get_gnuplot_version()],
+                      'gnuplot ' + self.configuration.get_gnuplot_version()],
             "contributors": [author for author in self.release_data['contributors']]
         }
 
