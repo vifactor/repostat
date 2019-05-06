@@ -5,6 +5,8 @@ import os
 import shutil
 import gitstats
 import warnings
+import argparse
+from tools.configuration import ReadableDir
 
 
 class ExportProjectRepos:
@@ -12,6 +14,7 @@ class ExportProjectRepos:
         self.project_folder = None
         self.output_folder = None
         self.tmp_output_folder = None
+        self.pull_repos = False
         self._process_params(args)
 
     @staticmethod
@@ -27,12 +30,24 @@ class ExportProjectRepos:
         print('project folder name will be the project_name option in getstats cli command')
 
     def _process_params(self, args):
-        if len(args) != 3:
-            self.usage()
-            sys.exit(1)
+        parser = argparse.ArgumentParser(prog="export_repos",
+                                         description="Mass git repo statistic export, "
+                                                     "based on project/git repo folder structure"
+                                                     "Expected root folder structure: "
+                                                     "root -> contain the projects"
+                                                     "   | - project -> contain the repos of the project"
+                                                     "       | -  gitrepo -> git repo")
 
-        self.project_folder = args[1]
-        self.output_folder = args[2]
+        parser.add_argument("--pull_repos",
+                            help="Auto execute 'git pull' command in repo folder before start statistic export",
+                            action="store_true")
+        parser.add_argument("project_folder", action=ReadableDir, type=str, help="Folder contains project folders")
+        parser.add_argument("output_folder", action=ReadableDir, type=str, help="Output folder")
+        ns = parser.parse_args(args)
+
+        self.project_folder = ns.project_folder
+        self.output_folder = ns.output_folder
+        self.pull_repos = ns.pull_repos
         self.tmp_output_folder = os.path.join(self.output_folder, 'tmp')
 
         print("Project folder: " + self.project_folder)
@@ -96,6 +111,10 @@ class ExportProjectRepos:
                         try:
                             # create target folder
                             target_dir = self.create_project_repo_folder(project_dir, repo_dir)
+                            if self.pull_repos:
+                                print("Pull repo: {}".format(abs_gdir))
+                                os.chdir(abs_gdir)
+                                os.system("git pull")
                             # call generator export to tmp folder
                             self._execute_gitstat(['--output_format=csv',
                                                    format("--project_name=%s" % project_dir),
@@ -114,5 +133,5 @@ class ExportProjectRepos:
 
 
 if __name__ == '__main__':
-    export = ExportProjectRepos(sys.argv)
+    export = ExportProjectRepos(sys.argv[1:])
     export.run()
