@@ -95,6 +95,7 @@ class TestConfiguration(unittest.TestCase):
                          "test_json_config_parser result max_domains is different than expected")
         self.assertEqual(args.max_authors, 7,
                          "test_json_config_parser result max_authors is different than expected")
+        self.assertFalse(args.append_csv)
 
     def test_configuration_invalid_config_file(self):
         cli_params = list([
@@ -137,9 +138,11 @@ class TestConfiguration(unittest.TestCase):
         self.assertTrue(isinstance(context.exception, argparse.ArgumentTypeError))
 
     def test_process_and_validate_params_csv_success(self):
+        # append_csv param added
         cli_params = list([
             '--project_name=UTEST Project',
             '--output_format=csv',
+            '--append_csv',
             self.repo_folder,
             self.output_folder
         ])
@@ -159,6 +162,8 @@ class TestConfiguration(unittest.TestCase):
         # Check options override init configuration
         self.assertTrue(config.is_csv_output())
         self.assertFalse(config.is_html_output())
+        # append_csv param True expected
+        self.assertTrue(config.is_append_csv())
 
     def test_process_and_validate_params_html_success(self):
         expected_project_name = "UTEST HTML Project"
@@ -179,6 +184,7 @@ class TestConfiguration(unittest.TestCase):
                          "test_process_and_validate_params_csv_success result project_name is different than expected")
         self.assertTrue(config.is_html_output())
         self.assertFalse(config.is_csv_output())
+        self.assertFalse(config.is_append_csv())
 
     def test_gnuplot_version_success_equal(self):
         expected_project_name = "UTEST HTML Project"

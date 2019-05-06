@@ -97,6 +97,10 @@ class Configuration:
                                  "This param currently used in csv output format.")
         parser.add_argument('--output_format', default='html', type=str, choices=['html', 'csv'],
                             help="Statistic output format. Valid values: [html, csv]")
+        parser.add_argument('--append_csv', action='store_true',
+                            help="This option operates in case csv output format. "
+                                 "Append exists csv, instead of rewrite.")
+
         parser.add_argument('--version', action='version', version='%(prog)s ' + release_info['develop_version'])
         parser.add_argument('--config_file', action=LoadConfigJsonFile, default="-")
 
@@ -182,6 +186,9 @@ class Configuration:
 
     def get_args_dict(self):
         return self.args.__dict__
+
+    def is_append_csv(self) -> bool:
+        return self.args.append_csv == True
 
     @staticmethod
     def get_run_dir():

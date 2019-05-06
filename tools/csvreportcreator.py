@@ -11,8 +11,13 @@ class DictionaryListCsvExporter:
     """Export dictionary values as List. Keys in dictionary doesn't exported or handled!"""
 
     @staticmethod
-    def export(file_name: str, data: dict, aditional_values: dict = None):
-        with open(file_name, 'w', newline='', encoding='utf-8') as csvfile:
+    def export(file_name: str, data: dict, append_file: bool = False, aditional_values: dict = None):
+        file_mode = 'w'
+        if append_file:
+            file_mode = 'a'
+        new_file = not os.path.isfile(file_name)
+
+        with open(file_name, file_mode, newline='', encoding='utf-8') as csvfile:
             fieldnames = []
             data_list = []
             if aditional_values is None:
@@ -27,7 +32,8 @@ class DictionaryListCsvExporter:
 
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames, delimiter=';', quotechar='"')
 
-            writer.writeheader()
+            if not append_file or new_file:
+                writer.writeheader()
 
             for line in data_list:
                 tmp = dict(line)
@@ -40,15 +46,22 @@ class DictionaryCsvExporter:
     """Export dictionary values with or without keys. Able to export key-s as column!"""
 
     @staticmethod
-    def export(file_name: str, data: dict, export_key_as_field: bool = True, key_field_name: str = 'key'):
-        with open(file_name, 'w', newline='', encoding='utf-8') as csvfile:
+    def export(file_name: str, data: dict, append_file: bool = False, export_key_as_field: bool = True,
+               key_field_name: str = 'key'):
+        file_mode = 'w'
+        if append_file:
+            file_mode = 'a'
+        new_file = not os.path.isfile(file_name)
+
+        with open(file_name, file_mode, newline='', encoding='utf-8') as csvfile:
             fieldnames = list(data[list(data.keys())[0]].keys())
             if export_key_as_field:
                 fieldnames.append(key_field_name)
 
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames, delimiter=';', quotechar='"')
+            if not append_file or new_file:
+                writer.writeheader()
 
-            writer.writeheader()
             for key, line in data.items():
                 print_line = line
                 if export_key_as_field:
@@ -65,7 +78,7 @@ class CSVReportCreator(ReportCreator):
                 "Repo name": data.repo_name
                 }
 
-    def create(self, data: GitStatistics, path: str, config: dict):
+    def create(self, data: GitStatistics, path: str, config: dict, append_file: bool = False):
 
         ReportCreator.create(self, data, path, config)
 
@@ -92,16 +105,18 @@ class CSVReportCreator(ReportCreator):
 
         aditional_info = self.get_additional_fields(data)
         # export general info
-        DictionaryCsvExporter.export(os.path.join(path, "general.csv"), general_info, False)
+        DictionaryCsvExporter.export(os.path.join(path, "general.csv"), general_info, append_file, False)
 
         # export authors
-        DictionaryListCsvExporter.export(os.path.join(path, "authors.csv"), data.authors, aditional_info)
+        DictionaryListCsvExporter.export(os.path.join(path, "authors.csv"), data.authors, append_file, aditional_info)
 
         # export commits
-        DictionaryListCsvExporter.export(os.path.join(path, "commits.csv"), data.all_commits, aditional_info)
+        DictionaryListCsvExporter.export(os.path.join(path, "commits.csv"), data.all_commits,
+                                         append_file, aditional_info)
 
         # export total_history
-        DictionaryListCsvExporter.export(os.path.join(path, "total_history.csv"), data.changes_history, aditional_info)
+        DictionaryListCsvExporter.export(os.path.join(path, "total_history.csv"), data.changes_history,
+                                         append_file, aditional_info)
 
         ###
         # Activity
@@ -109,7 +124,7 @@ class CSVReportCreator(ReportCreator):
         # month of year
         lines_added_monthly = {}
         lines_removed_monthly = {}
-        for id, commit in data.all_commits.items():
+        for oid, commit in data.all_commits.items():
             ts = commit[CommitDictFactory.TIMESTAMP]
             key = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m')
             if key in lines_added_monthly.keys():
@@ -130,4 +145,5 @@ class CSVReportCreator(ReportCreator):
                 'Author count': len(data.author_year_monthly.get(mm, {})),
                 'Commits': data.activity_year_monthly.get(mm, 0)
             }
-        DictionaryCsvExporter.export(path + '/activity_month_of_year.csv', month_statistic, False)
+        DictionaryCsvExporter.export(os.path.join(path, 'activity_month_of_year.csv'), month_statistic,
+                                     append_file, False)

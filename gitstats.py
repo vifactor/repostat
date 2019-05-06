@@ -79,7 +79,7 @@ class GitStats:
         elif config.is_csv_output():
             print('Generating CSV report...')
             report = CSVReportCreator()
-            report.create(data.repo_statistics, output_path, config.get_args_dict())
+            report.create(data.repo_statistics, output_path, config.get_args_dict(), config.is_append_csv())
             print('CSV report created here: %s' % output_path)
             self.get_times()
 
