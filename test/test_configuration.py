@@ -1,10 +1,18 @@
 import unittest
 from tools.configuration import Configuration
 import argparse
-import json
+import os
 
 
 class TestConfiguration(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self.repo_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
+        self.output_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_outs")
+        try:
+            os.makedirs(self.output_folder)
+        except OSError:
+            pass
 
     def test_json_config_parser(self):
         # test config with full json config file
@@ -12,14 +20,14 @@ class TestConfiguration(unittest.TestCase):
             '--project_name=UTEST Project',
             '--output_format=csv',
             '--config_file=config-test.json',
-            'e:\\git\\repostat',
-            'e:\\gitriports\\repostat'
+            self.repo_folder,
+            self.output_folder
         ])
         config = Configuration(cli_params)
         args = config.get_args()
-        self.assertEqual(args.git_repo, 'e:\\git\\repostat',
+        self.assertEqual(args.git_repo, self.repo_folder,
                          "test_json_config_parser result git_repo is different than expected")
-        self.assertEqual(args.output_path, 'e:\\gitriports\\repostat',
+        self.assertEqual(args.output_path, self.output_folder,
                          "test_json_config_parser result output_path is different than expected")
         self.assertEqual(args.project_name, 'UTEST Project',
                          "test_json_config_parser result project_name is different than expected")
@@ -39,14 +47,14 @@ class TestConfiguration(unittest.TestCase):
             '--project_name=UTEST Project',
             '--output_format=csv',
             '--config_file=partial-config-test.json',
-            'e:\\git\\repostat',
-            'e:\\gitriports\\repostat'
+            self.repo_folder,
+            self.output_folder
         ])
         config = Configuration(cli_params)
         args = config.get_args()
-        self.assertEqual(args.git_repo, 'e:\\git\\repostat',
+        self.assertEqual(args.git_repo, self.repo_folder,
                          "test_json_config_parser result git_repo is different than expected")
-        self.assertEqual(args.output_path, 'e:\\gitriports\\repostat',
+        self.assertEqual(args.output_path, self.output_folder,
                          "test_json_config_parser result output_path is different than expected")
         self.assertEqual(args.project_name, 'UTEST Project',
                          "test_json_config_parser result project_name is different than expected")
@@ -67,14 +75,14 @@ class TestConfiguration(unittest.TestCase):
         cli_params = list([
             '--project_name=UTEST Project',
             '--output_format=csv',
-            'e:\\git\\repostat',
-            'e:\\gitriports\\repostat'
+            self.repo_folder,
+            self.output_folder
         ])
         config = Configuration(cli_params)
         args = config.get_args()
-        self.assertEqual(args.git_repo, 'e:\\git\\repostat',
+        self.assertEqual(args.git_repo, self.repo_folder,
                          "test_json_config_parser result git_repo is different than expected")
-        self.assertEqual(args.output_path, 'e:\\gitriports\\repostat',
+        self.assertEqual(args.output_path, self.output_folder,
                          "test_json_config_parser result output_path is different than expected")
         self.assertEqual(args.project_name, 'UTEST Project',
                          "test_json_config_parser result project_name is different than expected")
@@ -93,7 +101,7 @@ class TestConfiguration(unittest.TestCase):
             '--project_name=UTEST Project',
             '--output_format=csv',
             '--config_file=not_exists.json',
-            'e:\\git\\repostat',
+            self.repo_folder,
             'x:\\gitriports\\repostat'
         ])
         with self.assertRaises(argparse.ArgumentTypeError) as context:
@@ -110,8 +118,8 @@ class TestConfiguration(unittest.TestCase):
         cli_params = list([
             '--project_name=UTEST Project',
             '--output_format=csv',
-            'e:\\git\\repostat',
-            'e:\\gitriports\\repostat'
+            self.repo_folder,
+            self.output_folder
         ])
         args = Configuration(cli_params).get_args()
         print(args.project_name)
@@ -121,7 +129,7 @@ class TestConfiguration(unittest.TestCase):
         cli_params = list([
             '--project_name=UTEST Project',
             '--output_format=csv',
-            'e:\\git\\repostat',
+            self.repo_folder,
             'x:\\gitriports\\repostat'
         ])
         with self.assertRaises(argparse.ArgumentTypeError) as context:
@@ -132,16 +140,16 @@ class TestConfiguration(unittest.TestCase):
         cli_params = list([
             '--project_name=UTEST Project',
             '--output_format=csv',
-            'e:\\git\\repostat',
-            'e:\\gitriports\\repostat'
+            self.repo_folder,
+            self.output_folder
         ])
 
         config = Configuration(cli_params)
         args = config.get_args()
 
-        self.assertEqual(args.git_repo, 'e:\\git\\repostat',
+        self.assertEqual(args.git_repo, self.repo_folder,
                          "test_process_and_validate_params_csv_success result git_repo is different than expected")
-        self.assertEqual(args.output_path, 'e:\\gitriports\\repostat',
+        self.assertEqual(args.output_path, self.output_folder,
                          "test_process_and_validate_params_csv_success result output_path is different than expected")
         self.assertEqual(args.project_name, 'UTEST Project',
                          "test_process_and_validate_params_csv_success result project_name is different than expected")
@@ -156,18 +164,72 @@ class TestConfiguration(unittest.TestCase):
         expected_project_name = "UTEST HTML Project"
         cli_params = list([
             '--project_name=' + expected_project_name,
-            'e:\\git\\repostat',
-            'e:\\gitriports\\repostat'
+            self.repo_folder,
+            self.output_folder
         ])
 
         config = Configuration(cli_params)
         args = config.get_args()
 
-        self.assertEqual(args.git_repo, 'e:\\git\\repostat',
+        self.assertEqual(args.git_repo, self.repo_folder,
                          "test_process_and_validate_params_csv_success result git_repo is different than expected")
-        self.assertEqual(args.output_path, 'e:\\gitriports\\repostat',
+        self.assertEqual(args.output_path, self.output_folder,
                          "test_process_and_validate_params_csv_success result output_path is different than expected")
         self.assertEqual(args.project_name, expected_project_name,
                          "test_process_and_validate_params_csv_success result project_name is different than expected")
         self.assertTrue(config.is_html_output())
         self.assertFalse(config.is_csv_output())
+
+    def test_gnuplot_version_success_equal(self):
+        expected_project_name = "UTEST HTML Project"
+        cli_params = list([
+            '--project_name=' + expected_project_name,
+            self.repo_folder,
+            self.output_folder
+        ])
+
+        config = Configuration(cli_params)
+        # rewrite fields with test data
+        config.GNUPLOT_VERSION_STRING = '5.2'
+        config.GNUPLOT_MINIMAL_VERSION = '5.2'
+        self.assertTrue(config.is_valid_gnuplot_version())
+
+    def test_gnuplot_version_success_higher(self):
+        expected_project_name = "UTEST HTML Project"
+        cli_params = list([
+            '--project_name=' + expected_project_name,
+            self.repo_folder,
+            self.output_folder
+        ])
+
+        config = Configuration(cli_params)
+        # rewrite fields with test data
+        config.GNUPLOT_VERSION_STRING = '5.6'
+        config.GNUPLOT_MINIMAL_VERSION = '5.2'
+        self.assertTrue(config.is_valid_gnuplot_version())
+
+    def test_gnuplot_version_failed_lower(self):
+        expected_project_name = "UTEST HTML Project"
+        cli_params = list([
+            '--project_name=' + expected_project_name,
+            self.repo_folder,
+            self.output_folder
+        ])
+
+        config = Configuration(cli_params)
+        # rewrite fields with test data
+        config.GNUPLOT_VERSION_STRING = '5.0'
+        config.GNUPLOT_MINIMAL_VERSION = '5.2'
+        self.assertFalse(config.is_valid_gnuplot_version())
+
+    def test_gnuplot_version_faild_not_exists(self):
+        expected_project_name = "UTEST HTML Project"
+        cli_params = list([
+            '--project_name=' + expected_project_name,
+            self.repo_folder,
+            self.output_folder
+        ])
+
+        config = Configuration(cli_params)
+        # rewrite fields with test data
+        self.assertFalse(config.is_valid_gnuplot_version('-'))

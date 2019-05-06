@@ -2,6 +2,9 @@ import os
 import sys
 import argparse
 import json
+import re
+import warnings
+from distutils.version import StrictVersion
 
 from tools import get_pipe_output
 
@@ -71,6 +74,7 @@ class Configuration:
     GNUPLOT_VERSION_STRING = None
     # By default, gnuplot is searched from path, but can be overridden with the
     # environment variable "GNUPLOT"
+    GNUPLOT_MINIMAL_VERSION = '5.2'
     gnuplot_executable = os.environ.get('GNUPLOT', 'gnuplot')
 
     @staticmethod
@@ -107,10 +111,33 @@ class Configuration:
         if self.args.config_file == "-":
             LoadConfigJsonFile.setup_config(self.args, DEFAULT_CONFIG)
 
+    def query_gnuplot_version(self):
+        query_str = get_pipe_output(['%s --version' % self.gnuplot_executable]).split('\n')[0]
+        return query_str
+
     def get_gnuplot_version(self):
         if self.GNUPLOT_VERSION_STRING is None:
-            self.GNUPLOT_VERSION_STRING = get_pipe_output(['%s --version' % self.gnuplot_executable]).split('\n')[0]
+            reg = re.compile("(\d+)\.(\d+)\.?(\d+)?")
+            version_str = self.query_gnuplot_version()
+            match = reg.search(version_str)
+            if match:
+                self.GNUPLOT_VERSION_STRING = version_str[match.span()[0]:match.span()[1]]
+            else:
+                self.GNUPLOT_VERSION_STRING = None
         return self.GNUPLOT_VERSION_STRING
+
+    def is_valid_gnuplot_version(self, version: str = None) -> bool:
+        current_version = version if version else self.get_gnuplot_version()
+        if current_version:
+            try:
+                return StrictVersion(current_version) >= StrictVersion(self.GNUPLOT_MINIMAL_VERSION)
+            except Exception as ex:
+                warnings.warn('Gnuplot version number not aplicable. Error: %s \n version number str: %s' % (ex, current_version))
+                return False
+
+        else:
+            warnings.warn('Gnuplot not installed! Required minimal version: %s' % self.GNUPLOT_MINIMAL_VERSION)
+            return False
 
     def get_gnuplot_executable(self) -> str:
         return self.gnuplot_executable
