@@ -29,6 +29,13 @@ class GitStats:
             warnings.warn(ce)
             sys.exit(1)
 
+        # check gnuplot version needed to HTML reports
+        if config.is_html_output() and not config.is_valid_gnuplot_version():
+            warnings.warn("Invalid gnuplot version. Requiered "
+                          "minimal version: %s. Current version: %s" % (Configuration.GNUPLOT_MINIMAL_VERSION,
+                                                                        config.get_gnuplot_version()))
+            sys.exit(1)
+
         output_path = args.output_path
         run_dir = config.get_run_dir()
 
