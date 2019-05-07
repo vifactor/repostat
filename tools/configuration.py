@@ -72,17 +72,25 @@ class UsageException(Exception):
 class Configuration:
 
     GNUPLOT_VERSION_STRING = None
+    GNUPLOT_MINIMAL_VERSION = '5.2'
     # By default, gnuplot is searched from path, but can be overridden with the
     # environment variable "GNUPLOT"
-    GNUPLOT_MINIMAL_VERSION = '5.2'
     gnuplot_executable = os.environ.get('GNUPLOT', 'gnuplot')
+    release_data_dict = None
+    repostat_root_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
 
-    @staticmethod
-    def get_release_data_info():
-        release_data_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../git_hooks/release_data.json')
-        with open(release_data_file, "r") as release_file:
-            release_data = json.load(release_file)
-        return release_data
+    @classmethod
+    def get_release_data_info(cls):
+        if not cls.release_data_dict:
+            cls.release_data_dict = cls._read_release_data()
+        return cls.release_data_dict
+
+    @classmethod
+    def _read_release_data(cls):
+        RELEASE_DATA_FILE = os.path.join(cls.repostat_root_dir, 'git_hooks', 'release_data.json')
+        with open(RELEASE_DATA_FILE) as release_json_file:
+            release_data = json.load(release_json_file)
+            return release_data
 
     @staticmethod
     def get_gitstat_parser() -> argparse.ArgumentParser:

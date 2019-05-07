@@ -1,8 +1,9 @@
 from setuptools import setup
+from tools import Configuration
 
 # name with underscore is used here because 'repostat' is already occupied by https://pypi.org/project/repostat/
 setup(name='repo_stat',
-      version='0.91',
+      version=Configuration.get_release_data_info()['develop_version'],
       description='Desktop git repository analyser and report creator.',
       keywords='git analisys statistics',
       url='https://github.com/vifactor/repostat',
