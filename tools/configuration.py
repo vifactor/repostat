@@ -12,13 +12,35 @@ from tools import get_pipe_output
 class ReadableDir(argparse.Action):
 
     def __call__(self, parser, namespace, values, option_string=None):
-        prospective_dir = values
+        prospective_dir = os.path.abspath(os.path.expanduser(values))
         if not os.path.isdir(prospective_dir):
-            raise argparse.ArgumentTypeError("readable_dir:{0} is not a valid path".format(prospective_dir))
+            raise argparse.ArgumentTypeError("Path {0} is not valid.".format(prospective_dir))
         if os.access(prospective_dir, os.R_OK):
             setattr(namespace, self.dest, prospective_dir)
         else:
-            raise argparse.ArgumentTypeError("readable_dir:{0} is not a readable dir".format(prospective_dir))
+            raise argparse.ArgumentTypeError("Directory {0} is not readable.".format(prospective_dir))
+
+
+class WritableDir(argparse.Action):
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        prospective_dir = os.path.abspath(os.path.expanduser(values))
+        if os.path.isdir(prospective_dir):
+            warnings.warn("Directory {0} already exists. Its content will be rewritten.".format(prospective_dir))
+            if not os.access(prospective_dir, os.W_OK):
+                raise argparse.ArgumentTypeError("Directory {0} is not writable.".format(prospective_dir))
+        else:
+            is_subdir_of_writable_parent = False
+            parent_dir, sub_dir = os.path.split(prospective_dir)
+            while sub_dir:
+                parent_dir, sub_dir = os.path.split(parent_dir)
+                if os.path.isdir(parent_dir) and os.access(parent_dir, os.W_OK):
+                    is_subdir_of_writable_parent = True
+                    break
+            if not is_subdir_of_writable_parent:
+                raise argparse.ArgumentTypeError("{0} is not writable directory.".format(parent_dir))
+
+        setattr(namespace, self.dest, prospective_dir)
 
 
 DEFAULT_CONFIG = {
@@ -112,8 +134,8 @@ class Configuration:
         parser.add_argument('--version', action='version', version='%(prog)s ' + release_info['develop_version'])
         parser.add_argument('--config_file', action=LoadConfigJsonFile, default="-")
 
-        parser.add_argument('git_repo', type=str)
-        parser.add_argument('output_path', type=str, action=ReadableDir)
+        parser.add_argument('git_repo', type=str, action=ReadableDir)
+        parser.add_argument('output_path', type=str, action=WritableDir)
 
         return parser
 
@@ -179,6 +201,7 @@ class Configuration:
         args = self.get_gitstat_parser().parse_args(args_orig)
 
         try:
+            print(args.output_path)
             os.makedirs(args.output_path)
         except OSError:
             pass
