@@ -110,6 +110,7 @@ class TestConfiguration(unittest.TestCase):
         self.assertTrue(isinstance(context.exception, argparse.ArgumentTypeError))
 
     def test_configuration_argparse_usage(self):
+        # FIXME: this mainly tests third-party argparse library
         parser = Configuration.get_gitstat_parser()
         parser.print_usage()
         print()

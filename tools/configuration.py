@@ -196,12 +196,8 @@ class Configuration:
             raise ConfigurationException("gnuplot not found")
 
     def _process_and_validate_params(self, args_orig=None):
-        self._check_pre_reqs()
-
         args = self.get_gitstat_parser().parse_args(args_orig)
-
         try:
-            print(args.output_path)
             os.makedirs(args.output_path)
         except OSError:
             pass
@@ -209,6 +205,7 @@ class Configuration:
             ConfigurationException(
                 'FATAL:Can\'t create Output path. Output path is not a directory ' 
                 'or does not exist: %s' % args.output_path)
+        self._check_pre_reqs()
 
         return args
 
