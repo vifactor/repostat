@@ -31,7 +31,7 @@ class GitStats:
 
         # check gnuplot version needed to HTML reports
         if config.is_html_output() and not config.is_valid_gnuplot_version():
-            warnings.warn("Invalid gnuplot version. Requiered "
+            warnings.warn("Invalid gnuplot version. Required "
                           "minimal version: %s. Current version: %s" % (Configuration.GNUPLOT_MINIMAL_VERSION,
                                                                         config.get_gnuplot_version()))
             sys.exit(1)
@@ -79,7 +79,7 @@ class GitStats:
         elif config.is_csv_output():
             print('Generating CSV report...')
             report = CSVReportCreator()
-            report.create(data.repo_statistics, output_path, config.get_args_dict())
+            report.create(data.repo_statistics, output_path, config.get_args_dict(), config.is_append_csv())
             print('CSV report created here: %s' % output_path)
             self.get_times()
 

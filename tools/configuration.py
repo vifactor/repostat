@@ -12,13 +12,35 @@ from tools import get_pipe_output
 class ReadableDir(argparse.Action):
 
     def __call__(self, parser, namespace, values, option_string=None):
-        prospective_dir = values
+        prospective_dir = os.path.abspath(os.path.expanduser(values))
         if not os.path.isdir(prospective_dir):
-            raise argparse.ArgumentTypeError("readable_dir:{0} is not a valid path".format(prospective_dir))
+            raise argparse.ArgumentTypeError("Path {0} is not valid.".format(prospective_dir))
         if os.access(prospective_dir, os.R_OK):
             setattr(namespace, self.dest, prospective_dir)
         else:
-            raise argparse.ArgumentTypeError("readable_dir:{0} is not a readable dir".format(prospective_dir))
+            raise argparse.ArgumentTypeError("Directory {0} is not readable.".format(prospective_dir))
+
+
+class WritableDir(argparse.Action):
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        prospective_dir = os.path.abspath(os.path.expanduser(values))
+        if os.path.isdir(prospective_dir):
+            warnings.warn("Directory {0} already exists. Its content will be rewritten.".format(prospective_dir))
+            if not os.access(prospective_dir, os.W_OK):
+                raise argparse.ArgumentTypeError("Directory {0} is not writable.".format(prospective_dir))
+        else:
+            is_subdir_of_writable_parent = False
+            parent_dir, sub_dir = os.path.split(prospective_dir)
+            while sub_dir:
+                parent_dir, sub_dir = os.path.split(parent_dir)
+                if os.path.isdir(parent_dir) and os.access(parent_dir, os.W_OK):
+                    is_subdir_of_writable_parent = True
+                    break
+            if not is_subdir_of_writable_parent:
+                raise argparse.ArgumentTypeError("{0} is not writable directory.".format(parent_dir))
+
+        setattr(namespace, self.dest, prospective_dir)
 
 
 DEFAULT_CONFIG = {
@@ -72,17 +94,25 @@ class UsageException(Exception):
 class Configuration:
 
     GNUPLOT_VERSION_STRING = None
+    GNUPLOT_MINIMAL_VERSION = '5.2'
     # By default, gnuplot is searched from path, but can be overridden with the
     # environment variable "GNUPLOT"
-    GNUPLOT_MINIMAL_VERSION = '5.2'
     gnuplot_executable = os.environ.get('GNUPLOT', 'gnuplot')
+    release_data_dict = None
+    repostat_root_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
 
-    @staticmethod
-    def get_release_data_info():
-        release_data_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../git_hooks/release_data.json')
-        with open(release_data_file, "r") as release_file:
-            release_data = json.load(release_file)
-        return release_data
+    @classmethod
+    def get_release_data_info(cls):
+        if not cls.release_data_dict:
+            cls.release_data_dict = cls._read_release_data()
+        return cls.release_data_dict
+
+    @classmethod
+    def _read_release_data(cls):
+        RELEASE_DATA_FILE = os.path.join(cls.repostat_root_dir, 'git_hooks', 'release_data.json')
+        with open(RELEASE_DATA_FILE) as release_json_file:
+            release_data = json.load(release_json_file)
+            return release_data
 
     @staticmethod
     def get_gitstat_parser() -> argparse.ArgumentParser:
@@ -97,11 +127,15 @@ class Configuration:
                                  "This param currently used in csv output format.")
         parser.add_argument('--output_format', default='html', type=str, choices=['html', 'csv'],
                             help="Statistic output format. Valid values: [html, csv]")
+        parser.add_argument('--append_csv', action='store_true',
+                            help="This option operates in case csv output format. "
+                                 "Append exists csv, instead of rewrite.")
+
         parser.add_argument('--version', action='version', version='%(prog)s ' + release_info['develop_version'])
         parser.add_argument('--config_file', action=LoadConfigJsonFile, default="-")
 
-        parser.add_argument('git_repo', type=str)
-        parser.add_argument('output_path', type=str, action=ReadableDir)
+        parser.add_argument('git_repo', type=str, action=ReadableDir)
+        parser.add_argument('output_path', type=str, action=WritableDir)
 
         return parser
 
@@ -162,10 +196,7 @@ class Configuration:
             raise ConfigurationException("gnuplot not found")
 
     def _process_and_validate_params(self, args_orig=None):
-        self._check_pre_reqs()
-
         args = self.get_gitstat_parser().parse_args(args_orig)
-
         try:
             os.makedirs(args.output_path)
         except OSError:
@@ -174,6 +205,7 @@ class Configuration:
             ConfigurationException(
                 'FATAL:Can\'t create Output path. Output path is not a directory ' 
                 'or does not exist: %s' % args.output_path)
+        self._check_pre_reqs()
 
         return args
 
@@ -182,6 +214,9 @@ class Configuration:
 
     def get_args_dict(self):
         return self.args.__dict__
+
+    def is_append_csv(self) -> bool:
+        return self.args.append_csv == True
 
     @staticmethod
     def get_run_dir():

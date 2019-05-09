@@ -7,7 +7,6 @@ import itertools
 import time
 import collections
 import glob
-import json
 
 from jinja2 import Environment, FileSystemLoader
 from tools.datacollector import GitDataCollector
@@ -20,12 +19,12 @@ from tools import Configuration
 def getkeyssortedbyvalues(a_dict):
     return [el[1] for el in sorted([(el[1], el[0]) for el in a_dict.items()])]
 
+
 class HTMLReportCreator(object):
     data: GitDataCollector = None
     configuration: Configuration = None
     conf: dict = None
     recent_activity_period_weeks = 32
-    repostat_root_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
 
     def __init__(self, config: Configuration, repo_stat):
         self.data = None
@@ -36,21 +35,13 @@ class HTMLReportCreator(object):
 
         self.git_repo_statistics = repo_stat
 
-        templates_dir = os.path.join(self.repostat_root_dir, 'templates')
+        templates_dir = os.path.join(self.configuration.repostat_root_dir, 'templates')
         self.j2_env = Environment(loader=FileSystemLoader(templates_dir), trim_blocks=True)
         self.j2_env.filters['to_month_name_abr'] = lambda im: calendar.month_abbr[im]
         self.j2_env.filters['to_weekday_name'] = lambda i: calendar.day_name[i]
         self.j2_env.filters['to_ratio'] = lambda val, max_val: float(val) / max_val
         self.j2_env.filters['to_percentage'] = lambda val, max_val: 100 * float(val) / max_val
         self.j2_env.filters['to_intensity'] = lambda val, max_val: 127 + int((float(val) / max_val) * 128)
-
-        self.release_data = self._read_release_data()
-
-    def _read_release_data(self):
-        RELEASE_DATA_FILE = os.path.join(self.repostat_root_dir, 'git_hooks', 'release_data.json')
-        with open(RELEASE_DATA_FILE) as release_json_file:
-            release_data = json.load(release_json_file)
-            return release_data
 
     def _save_recent_activity_data(self):
         # generate weeks to show (previous N weeks from now)
@@ -72,8 +63,8 @@ class HTMLReportCreator(object):
         self.title = data.projectname
 
         # copy static files. Looks in the binary directory, ../share/gitstats and /usr/share/gitstats
-        secondarypath = os.path.join(self.repostat_root_dir, '..', 'share', 'gitstats')
-        basedirs = [self.repostat_root_dir, secondarypath, '/usr/share/gitstats']
+        secondarypath = os.path.join(self.configuration.repostat_root_dir, '..', 'share', 'gitstats')
+        basedirs = [self.configuration.repostat_root_dir, secondarypath, '/usr/share/gitstats']
         for asset in ('gitstats.css', 'sortable.js', 'arrow-up.gif', 'arrow-down.gif', 'arrow-none.gif'):
             for base in basedirs:
                 src = os.path.join(base, asset)
@@ -192,7 +183,7 @@ class HTMLReportCreator(object):
             f.write(about_html.decode('utf-8'))
 
         print('Generating graphs...')
-        self.process_gnuplot_scripts(scripts_path=os.path.join(self.repostat_root_dir, 'gnuplot'),
+        self.process_gnuplot_scripts(scripts_path=os.path.join(self.configuration.repostat_root_dir, 'gnuplot'),
                                      data_path=path,
                                      output_images_path=path)
 
@@ -408,11 +399,11 @@ class HTMLReportCreator(object):
     def render_about_page(self):
         page_data = {
             "url": "https://github.com/vifactor/repostat",
-            "version": self.release_data['user_version'],
+            "version": self.configuration.get_release_data_info()['user_version'],
             "tools": [GitStatistics.get_fetching_tool_info(),
                       self.configuration.get_jinja_version(),
                       'gnuplot ' + self.configuration.get_gnuplot_version()],
-            "contributors": [author for author in self.release_data['contributors']]
+            "contributors": [author for author in self.configuration.get_release_data_info()['contributors']]
         }
 
         template_rendered = self.j2_env.get_template('about.html').render(
