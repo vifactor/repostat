@@ -19,3 +19,7 @@ test/csv_outs
 .idea
 # Visual Studio files 
 .vscode
+
+# pip install --develop files
+build
+dist

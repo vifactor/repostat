@@ -7,6 +7,7 @@ import itertools
 import time
 import collections
 import glob
+import warnings
 
 from jinja2 import Environment, FileSystemLoader
 from tools.datacollector import GitDataCollector
@@ -62,17 +63,18 @@ class HTMLReportCreator(object):
         self.path = path
         self.title = data.projectname
 
-        # copy static files. Looks in the binary directory, ../share/gitstats and /usr/share/gitstats
-        secondarypath = os.path.join(self.configuration.repostat_root_dir, '..', 'share', 'gitstats')
-        basedirs = [self.configuration.repostat_root_dir, secondarypath, '/usr/share/gitstats']
-        for asset in ('gitstats.css', 'sortable.js', 'arrow-up.gif', 'arrow-down.gif', 'arrow-none.gif'):
-            for base in basedirs:
-                src = os.path.join(base, asset)
-                if os.path.exists(src):
-                    shutil.copyfile(src, os.path.join(path, asset))
-                    break
+        # copy static files
+        for asset in ('gitrepostat.css', 'sortable.js', 'arrow-up.gif', 'arrow-down.gif', 'arrow-none.gif'):
+            src = os.path.join(self.configuration.repostat_root_dir, "assets")
+            if asset.endswith(".gif"):
+                src = os.path.join(src, "images", asset)
             else:
-                print('Warning: "%s" not found, so not copied (searched: %s)' % (asset, basedirs))
+                src = os.path.join(src, asset)
+            dst = os.path.join(path, asset)
+            if os.path.exists(src):
+                shutil.copyfile(src, dst)
+            else:
+                warnings.warn('"%s" not found while searched in %s and, hence, not copied' % (asset, src))
 
         ###
         # General
