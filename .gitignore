@@ -23,3 +23,7 @@ test/csv_outs
 # pip install --develop files
 build
 dist
+
+# stdeb files
+deb_dist/
+*.tar.gz

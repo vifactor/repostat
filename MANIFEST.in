@@ -3,3 +3,4 @@ include templates/*.html
 include assets/images/*.gif
 include assets/sortable.js
 include assets/gitstats.css
+include release_data.json

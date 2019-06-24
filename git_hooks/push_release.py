@@ -9,7 +9,7 @@ import pygit2 as git
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPOSTAT_REPO = os.path.join(HERE, '..', '..')
-RELEASE_DATA_FILE = os.path.join(REPOSTAT_REPO, 'git_hooks', 'release_data.json')
+RELEASE_DATA_FILE = os.path.join(REPOSTAT_REPO, 'release_data.json')
 
 
 def fetch_contributors():
@@ -62,7 +62,7 @@ if not release_data or release_data['develop_version'] != git_tag_string:
 
     with open(RELEASE_DATA_FILE, 'w') as release_json_file:
         print("Release data is being updated:", release_data)
-        json.dump(release_data, release_json_file)
+        json.dump(release_data, release_json_file, indent=4)
 
     # create commit with release data
     subprocess.check_output(['git', 'add', '{}'.format(RELEASE_DATA_FILE)])

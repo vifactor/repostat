@@ -109,7 +109,7 @@ class Configuration:
 
     @classmethod
     def _read_release_data(cls):
-        RELEASE_DATA_FILE = os.path.join(cls.repostat_root_dir, 'git_hooks', 'release_data.json')
+        RELEASE_DATA_FILE = os.path.join(cls.repostat_root_dir, 'release_data.json')
         with open(RELEASE_DATA_FILE) as release_json_file:
             release_data = json.load(release_json_file)
             return release_data
