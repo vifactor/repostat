@@ -1,5 +1,5 @@
 import unittest
-from tools.configuration import Configuration
+from config.configuration import Configuration
 import argparse
 import os
 

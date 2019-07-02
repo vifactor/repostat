@@ -14,7 +14,7 @@ from tools.datacollector import GitDataCollector
 from tools.gitstatistics import GitStatistics
 from tools.gitstatistics import CommitDictFactory
 from tools import get_pipe_output
-from tools import Configuration
+from config import Configuration
 
 
 def getkeyssortedbyvalues(a_dict):

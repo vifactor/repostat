@@ -11,7 +11,7 @@ from tools.csvreportcreator import CSVReportCreator
 from tools.htmlreportcreator import HTMLReportCreator
 from tools import GitDataCollector
 from tools import get_external_execution_time
-from tools import Configuration, ConfigurationException
+from config import Configuration, ConfigurationException
 
 os.environ['LC_ALL'] = 'C'
 
