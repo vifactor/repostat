@@ -1,0 +1,13 @@
+Source: repostat
+Maintainer: Viktor Kopp <vifactor@gmail.com>
+Section: python
+Priority: optional
+Build-Depends: dh-python, python3-setuptools, python3-all, debhelper (>= 9)
+Standards-Version: 3.9.6
+Homepage: https://github.com/vifactor/repostat
+
+Package: repostat
+Architecture: all
+Depends: ${misc:Depends}, ${python3:Depends}
+Description: Desktop git repository analyser and report creator.
+

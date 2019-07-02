@@ -1,0 +1,23 @@
+repostat (0.95-5ubuntu1~1.gbpbf2a7b) UNRELEASED; urgency=medium
+
+  ** SNAPSHOT build @bf2a7b719f13dda451e31617f36547e200ca8d70 **
+
+  * Revert "New upstream version 0.95"
+
+ -- Viktor Kopp <vifactor@gmail.com>  Thu, 11 Jul 2019 22:59:33 +0200
+
+repostat (0.95-5) bionic; urgency=low
+
+  * Fix python3-six dependency (#60)
+  *  "Release v0.95"
+  * Get rid of implicit build deps (#61)
+  * Removed obsolete package dependencies
+  * New upstream version 0.95
+
+ -- Viktor Kopp <vifactor@gmail.com>  Wed, 10 Jul 2019 00:18:12 +0200
+
+repostat (0.94-1) unstable; urgency=low
+
+  * source package automatically created by stdeb 0.8.5
+
+ -- Viktor Kopp <vifactor@gmail.com>  Tue, 02 Jul 2019 23:06:35 +0200
