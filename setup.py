@@ -19,10 +19,11 @@ setup(name='repo_stat',
             'pygit2>=0.24.2,<=0.28',
             'python-dateutil==2.7.3',
             'pytz==2018.5',
-            'six==1.11.0'
+            'six>=1.11.0'
       ],
-      test_suite='nose.collector',
-      tests_require=['nose'],
+# FIXME: commented out due to dpkg failure due to impossibility to download "nose" from pypi
+#      test_suite='nose.collector',
+#      tests_require=['nose'],
       scripts=['gitstats.py', 'export_repos.py'],
       include_package_data=True,
       zip_safe=False)
