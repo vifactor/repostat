@@ -1,4 +1,3 @@
-
 import os
 import datetime
 import calendar
@@ -10,11 +9,11 @@ import glob
 import warnings
 
 from jinja2 import Environment, FileSystemLoader
-from tools.datacollector import GitDataCollector
-from tools.gitstatistics import GitStatistics
-from tools.gitstatistics import CommitDictFactory
-from tools import get_pipe_output
-from config import Configuration
+from analysis.datacollector import GitDataCollector
+from analysis.gitstatistics import GitStatistics
+from analysis.gitstatistics import CommitDictFactory
+from tools.shellhelper import get_pipe_output
+from tools.configuration import Configuration
 
 
 def getkeyssortedbyvalues(a_dict):
@@ -402,7 +401,7 @@ class HTMLReportCreator(object):
         page_data = {
             "url": "https://github.com/vifactor/repostat",
             "version": self.configuration.get_release_data_info()['user_version'],
-            "tools": [GitStatistics.get_fetching_tool_info(),
+            "analysis": [GitStatistics.get_fetching_tool_info(),
                       self.configuration.get_jinja_version(),
                       'gnuplot ' + self.configuration.get_gnuplot_version()],
             "contributors": [author for author in self.configuration.get_release_data_info()['contributors']]

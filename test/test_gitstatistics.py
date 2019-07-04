@@ -1,9 +1,9 @@
 import unittest
 import datetime
 import os
-from tools.gitstatistics import CommitDictFactory
-from tools.gitstatistics import AuthorDictFactory
-from tools.gitstatistics import GitStatistics
+from analysis.gitstatistics import CommitDictFactory
+from analysis.gitstatistics import AuthorDictFactory
+from analysis.gitstatistics import GitStatistics
 
 
 class TestCommitDictFactory(unittest.TestCase):

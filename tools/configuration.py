@@ -6,7 +6,7 @@ import re
 import warnings
 from distutils.version import StrictVersion
 
-from tools import get_pipe_output
+from tools.shellhelper import get_pipe_output
 
 
 class ReadableDir(argparse.Action):

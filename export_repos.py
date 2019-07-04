@@ -6,7 +6,7 @@ import shutil
 import gitstats
 import warnings
 import argparse
-from config.configuration import ReadableDir
+from tools.configuration import ReadableDir
 
 
 class ExportProjectRepos:

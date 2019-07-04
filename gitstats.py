@@ -7,11 +7,11 @@ import sys
 import warnings
 import time
 
-from tools.csvreportcreator import CSVReportCreator
-from tools.htmlreportcreator import HTMLReportCreator
-from tools import GitDataCollector
-from tools import get_external_execution_time
-from config import Configuration, ConfigurationException
+from analysis.csvreportcreator import CSVReportCreator
+from analysis.htmlreportcreator import HTMLReportCreator
+from analysis import GitDataCollector
+from tools.shellhelper import get_external_execution_time
+from tools.configuration import Configuration, ConfigurationException
 
 os.environ['LC_ALL'] = 'C'
 
