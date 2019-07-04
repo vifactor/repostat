@@ -69,19 +69,17 @@ class GitStats:
             print('Generating HTML report...')
             report = HTMLReportCreator(config, data.repo_statistics)
             report.create(data, output_path)
-            self.get_times()
             if sys.stdin.isatty():
                 print('You may now run:')
                 print('')
                 print('   sensible-browser \'%s\'' % os.path.join(output_path, 'general.html').replace("'", "'\\''"))
                 print('')
-            self.get_times()
         elif config.is_csv_output():
             print('Generating CSV report...')
             report = CSVReportCreator()
             report.create(data.repo_statistics, output_path, config.get_args_dict(), config.is_append_csv())
             print('CSV report created here: %s' % output_path)
-            self.get_times()
+        self.get_times()
 
     @staticmethod
     def get_times():

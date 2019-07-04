@@ -7,7 +7,6 @@ import time
 import collections
 import glob
 import warnings
-
 from jinja2 import Environment, FileSystemLoader
 from analysis.datacollector import GitDataCollector
 from analysis.gitstatistics import GitStatistics

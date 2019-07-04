@@ -13,11 +13,9 @@ setup(name='repo_stat',
       packages=['analysis', 'tools'],
       install_requires=[
           'cffi==1.11.5',
-          'dateutils==0.6.6',
           'Jinja2>=2.10.1',
           'MarkupSafe==1.0',
           'pygit2>=0.24.2,<=0.28',
-          'python-dateutil==2.7.3',
           'pytz==2018.5',
           'six>=1.11.0'
       ],
