@@ -1,9 +1,9 @@
 import unittest
 import shutil
 import os
-from tools.csvreportcreator import DictionaryListCsvExporter
-from tools.csvreportcreator import DictionaryCsvExporter
-from tools.gitstatistics import GitStatistics
+from analysis.csvreportcreator import DictionaryListCsvExporter
+from analysis.csvreportcreator import DictionaryCsvExporter
+from analysis.gitstatistics import GitStatistics
 
 
 class BasicTestExporter(unittest.TestCase):

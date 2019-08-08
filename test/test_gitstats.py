@@ -3,8 +3,8 @@ import unittest
 import datetime
 import re
 from six import iteritems
-from tools import GitStatistics
-from tools import get_pipe_output
+from analysis import GitStatistics
+from analysis import get_pipe_output
 
 conf = {
     'max_domains': 10,

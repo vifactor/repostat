@@ -1,5 +1,6 @@
 include gnuplot/*.plot
 include templates/*.html
-include *.gif
-include sortable.js
-include gitstats.css
+include assets/images/*.gif
+include assets/sortable.js
+include assets/gitstats.css
+include release_data.json

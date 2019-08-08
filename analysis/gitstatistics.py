@@ -1,10 +1,8 @@
-from __future__ import unicode_literals
-from __future__ import absolute_import
 import pygit2 as git
 from datetime import datetime, tzinfo, timedelta
 from collections import Counter
 import warnings
-from .timeit import Timeit
+from tools.timeit import Timeit
 import os
 
 

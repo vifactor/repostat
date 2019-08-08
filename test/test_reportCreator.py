@@ -1,7 +1,7 @@
 import unittest
 import os
-from tools.reportCreator  import ReportCreator
-from tools.gitstatistics import GitStatistics
+from analysis.reportCreator  import ReportCreator
+from analysis.gitstatistics import GitStatistics
 
 conf = {
     'max_domains': 10,

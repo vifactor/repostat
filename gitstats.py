@@ -7,11 +7,11 @@ import sys
 import warnings
 import time
 
-from tools.csvreportcreator import CSVReportCreator
-from tools.htmlreportcreator import HTMLReportCreator
-from tools import GitDataCollector
-from tools import get_external_execution_time
-from tools import Configuration, ConfigurationException
+from analysis.csvreportcreator import CSVReportCreator
+from analysis.htmlreportcreator import HTMLReportCreator
+from analysis import GitDataCollector
+from tools.shellhelper import get_external_execution_time
+from tools.configuration import Configuration, ConfigurationException
 
 os.environ['LC_ALL'] = 'C'
 
@@ -69,19 +69,17 @@ class GitStats:
             print('Generating HTML report...')
             report = HTMLReportCreator(config, data.repo_statistics)
             report.create(data, output_path)
-            self.get_times()
             if sys.stdin.isatty():
                 print('You may now run:')
                 print('')
                 print('   sensible-browser \'%s\'' % os.path.join(output_path, 'general.html').replace("'", "'\\''"))
                 print('')
-            self.get_times()
         elif config.is_csv_output():
             print('Generating CSV report...')
             report = CSVReportCreator()
             report.create(data.repo_statistics, output_path, config.get_args_dict(), config.is_append_csv())
             print('CSV report created here: %s' % output_path)
-            self.get_times()
+        self.get_times()
 
     @staticmethod
     def get_times():
