@@ -1,10 +1,8 @@
-repostat (0.95-5ubuntu1~1.gbpbf2a7b) UNRELEASED; urgency=medium
+repostat (0.96-1) bionic; urgency=low
 
-  ** SNAPSHOT build @bf2a7b719f13dda451e31617f36547e200ca8d70 **
+  * Packaging using gbp tool
 
-  * Revert "New upstream version 0.95"
-
- -- Viktor Kopp <vifactor@gmail.com>  Thu, 11 Jul 2019 22:59:33 +0200
+ -- Viktor Kopp <vifactor@gmail.com>  Sun, 11 Aug 2019 14:16:13 +0200
 
 repostat (0.95-5) bionic; urgency=low
 
