@@ -2,34 +2,24 @@ import unittest
 from tools.configuration import Configuration
 import argparse
 import os
-import stat
 
 
 class TestConfiguration(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.repo_folder, test_subdir = os.path.split(os.path.dirname(os.path.abspath(__file__)))
+        self.repo_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
         self.output_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_outs")
-        self.read_only_folder = os.path.join(self.output_folder, 'readonly')
         try:
             os.makedirs(self.output_folder)
         except OSError:
             pass
-        try:
-            os.makedirs(self.read_only_folder)
-        except OSError:
-            pass
-        try:
-            os.chmod(self.read_only_folder, stat.S_IREAD)
-        except OSError:
-            pass
 
     def test_json_config_parser(self):
-        # test config with full json config file
+        # test tools with full json tools file
         cli_params = list([
             '--project_name=UTEST Project',
             '--output_format=csv',
-            '--config_file=config-test.json',
+            '--config_file=tools-test.json',
             self.repo_folder,
             self.output_folder
         ])
@@ -52,11 +42,11 @@ class TestConfiguration(unittest.TestCase):
                          "test_json_config_parser result max_authors is different than expected")
 
     def test_partial_json_config_parser(self):
-        # test config with partially filled json config file
+        # test tools with partially filled json tools file
         cli_params = list([
             '--project_name=UTEST Project',
             '--output_format=csv',
-            '--config_file=partial-config-test.json',
+            '--config_file=partial-tools-test.json',
             self.repo_folder,
             self.output_folder
         ])
@@ -73,15 +63,15 @@ class TestConfiguration(unittest.TestCase):
         # default
         self.assertEqual(args.authors_top, 5,
                          "test_json_config_parser result authors_top is different than expected")
-        # from partial config json
+        # from partial tools json
         self.assertEqual(args.max_domains, 9,
                          "test_json_config_parser result max_domains is different than expected")
-        # from partial config json
+        # from partial tools json
         self.assertEqual(args.max_authors, 1,
                          "test_json_config_parser result max_authors is different than expected")
 
     def test_json_config_parser_defaults(self):
-        # test config without json config file
+        # test tools without json tools file
         cli_params = list([
             '--project_name=UTEST Project',
             '--output_format=csv',
@@ -98,7 +88,7 @@ class TestConfiguration(unittest.TestCase):
                          "test_json_config_parser result project_name is different than expected")
         self.assertEqual(args.output_format, 'csv',
                          "test_json_config_parser result output_format is different than expected")
-        # Check default config values without config json
+        # Check default tools values without tools json
         self.assertEqual(args.authors_top, 5,
                          "test_json_config_parser result authors_top is different than expected")
         self.assertEqual(args.max_domains, 10,
@@ -113,7 +103,7 @@ class TestConfiguration(unittest.TestCase):
             '--output_format=csv',
             '--config_file=not_exists.json',
             self.repo_folder,
-            self.output_folder
+            'x:\\gitriports\\repostat'
         ])
         with self.assertRaises(argparse.ArgumentTypeError) as context:
             configuration = Configuration(cli_params)
@@ -142,7 +132,7 @@ class TestConfiguration(unittest.TestCase):
             '--project_name=UTEST Project',
             '--output_format=csv',
             self.repo_folder,
-            self.read_only_folder
+            'x:\\gitriports\\repostat'
         ])
         with self.assertRaises(argparse.ArgumentTypeError) as context:
             configuration = Configuration(cli_params)

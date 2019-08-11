@@ -4,7 +4,7 @@ import datetime
 import re
 from six import iteritems
 from analysis import GitStatistics
-from tools.shellhelper import get_pipe_output
+from analysis import get_pipe_output
 
 conf = {
     'max_domains': 10,
@@ -492,13 +492,12 @@ class TestPygitMethods(unittest.TestCase):
                              "Tags list is not same estimated by different methods")
 
         for tagname in expected_tags_dict.keys():
-            if 'commits' in actual_tags_dict[tagname] and 'authors' in actual_tags_dict[tagname]:
-                expected_authors = expected_tags_dict[tagname]['authors']
-                actual_authors = actual_tags_dict[tagname]['authors']
-                # direct comparison of the two dicts is problematic
-                # due to difference in unicode strings parsing via command line and pygit2
-                self.assertEqual(len(expected_authors), len(actual_authors))
-                self.assertEqual(expected_tags_dict[tagname]['commits'], actual_tags_dict[tagname]['commits'])
+            expected_authors = expected_tags_dict[tagname]['authors']
+            actual_authors = actual_tags_dict[tagname]['authors']
+            # direct comparison of the two dicts is problematic
+            # due to difference in unicode strings parsing via command line and pygit2
+            self.assertEqual(len(expected_authors), len(actual_authors))
+            self.assertEqual(expected_tags_dict[tagname]['commits'], actual_tags_dict[tagname]['commits'])
 
     @unittest.skip("Kept for historical reasons.")
     def test_authors_info(self):
