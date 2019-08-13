@@ -1,3 +1,10 @@
+repostat (0.96.1-1) bionic; urgency=low
+
+  * Add copyright
+  * Manifest.in into Manifest.in
+
+ -- Viktor Kopp <vifactor@gmail.com>  Tue, 13 Aug 2019 07:39:14 +0200
+
 repostat (0.96-1) bionic; urgency=low
 
   * Packaging using gbp tool
