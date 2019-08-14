@@ -8,7 +8,7 @@ Homepage: https://github.com/vifactor/repostat
 
 Package: repostat
 Architecture: all
-Depends: ${misc:Depends}, ${python3:Depends}
+Depends: ${misc:Depends}, ${python3:Depends}, git, gnuplot-nox
 Description: Desktop git repository analyser and report creator.
  repostat is a fork of GitStats utility (by Heikki Hokkanen <hoxu@users.sf.net>)
  As its predecessor, it examines a git-repository and produces some interesting
