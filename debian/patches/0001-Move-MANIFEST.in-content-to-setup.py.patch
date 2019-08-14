@@ -1,0 +1,89 @@
+From: Viktor Kopp <vifactor@gmail.com>
+Date: Wed, 14 Aug 2019 21:23:25 +0200
+Subject: Move MANIFEST.in content to setup.py
+
+Fix repostat root dir
+---
+ MANIFEST.in            |  7 -------
+ setup.py               | 15 +++++++++++----
+ tools/configuration.py | 12 ++++++------
+ 3 files changed, 17 insertions(+), 17 deletions(-)
+ delete mode 100644 MANIFEST.in
+
+diff --git a/MANIFEST.in b/MANIFEST.in
+deleted file mode 100644
+index c958899..0000000
+--- a/MANIFEST.in
++++ /dev/null
+@@ -1,7 +0,0 @@
+-include MANIFEST.in
+-include gnuplot/*.plot
+-include templates/*.html
+-include assets/images/*.gif
+-include assets/sortable.js
+-include assets/gitstats.css
+-include release_data.json
+diff --git a/setup.py b/setup.py
+index 7328c00..80f2067 100644
+--- a/setup.py
++++ b/setup.py
+@@ -1,9 +1,14 @@
++from glob import glob
++import os
++
+ from setuptools import setup
+ from tools.configuration import Configuration
+ 
++this_file_dir = os.path.dirname(os.path.abspath(__file__))
++
+ # name with underscore is used here because 'repostat' is already occupied by https://pypi.org/project/repostat/
+ setup(name='repo_stat',
+-      version=Configuration.get_release_data_info()['develop_version'],
++      version=Configuration.get_release_data_info(this_file_dir)['develop_version'],
+       description='Desktop git repository analyser and report creator.',
+       keywords='git analisys statistics',
+       url='https://github.com/vifactor/repostat',
+@@ -19,9 +24,11 @@ setup(name='repo_stat',
+           'pytz==2018.5',
+           'six>=1.11.0'
+       ],
+-      # FIXME: commented out due to dpkg failure due to impossibility to download "nose" from pypi
+-      #      test_suite='nose.collector',
+-      #      tests_require=['nose'],
+       scripts=['gitstats.py', 'export_repos.py'],
++      data_files=[("share/repostat/gnuplot", glob("gnuplot/*.plot")),
++                  ("share/repostat/templates", glob("templates/*.html")),
++                  ("share/repostat/assets", glob("assets/*.gif", recursive=True)),
++                  ("share/repostat/assets", ["assets/gitrepostat.css", "assets/sortable.js"]),
++                  ("share/repostat", ["release_data.json"])],
+       include_package_data=True,
+       zip_safe=False)
+diff --git a/tools/configuration.py b/tools/configuration.py
+index 2a3340c..694a59b 100644
+--- a/tools/configuration.py
++++ b/tools/configuration.py
+@@ -99,18 +99,18 @@ class Configuration:
+     # environment variable "GNUPLOT"
+     gnuplot_executable = os.environ.get('GNUPLOT', 'gnuplot')
+     release_data_dict = None
+-    repostat_root_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
++    repostat_root_dir = "/usr/share/repostat"
+ 
+     @classmethod
+-    def get_release_data_info(cls):
++    def get_release_data_info(cls, root_dir="/usr/share/repostat"):
+         if not cls.release_data_dict:
+-            cls.release_data_dict = cls._read_release_data()
++            cls.release_data_dict = cls._read_release_data(root_dir)
+         return cls.release_data_dict
+ 
+     @classmethod
+-    def _read_release_data(cls):
+-        RELEASE_DATA_FILE = os.path.join(cls.repostat_root_dir, 'release_data.json')
+-        with open(RELEASE_DATA_FILE) as release_json_file:
++    def _read_release_data(cls, root_dir):
++        release_data_file = os.path.join(root_dir, 'release_data.json')
++        with open(release_data_file) as release_json_file:
+             release_data = json.load(release_json_file)
+             return release_data
+ 
