@@ -10,4 +10,8 @@ Package: repostat
 Architecture: all
 Depends: ${misc:Depends}, ${python3:Depends}
 Description: Desktop git repository analyser and report creator.
+ repostat is a fork of GitStats utility (by Heikki Hokkanen <hoxu@users.sf.net>)
+ As its predecessor, it examines a git-repository and produces some interesting
+ statistics from the history.
+ Currently it supports HTML and CSV outputs.
 
