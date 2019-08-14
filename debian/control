@@ -1,9 +1,9 @@
 Source: repostat
 Maintainer: Viktor Kopp <vifactor@gmail.com>
-Section: python
+Section: vcs
 Priority: optional
-Build-Depends: dh-python, python3-setuptools, python3-all, debhelper (>= 9)
-Standards-Version: 3.9.6
+Build-Depends: dh-python, python3-setuptools, python3-all, debhelper (>= 10)
+Standards-Version: 4.1.0
 Homepage: https://github.com/vifactor/repostat
 
 Package: repostat
