@@ -24,7 +24,7 @@ index c958899..0000000
 -include assets/gitstats.css
 -include release_data.json
 diff --git a/setup.py b/setup.py
-index 7328c00..80f2067 100644
+index 7328c00..69b0cd8 100644
 --- a/setup.py
 +++ b/setup.py
 @@ -1,9 +1,14 @@
@@ -53,7 +53,7 @@ index 7328c00..80f2067 100644
        scripts=['gitstats.py', 'export_repos.py'],
 +      data_files=[("share/repostat/gnuplot", glob("gnuplot/*.plot")),
 +                  ("share/repostat/templates", glob("templates/*.html")),
-+                  ("share/repostat/assets", glob("assets/*.gif", recursive=True)),
++                  ("share/repostat/assets", glob("assets/**/*.gif", recursive=True)),
 +                  ("share/repostat/assets", ["assets/gitrepostat.css", "assets/sortable.js"]),
 +                  ("share/repostat", ["release_data.json"])],
        include_package_data=True,
