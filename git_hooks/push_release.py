@@ -31,13 +31,21 @@ def fetch_contributors():
     return [contributor for contributor, lines_contributed in contribution]
 
 
-# TODO: do not perform any actions if not on 'master' branch
-# get most recent tag name in current branch
-git_tag_string = subprocess.check_output(['git', 'describe', '--abbrev=0', '--tags']).decode().strip()
+# retrieve name of current branch
+git_branch_string = subprocess.check_output(['git', 'rev-parse', '--abbrev-ref', 'HEAD']).decode().strip()
+if git_branch_string != 'master':
+    print("Not the 'master' branch: {}. Do not perform any actions.".format(git_branch_string))
+    sys.exit(0)
 
+# get most recent tag name in current branch
+# TODO: go for earlier tags in history?
+git_tag_string = subprocess.check_output(['git', 'describe', '--abbrev=0', '--tags']).decode().strip()
 # check if this is a version tag of type: vN.N[.N], e.g. "v0.1"
 if re.fullmatch(r'^v\d+\.\d+(\.\d+)?\Z', git_tag_string):
-    print('the most recent version tag is:', git_tag_string)
+    print('The most recent version tag is: ', git_tag_string)
+else:
+    print('The most recent is not a release version tag: ', git_tag_string)
+    sys.exit(0)
 
 try:
     release_json_file = open(RELEASE_DATA_FILE)
