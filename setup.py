@@ -19,9 +19,8 @@ setup(name='repo_stat',
           'pytz==2018.5',
           'six>=1.11.0'
       ],
-      # FIXME: commented out due to dpkg failure due to impossibility to download "nose" from pypi
-      #      test_suite='nose.collector',
-      #      tests_require=['nose'],
-      scripts=['gitstats.py', 'export_repos.py'],
+      test_suite='nose.collector',
+      tests_require=['nose'],
+      scripts=['repostat.py', 'export_repos.py'],
       include_package_data=True,
       zip_safe=False)

@@ -1,5 +1,5 @@
 {
-    "develop_version": "v0.96.1",
+    "develop_version": "v0.97",
     "user_version": "2019-08",
     "contributors": [
         "G\u00e1bor Bereczki",
@@ -9,8 +9,6 @@
         "Jan Beran",
         "Sven van Haastregt",
         "Jani Hur",
-        "Andrew Lazarus",
-        "Pekka Enberg",
         "Alexander Strasser"
     ]
 }
