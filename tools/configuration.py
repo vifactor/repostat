@@ -33,10 +33,10 @@ class WritableDir(argparse.Action):
             is_subdir_of_writable_parent = False
             parent_dir, sub_dir = os.path.split(prospective_dir)
             while sub_dir:
-                parent_dir, sub_dir = os.path.split(parent_dir)
                 if os.path.isdir(parent_dir) and os.access(parent_dir, os.W_OK):
                     is_subdir_of_writable_parent = True
                     break
+                parent_dir, sub_dir = os.path.split(parent_dir)
             if not is_subdir_of_writable_parent:
                 raise argparse.ArgumentTypeError("{0} is not writable directory.".format(parent_dir))
 

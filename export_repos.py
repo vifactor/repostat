@@ -3,7 +3,7 @@
 import sys
 import os
 import shutil
-import gitstats
+from repostat import GitStats
 import warnings
 import argparse
 from tools.configuration import ReadableDir
@@ -66,7 +66,7 @@ class ExportProjectRepos:
 
     @staticmethod
     def _execute_gitstat(args):
-        gitstats.GitStats().run(args)
+        GitStats().run(args)
 
     def before_export(self):
         # Prepare export folder structure
