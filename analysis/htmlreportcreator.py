@@ -10,10 +10,8 @@ import warnings
 from jinja2 import Environment, FileSystemLoader
 from analysis.datacollector import GitDataCollector
 from analysis.gitstatistics import GitStatistics
-from analysis.gitstatistics import CommitDictFactory
 from tools.shellhelper import get_pipe_output
 from tools.configuration import Configuration
-
 
 def getkeyssortedbyvalues(a_dict):
     return [el[1] for el in sorted([(el[1], el[0]) for el in a_dict.items()])]
@@ -167,8 +165,7 @@ class HTMLReportCreator(object):
 
         with open(os.path.join(path, 'lines_of_code.dat'), 'w') as fg:
             for stamp in sorted(self.git_repo_statistics.changes_history.keys()):
-                fg.write(
-                    '%d %d\n' % (stamp, self.git_repo_statistics.changes_history[stamp][CommitDictFactory.LINE_COUNT]))
+                fg.write('%d %d\n' % (stamp, self.git_repo_statistics.changes_history[stamp]['lines']))
 
         ###
         # tags.html
