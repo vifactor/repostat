@@ -1,0 +1,70 @@
+From: Viktor Kopp <vifactor@gmail.com>
+Date: Sun, 18 Aug 2019 14:59:32 +0200
+Subject: Add manpage
+
+---
+ doc/repostat.1 | 55 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 55 insertions(+)
+ create mode 100644 doc/repostat.1
+
+diff --git a/doc/repostat.1 b/doc/repostat.1
+new file mode 100644
+index 0000000..392fb25
+--- /dev/null
++++ b/doc/repostat.1
+@@ -0,0 +1,55 @@
++.\" This is the manual page for repostat
++.\"
++.\" Copyright 2019 by Viktor Kopp
++.\"
++.\" This program is free software; you can redistribute it and/or modify
++.\" it under the terms of the GNU General Public License as published by
++.\" the Free Software Foundation; either version 2 of the License, or
++.\" (at your option) any later version.
++.\"  
++.\" This program is distributed in the hope that it will be useful,
++.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
++.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++.\" GNU General Public License for more details (in the COPYING file).
++.\"
++.TH REPOSTAT "19" "August 2019" "repostat" "User Commands"
++
++.SH NAME
++repostat \- generate statistics of git repositories
++
++.SH SYNOPSIS
++
++.B repostat
++.I <git repository> 
++.I <output path>
++
++.SH DESCRIPTION
++
++Generates statistics about the git repository
++.I <git repository> 
++and stores them in HTML or CSV0 format in the directory
++.I <output path>\fR.
++
++Currently
++.B repostat
++Comprehensive list of options accepted by the program
++you may find by running "repostat --help".
++
++.SH AUTHORS
++
++.B repostat
++is a fork of "gitstats" utility written by
++Heikki Hokkanen and others. This fork is developed and maintained
++by Viktor Kopp, but the list (currently not full) of contributors
++one may find in "release_data.json" configuration file or in a
++generated html report (see "About"-page).
++
++This manual page was written by Viktor Kopp <vifactor@gmail.com>
++for the Ubuntu project, but may be used by others.
++
++.SH SEE ALSO
++
++.B git\fR(1),
++.B statcvs\fR(1) and 
++.B statsvn\fR(1)
++
