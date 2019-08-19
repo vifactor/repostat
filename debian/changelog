@@ -1,3 +1,10 @@
+repostat (0.97-2) bionic; urgency=medium
+
+  * Add manpages
+  * Fix location of gifs in assets
+
+ -- Viktor Kopp <vifactor@gmail.com>  Mon, 19 Aug 2019 23:38:28 +0200
+
 repostat (0.97-1) bionic; urgency=medium
 
   * Fix packaging of gif assets
