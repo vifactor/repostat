@@ -6,118 +6,65 @@ Modernized forked [gitstats](https://github.com/hoxu/gitstats) tool:
  - git output text parsing replaced with pygit2 library calls 
  - added "About" page
 
-# Install
-### Local version can be installed running
+# Ubuntu installation
+## Using pip
 ```bash
-sudo python3 setup.py install [--record files.txt]
+sudo pip3 install [-e] https://github.com/vifactor/repostat
 ```
+This installation procedure may require manual installation 
+of required dependencies, e.g. libgit2, gnuplot. But should also
+work in other non-Debian Linux distributions.
 
-### Local develop version can be uninstalled running
+## Using ppa
 ```bash
-sudo cat files.txt | sudo xargs rm -rf
+sudo add-apt-repository ppa:vifactor/ppa
+sudo apt update
+sudo apt install repostat
 ```
-if previously option "--record files.txt" was used at previous installation.
+**Currently only Ubuntu 18.04 is supported**
+
+# Windows installation
+Check issue #57
 
 ___
-## gitstats Usage
-**Sample:**
+# Scripts
+## repostat
+**Usage**
 ```bash
-repo_stat [-h] [--project_name PROJECT_NAME]
+repostat [--help] [--project_name PROJECT_NAME]
                  [--output_format {html,csv}] [--append_csv] [--version]
                  [--config_file CONFIG_FILE]
-                 git_repo output_path
+                 git_repository_path output_path
 ```
+See "--help" for details.
 
+## export_repos
+The tool script to export statistics of well structured git repos.
+Required folder structure:
+* root_folder
+  * folder1 
+    * GitRepo_1
+    * ...  
+    * GitRepo_n
+  * ...
 
-### Args
-#### output_format
-**valid values**: csv, html  
-**csv**: export basics repo statistic to csv files:  
-    - activity_month_of_year.csv : monthly statistic  
-    - commits.csv : all commit info. Merge commit ignored  
-    - authors.csv : statistic about authors  
-    - general.csv : main statistic info about rep  
-      
-CSV export useful for import into any RDBMS and made any custom statistics.  
-All CSV export files has "Project Name" and "Repo Name" columns.  
-After csv imported any RDBMS can use this field for higher dimension of analysis.
+Expected output:
+* root_folder  
+  * folder1  
+    * GitRepo_1
+      * general.csv
+      * authors.csv
+      * commits.csv
+      * activity_month_of_year.csv
+      * total_history.csv
+    * ...
+  * ...
 
-**html**: this value is the default. Generate and show the statistics in html format. This is useful for human usage.
-#### project_name
-This param is only used in csv export.  
-Repo's project name. A complex project has frontend repo, backend repo, DB repo...etc.  
-When export the repo statistic you can group the details with this field.   
+*This tool is currently not maintained and might not be working at all.*
 
-#### append_csv
-Default value: **false**  
-This option used when output_format = csv.  
-With append_csv = true option, the script will append target csv file if exists.
-
-## export_repos Usage
-export_repos.py is a tool script to export well structured git repos.  
-Requiered folder structure:  
-
-* root  
-  * project1  
-    * GitRepo  
-    * GitRepo1  
-    * GitRepon  
-  * project2  
-    * p2repo1  
-    * p2repo2  
-
+**Usage**
 ```bash
-export_repos [-h] [--pull_repos] [--append_csv] project_folder output_folder
+export_repos [--help] [--pull_repos] [--append_csv] 
+             project_folder output_folder
 ```
-
-### Args
-#### pull_repos
-Execute git pull command in git repo folder before export statistics, and make repo up to date.
-
-#### append_csv
-Append exists csv, instead of rewrite. The repo statistics detail types exported to same files. 
-This reduce the amount of created csv file.
-
-#### project_folder
-root folder location. This folder contain the project folders, and the project folder contain the project repositories.
-
-#### output_folder structure without append_csv option
-The script create same folder structure in the output folder as root-folder.  
-The repos folders will contain the csv export files.
-
-* root  
-  * project1  
-    * GitRepo  
-      * general.csv
-      * authors.csv
-      * commits.csv
-      * activity_month_of_year.csv
-      * total_history.csv
-    * GitRepo1  
-      * general.csv
-      * authors.csv
-      * commits.csv
-      * activity_month_of_year.csv
-      * total_history.csv
-    * GitRepon  
-      * general.csv
-      * authors.csv
-      * commits.csv
-      * activity_month_of_year.csv
-      * total_history.csv
-  * project2  
-    * p2repo1  
-      * general.csv
-      * authors.csv
-      * commits.csv
-      * activity_month_of_year.csv
-      * total_history.csv
-    * p2repo2  
-      * general.csv
-      * authors.csv
-      * commits.csv
-      * activity_month_of_year.csv
-      * total_history.csv
-
-With **append_csv** option the repo details will be exported to the same csv files without the different ones in output folder structure.
-The 5 csv file will be appear (general.csv, authors.csv, commits.csv, activity_month_of_year.csv, otal_history.csv) and contains all repo details.
+See "--help" for parameters description.
