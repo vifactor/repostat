@@ -362,7 +362,7 @@ class HTMLReportCreator(object):
             'tags': []
         }
 
-        # TODO: fix error occuring when a tag name and project name are the same
+        # TODO: fix error occurring when a tag name and project name are the same
         """
         fatal: ambiguous argument 'gitstats': both revision and filename
         Use '--' to separate paths from revisions, like this:
@@ -397,7 +397,7 @@ class HTMLReportCreator(object):
         page_data = {
             "url": "https://github.com/vifactor/repostat",
             "version": self.configuration.get_release_data_info()['user_version'],
-            "analysis": [GitStatistics.get_fetching_tool_info(),
+            "tools": [GitStatistics.get_fetching_tool_info(),
                       self.configuration.get_jinja_version(),
                       'gnuplot ' + self.configuration.get_gnuplot_version()],
             "contributors": [author for author in self.configuration.get_release_data_info()['contributors']]
