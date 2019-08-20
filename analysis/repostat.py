@@ -25,7 +25,7 @@ class GitStats:
             config = Configuration(args_orig)
             args = config.get_args()
         except ConfigurationException as ce:
-            warnings.warn("Configuration exception occured:")
+            warnings.warn("Configuration exception occurred:")
             warnings.warn(ce)
             sys.exit(1)
 
@@ -90,6 +90,9 @@ class GitStats:
               % (exectime_internal, exectime_external, (100.0 * exectime_external) / exectime_internal))
 
 
+def main():
+    GitStats().run(sys.argv[1:])
+
+
 if __name__ == '__main__':
-    g = GitStats()
-    g.run(sys.argv[1:])
+    main()
