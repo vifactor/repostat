@@ -1,3 +1,11 @@
+repostat (0.98-1) bionic; urgency=medium
+
+  * Disable analysis of all remote branches
+  * Add manpage for repostat
+  * Fix tool list in "About"-page
+
+ -- Viktor Kopp <vifactor@gmail.com>  Tue, 20 Aug 2019 22:04:02 +0200
+
 repostat (0.97-2) bionic; urgency=medium
 
   * Add manpages
