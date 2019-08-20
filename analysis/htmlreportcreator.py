@@ -10,10 +10,8 @@ import warnings
 from jinja2 import Environment, FileSystemLoader
 from analysis.datacollector import GitDataCollector
 from analysis.gitstatistics import GitStatistics
-from analysis.gitstatistics import CommitDictFactory
 from tools.shellhelper import get_pipe_output
 from tools.configuration import Configuration
-
 
 def getkeyssortedbyvalues(a_dict):
     return [el[1] for el in sorted([(el[1], el[0]) for el in a_dict.items()])]
@@ -167,8 +165,7 @@ class HTMLReportCreator(object):
 
         with open(os.path.join(path, 'lines_of_code.dat'), 'w') as fg:
             for stamp in sorted(self.git_repo_statistics.changes_history.keys()):
-                fg.write(
-                    '%d %d\n' % (stamp, self.git_repo_statistics.changes_history[stamp][CommitDictFactory.LINE_COUNT]))
+                fg.write('%d %d\n' % (stamp, self.git_repo_statistics.changes_history[stamp]['lines']))
 
         ###
         # tags.html
@@ -365,7 +362,7 @@ class HTMLReportCreator(object):
             'tags': []
         }
 
-        # TODO: fix error occuring when a tag name and project name are the same
+        # TODO: fix error occurring when a tag name and project name are the same
         """
         fatal: ambiguous argument 'gitstats': both revision and filename
         Use '--' to separate paths from revisions, like this:
@@ -400,7 +397,7 @@ class HTMLReportCreator(object):
         page_data = {
             "url": "https://github.com/vifactor/repostat",
             "version": self.configuration.get_release_data_info()['user_version'],
-            "analysis": [GitStatistics.get_fetching_tool_info(),
+            "tools": [GitStatistics.get_fetching_tool_info(),
                       self.configuration.get_jinja_version(),
                       'gnuplot ' + self.configuration.get_gnuplot_version()],
             "contributors": [author for author in self.configuration.get_release_data_info()['contributors']]

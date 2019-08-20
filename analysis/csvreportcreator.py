@@ -111,8 +111,7 @@ class CSVReportCreator(ReportCreator):
         DictionaryListCsvExporter.export(os.path.join(path, "authors.csv"), data.authors, append_file, aditional_info)
 
         # export commits
-        DictionaryListCsvExporter.export(os.path.join(path, "commits.csv"), data.all_commits,
-                                         append_file, aditional_info)
+        DictionaryListCsvExporter.export(os.path.join(path, "commits.csv"), data.commits, aditional_info)
 
         # export total_history
         DictionaryListCsvExporter.export(os.path.join(path, "total_history.csv"), data.changes_history,
@@ -124,7 +123,7 @@ class CSVReportCreator(ReportCreator):
         # month of year
         lines_added_monthly = {}
         lines_removed_monthly = {}
-        for oid, commit in data.all_commits.items():
+        for commit in data.commits:
             ts = commit[CommitDictFactory.TIMESTAMP]
             key = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m')
             if key in lines_added_monthly.keys():

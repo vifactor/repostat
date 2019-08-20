@@ -10,10 +10,7 @@ class Timeit(object):
         def wrapper(*args):
             if self.before_message is None:
                 self.before_message = method.__name__
-            try:
-                print(str(self.before_message + "...").format(*args))
-            except IndexError as ex:
-                print(self.before_message + "...")
+            print(self.before_message + "...")
             ts = time.time()
             result = method(*args)
             te = time.time()

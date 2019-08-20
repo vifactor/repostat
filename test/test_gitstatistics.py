@@ -1,9 +1,7 @@
 import unittest
 import datetime
-import os
 from analysis.gitstatistics import CommitDictFactory
 from analysis.gitstatistics import AuthorDictFactory
-from analysis.gitstatistics import GitStatistics
 
 
 class TestCommitDictFactory(unittest.TestCase):
@@ -121,28 +119,6 @@ class TestAuthorDictFactory(unittest.TestCase):
         AuthorDictFactory.check_last_commit_stamp(author, last_commit_after.timestamp())
         self.assertEqual(author[AuthorDictFactory.LAST_COMMIT], last_commit_after.timestamp())
         self.assertEqual(author[AuthorDictFactory.LAST_ACTIVE_DAY], '2019-03-20')
-
-
-class TestGitStatistics(unittest.TestCase):
-
-    @staticmethod
-    def get_gitstatistic():
-        this_file_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
-        print('Init git repo. Path:' + this_file_dir)
-        return GitStatistics(this_file_dir)
-
-    def tesFetchAllCommits(self):
-        gs = TestGitStatistics.get_gitstatistic()
-        commits = dict()
-        gs.fetch_all_commits(commits)
-        print("Commit count {}".format(commits.__len__()))
-
-    def testFetchAuthorInfo(self):
-        gs = TestGitStatistics.get_gitstatistic()
-        authors = {}
-        commits = {}
-        gs.fetch_authors_info(authors, commits)
-        print("Commit count {}".format(len(commits)))
 
 
 if __name__ == '__main__':
