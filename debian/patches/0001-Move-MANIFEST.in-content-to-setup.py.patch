@@ -5,9 +5,9 @@ Subject: Move MANIFEST.in content to setup.py
 Fix repostat root dir
 ---
  MANIFEST.in            |  7 -------
- setup.py               | 16 ++++++++++++----
+ setup.py               | 14 +++++++++++---
  tools/configuration.py | 12 ++++++------
- 3 files changed, 18 insertions(+), 17 deletions(-)
+ 3 files changed, 17 insertions(+), 16 deletions(-)
  delete mode 100644 MANIFEST.in
 
 diff --git a/MANIFEST.in b/MANIFEST.in
@@ -24,7 +24,7 @@ index c958899..0000000
 -include assets/gitstats.css
 -include release_data.json
 diff --git a/setup.py b/setup.py
-index 4346308..defa17f 100644
+index a700d4f..b96b262 100644
 --- a/setup.py
 +++ b/setup.py
 @@ -1,9 +1,14 @@
@@ -41,16 +41,15 @@ index 4346308..defa17f 100644
 -      version=Configuration.get_release_data_info()['develop_version'],
 +      version=Configuration.get_release_data_info(this_file_dir)['develop_version'],
        description='Desktop git repository analyser and report creator.',
-       keywords='git analisys statistics',
+       keywords='git analysis statistics vcs python',
        url='https://github.com/vifactor/repostat',
-@@ -19,8 +24,11 @@ setup(name='repo_stat',
+@@ -27,8 +32,11 @@ setup(name='repo_stat',
            'pytz==2018.5',
            'six>=1.11.0'
        ],
 -      test_suite='nose.collector',
 -      tests_require=['nose'],
--      scripts=['repostat.py', 'export_repos.py'],
-+      scripts=['repostat.py'],
+       entry_points={"console_scripts": ["repostat = analysis.repostat:main"]},
 +      data_files=[("share/repostat/gnuplot", glob("gnuplot/*.plot")),
 +                  ("share/repostat/templates", glob("templates/*.html")),
 +                  ("share/repostat/assets/images", glob("assets/**/*.gif", recursive=True)),
