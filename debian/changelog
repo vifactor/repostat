@@ -1,3 +1,9 @@
+repostat (0.99-1) bionic; urgency=medium
+
+  * Fix by-author plots
+
+ -- Viktor Kopp <vifactor@gmail.com>  Thu, 22 Aug 2019 22:04:39 +0200
+
 repostat (0.98-1) bionic; urgency=medium
 
   * Disable analysis of all remote branches
