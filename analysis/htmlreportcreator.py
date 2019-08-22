@@ -36,8 +36,8 @@ class HTMLReportCreator(object):
         self.j2_env = Environment(loader=FileSystemLoader(templates_dir), trim_blocks=True)
         self.j2_env.filters['to_month_name_abr'] = lambda im: calendar.month_abbr[im]
         self.j2_env.filters['to_weekday_name'] = lambda i: calendar.day_name[i]
-        self.j2_env.filters['to_ratio'] = lambda val, max_val: float(val) / max_val
-        self.j2_env.filters['to_percentage'] = lambda val, max_val: 100 * float(val) / max_val
+        self.j2_env.filters['to_ratio'] = lambda val, max_val: (float(val) / max_val) if max_val != 0 else 0
+        self.j2_env.filters['to_percentage'] = lambda val, max_val: (100 * float(val) / max_val) if max_val != 0 else 0
         self.j2_env.filters['to_intensity'] = lambda val, max_val: 127 + int((float(val) / max_val) * 128)
 
     def _save_recent_activity_data(self):
@@ -110,17 +110,18 @@ class HTMLReportCreator(object):
         # lines_by_authors allows us to generate all the
         # points in the .dat file.
         lines_by_authors = {}
+        lines_by_other_authors = {}
 
         # Don't rely on getAuthors to give the same order each
         # time. Be robust and keep the list in a variable.
         commits_by_authors = {}
+        commits_by_other_authors = {}
 
-        others_column_name = 'others'
         authors_to_plot = data.get_authors(self.conf['max_authors'])
         with open(os.path.join(path, 'lines_of_code_by_author.dat'), 'w') as fgl, \
                 open(os.path.join(path, 'commits_by_author.dat'), 'w') as fgc:
             header_row = '"timestamp" ' + ' '.join('"{0}"'.format(w) for w in authors_to_plot) + ' ' \
-                         + others_column_name + '\n'
+                         + '"others"' + '\n'
             fgl.write(header_row)
             fgc.write(header_row)
             for stamp in sorted(data.changes_by_date_by_author.keys()):
@@ -132,16 +133,14 @@ class HTMLReportCreator(object):
                         commits_by_authors[author] = data.changes_by_date_by_author[stamp][author]['commits']
                     fgl.write(' %d' % lines_by_authors.get(author, 0))
                     fgc.write(' %d' % commits_by_authors.get(author, 0))
-                for author in data.changes_by_date_by_author[stamp].keys():
-                    if author not in authors_to_plot:
-                        lines_by_authors[others_column_name] = lines_by_authors.get(others_column_name, 0) \
-                                                               + data.changes_by_date_by_author[stamp][author][
-                                                                   'lines_added']
-                        commits_by_authors[others_column_name] = commits_by_authors.get(others_column_name, 0) \
-                                                                 + data.changes_by_date_by_author[stamp][author][
-                                                                     'commits']
-                fgl.write(' %d' % lines_by_authors.get(others_column_name, 0))
-                fgc.write(' %d' % commits_by_authors.get(others_column_name, 0))
+
+                if len(data.get_authors()) > self.conf['max_authors']:
+                    for author in data.changes_by_date_by_author[stamp].keys():
+                        if author not in authors_to_plot:
+                            lines_by_other_authors[author] = data.changes_by_date_by_author[stamp][author]['lines_added']
+                            commits_by_other_authors[author] = data.changes_by_date_by_author[stamp][author]['commits']
+                    fgl.write(' %d' % sum(lines for lines in lines_by_other_authors.values()))
+                    fgc.write(' %d' % sum(commits for commits in commits_by_other_authors.values()))
                 fgl.write('\n')
                 fgc.write('\n')
 
