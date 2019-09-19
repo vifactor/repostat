@@ -40,10 +40,8 @@ class GitStats:
         run_dir = config.get_run_dir()
 
         print('Output path: %s' % output_path)
-        cachefile = os.path.join(output_path, 'gitstats.cache')
 
-        data = GitDataCollector(config.get_args_dict())
-        data.load_cache(cachefile)
+        data = GitDataCollector(config.get_args_dict(), args.git_repo)
 
         # todo: Check loop result. It seems every loop rewrite the collected information in data object.
         #  Is this loop really needed?
@@ -54,12 +52,11 @@ class GitStats:
         os.chdir(args.git_repo)
 
         print('Collecting data...')
-        data.collect(args.git_repo)
+        data.collect()
 
         os.chdir(prevdir)
 
         print('Refining data...')
-        # data.saveCache(cachefile)
         data.refine()
 
         os.chdir(run_dir)

@@ -1,27 +1,27 @@
 import time
 import os
-import zlib
-import pickle
 import datetime
 from .gitstatistics import GitStatistics
 
 
-class DataCollector:
-    """Manages data collection from a revision control repository."""
+class GitDataCollector(object):
 
-    conf: dict = None
-
-    def __init__(self, config: dict):
+    def __init__(self, config: dict, project_directory):
         self.stamp_created = time.time()
-        self.cache = {}
         self.conf = config
-        self.projectname = ""
-        self.dir = ""
+        if not self.conf['project_name']:
+            self.projectname = os.path.basename(os.path.abspath(project_directory))
+        else:
+            self.projectname = self.conf['project_name']
+
+        self.repo_statistics = GitStatistics(project_directory)
+        self.analysed_branch = self.repo_statistics.repo.head.shorthand
 
         # name -> {commits, first_commit_stamp, last_commit_stamp, last_active_day, active_days,
         #  lines_added,
         #  lines_removed}
-        self.authors = {}
+        self.authors = self.repo_statistics.authors
+        self.changes_by_date_by_author = self.repo_statistics.author_changes_history
 
         self.total_commits = 0
         self.total_files = 0
@@ -32,87 +32,23 @@ class DataCollector:
         # extensions
         self.extensions = {}  # extension -> files, lines
 
-    ##
-    # This should be the main function to extract data from the repository.
-    def collect(self, project_directory):
-        self.dir = project_directory
-        if not self.conf['project_name']:
-            self.projectname = os.path.basename(os.path.abspath(project_directory))
-        else:
-            self.projectname = self.conf['project_name']
-
-    ##
-    # Load cacheable data
-    def load_cache(self, cachefile):
-        if not os.path.exists(cachefile):
-            return
-        print('Loading cache...')
-        f = open(cachefile, 'rb')
-        try:
-            self.cache = pickle.loads(zlib.decompress(f.read()))
-        except OSError:
-            # temporary hack to upgrade non-compressed caches
-            f.seek(0)
-            self.cache = pickle.load(f)
-        f.close()
-
-    ##
-    # Save cacheable data
-    def save_cache(self, cachefile):
-        print('Saving cache...')
-        tempfile = cachefile + '.tmp'
-        f = open(tempfile, 'wb')
-        # pickle.dump(self.cache, f)
-        data = zlib.compress(pickle.dumps(self.cache))
-        f.write(data)
-        f.close()
-        try:
-            os.remove(cachefile)
-        except OSError:
-            pass
-        os.rename(tempfile, cachefile)
-
-
-class GitDataCollector(DataCollector):
-
-    def __init__(self, config: dict):
-        DataCollector.__init__(self, config)
-        self.analysed_branch = ""
-        self.repo_statistics: GitStatistics = None
-        self.changes_by_date_by_author = None
-
     # dict['author'] = { 'commits': 512 } - ...key(dict, 'commits')
     @staticmethod
     def getkeyssortedbyvaluekey(d, key):
         return [el[1] for el in sorted([(d[el][key], el) for el in d.keys()])]
 
-    def collect(self, project_directory):
-        DataCollector.collect(self, project_directory)
-        self.repo_statistics = GitStatistics(project_directory)
-
-        self.analysed_branch = self.repo_statistics.repo.head.shorthand
-        self.authors = self.repo_statistics.authors
-        self.changes_by_date_by_author = self.repo_statistics.author_changes_history
-
-        if 'files_in_tree' not in self.cache:
-            self.cache['files_in_tree'] = {}
+    def collect(self):
         revs_cached = []
         revs_to_read = []
         # look up rev in cache and take info from cache if found
         # if not append rev to list of rev to read from repo
         for ts, tree_id in self.repo_statistics.get_revisions():
-            # if cache empty then add time and rev to list of new rev's
-            # otherwise try to read needed info from cache
-            if tree_id in self.cache['files_in_tree'].keys():
-                revs_cached.append((ts, self.cache['files_in_tree'][tree_id]))
-            else:
-                revs_to_read.append((ts, tree_id))
+            revs_to_read.append((ts, tree_id))
 
         # update cache with new revisions and append then to general list
         for ts, rev in revs_to_read:
             diff = self.repo_statistics.get_files_info(rev)
             count = len(diff)
-            self.cache['files_in_tree'][rev] = count
             revs_cached.append((ts, count))
 
         for (stamp, files) in revs_cached:
