@@ -430,22 +430,6 @@ class GitStatistics:
         yy = datetime_obj.year
         self.yearly_commits_timeline[yy] = self.yearly_commits_timeline.get(yy, 0) + 1
 
-    def get_total_size(self, revision='HEAD'):
-        # FIXME: not the most elegant and effective function
-        # TODO: check how it works for submodules
-        tree = self.repo.revparse_single(revision)
-        if isinstance(tree, git.Commit):
-            tree = tree.tree
-        s = [tree]
-        res = 0
-        while s:
-            for entry in s.pop():
-                if entry.type == 'blob':
-                    res += self.repo[entry.id].size
-                elif entry.type == 'tree':
-                    s.append(self.repo[entry.id])
-        return res
-
     def get_commit_delta_days(self):
         return (self.last_commit_timestamp / 86400 - self.first_commit_timestamp / 86400) + 1
 
@@ -464,7 +448,3 @@ class GitStatistics:
     def get_stamp_created(self):
         return self.created_time_stamp
 
-    # TODO: Implementation
-    @staticmethod
-    def get_total_files():
-        return 0

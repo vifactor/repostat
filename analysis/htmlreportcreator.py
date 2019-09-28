@@ -195,7 +195,7 @@ class HTMLReportCreator(object):
             "active_days_count": len(self.git_repo_statistics.active_days),
             "commits_count": data.get_total_commits(),
             "authors_count": len(self.git_repo_statistics.authors),
-            "files_count": data.get_total_files(),
+            "files_count": data.total_files_count,
             "total_lines_count": self.git_repo_statistics.total_lines_count,
             "added_lines_count": self.git_repo_statistics.total_lines_added,
             "removed_lines_count": self.git_repo_statistics.total_lines_removed,
@@ -332,9 +332,9 @@ class HTMLReportCreator(object):
     def render_files_page(self, data):
         # TODO: this conversion from old 'data' to new 'project data' should perhaps be removed in future
         project_data = {
-            'files_count': data.get_total_files(),
+            'files_count': data.total_files_count,
             'lines_count': self.git_repo_statistics.total_lines_count,
-            'size': self.git_repo_statistics.get_total_size(),
+            'size': data.total_tree_size,
             'files': []
         }
 

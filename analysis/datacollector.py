@@ -32,7 +32,8 @@ class GitDataCollector(object):
 
         # extension -> files, lines, size
         self.extensions = self.get_current_files_info()
-        self.total_files = sum(v['files'] for k, v in self.extensions.items())
+        self.total_files_count = sum(v['files'] for k, v in self.extensions.items())
+        self.total_tree_size = sum(v['size'] for k, v in self.extensions.items())
 
     # dict['author'] = { 'commits': 512 } - ...key(dict, 'commits')
     @staticmethod
@@ -105,5 +106,3 @@ class GitDataCollector(object):
     def get_total_commits(self):
         return self.total_commits
 
-    def get_total_files(self):
-        return self.total_files
