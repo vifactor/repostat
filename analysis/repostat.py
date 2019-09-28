@@ -41,6 +41,7 @@ class GitStats:
 
         print('Output path: %s' % output_path)
 
+        print('Collecting data...')
         data = GitDataCollector(config.get_args_dict(), args.git_repo)
 
         # todo: Check loop result. It seems every loop rewrite the collected information in data object.
@@ -50,10 +51,6 @@ class GitStats:
 
         prevdir = os.getcwd()
         os.chdir(args.git_repo)
-
-        print('Collecting data...')
-        data.collect()
-
         os.chdir(prevdir)
 
         print('Refining data...')

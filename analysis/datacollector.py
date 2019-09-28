@@ -1,6 +1,7 @@
 import time
 import os
 import datetime
+import pygit2 as git
 from .gitstatistics import GitStatistics
 
 
@@ -23,10 +24,11 @@ class GitDataCollector(object):
         self.authors = self.repo_statistics.authors
         self.changes_by_date_by_author = self.repo_statistics.author_changes_history
 
-        self.total_commits = 0
         self.authors_by_commits = 0
 
-        self.files_by_stamp = {}  # stamp -> files
+        # timestamp -> files count
+        self.files_by_stamp = self._get_files_count_by_timestamp()
+        self.total_commits = len(self.files_by_stamp)
 
         # extension -> files, lines, size
         self.extensions = self.get_current_files_info()
@@ -37,23 +39,16 @@ class GitDataCollector(object):
     def getkeyssortedbyvaluekey(d, key):
         return [el[1] for el in sorted([(d[el][key], el) for el in d.keys()])]
 
-    def collect(self):
-        revs_cached = []
-        revs_to_read = []
-        # look up rev in cache and take info from cache if found
-        # if not append rev to list of rev to read from repo
-        for ts, tree_id in self.repo_statistics.get_revisions():
-            revs_to_read.append((ts, tree_id))
-
-        # update cache with new revisions and append then to general list
-        for ts, rev in revs_to_read:
-            diff = self.repo_statistics.get_files_info(rev)
-            count = len(diff)
-            revs_cached.append((ts, count))
-
-        for (stamp, files) in revs_cached:
-            self.files_by_stamp[stamp] = files
-        self.total_commits = len(self.files_by_stamp)
+    def _get_files_count_by_timestamp(self):
+        files_by_stamp = {}
+        for commit in self.repo_statistics.repo.walk(self.repo_statistics.repo.head.target, git.GIT_SORT_TIME):
+            diff = commit.tree.diff_to_tree()
+            files_count = len(diff)
+            # committer timestamp is chosen as we want to know when number of files changed on current branch
+            # author.time gives time stamp of the commit creation
+            timestamp = commit.committer.time
+            files_by_stamp[timestamp] = files_count
+        return files_by_stamp
 
     def _get_file_extension(self, git_file_path):
         filename = os.path.basename(git_file_path)

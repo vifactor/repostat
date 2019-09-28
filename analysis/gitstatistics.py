@@ -430,20 +430,6 @@ class GitStatistics:
         yy = datetime_obj.year
         self.yearly_commits_timeline[yy] = self.yearly_commits_timeline.get(yy, 0) + 1
 
-    def get_files_info(self, revision):
-        """
-        :param revision: revision id
-        :return: pygit2.Diff for a given revision
-        """
-        obj = self.repo.revparse_single(revision)
-        diff = None
-        if isinstance(obj, git.Tree):
-            diff = obj.diff_to_tree()
-        elif isinstance(obj, git.Commit):
-            diff = obj.tree.diff_to_tree()
-
-        return diff
-
     def get_total_size(self, revision='HEAD'):
         # FIXME: not the most elegant and effective function
         # TODO: check how it works for submodules
@@ -482,8 +468,3 @@ class GitStatistics:
     @staticmethod
     def get_total_files():
         return 0
-
-    # TODO: too low level function for a GitStatistics class. Needed for fastest migration to pygit2
-    def get_revisions(self):
-        for commit in self.repo.walk(self.repo.head.target, git.GIT_SORT_TIME):
-            yield commit.author.time, commit.tree_id.hex
