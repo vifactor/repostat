@@ -24,13 +24,13 @@ class GitDataCollector(object):
         self.changes_by_date_by_author = self.repo_statistics.author_changes_history
 
         self.total_commits = 0
-        self.total_files = 0
         self.authors_by_commits = 0
 
         self.files_by_stamp = {}  # stamp -> files
 
-        # extensions
-        self.extensions = {}  # extension -> files, lines
+        # extension -> files, lines, size
+        self.extensions = self.get_current_files_info()
+        self.total_files = sum(v['files'] for k, v in self.extensions.items())
 
     # dict['author'] = { 'commits': 512 } - ...key(dict, 'commits')
     @staticmethod
@@ -55,21 +55,30 @@ class GitDataCollector(object):
             self.files_by_stamp[stamp] = files
         self.total_commits = len(self.files_by_stamp)
 
-        ext_dat = {}
-        for p in self.repo_statistics.get_files_info('HEAD'):
-            filename = os.path.basename(p.delta.old_file.path)
-            basename_ext = filename.split('.')
-            ext = basename_ext[1] if len(basename_ext) == 2 and basename_ext[0] else ''
-            if len(ext) > self.conf['max_ext_length']:
-                ext = ''
-            if ext not in ext_dat:
-                ext_dat[ext] = {'files': 0, 'lines': 0}
-            # unclear what first two entries of the tuple mean, for each file they were equal to 0
-            _, _, lines_count = p.line_stats
-            ext_dat[ext]['lines'] += lines_count
-            ext_dat[ext]['files'] += 1
-        self.extensions = ext_dat
-        self.total_files = sum(v['files'] for k, v in ext_dat.items())
+    def _get_file_extension(self, git_file_path):
+        filename = os.path.basename(git_file_path)
+        basename_parts = filename.split('.')
+        ext = basename_parts[1] if len(basename_parts) == 2 and basename_parts[0] else ''
+        if len(ext) > self.conf['max_ext_length']:
+            ext = ''
+        return ext
+
+    def get_current_files_info(self):
+        """
+        :return: returns total files count and distribution of lines and files count by file extensions
+        """
+        head_commit = self.repo_statistics.repo.revparse_single('HEAD')
+        head_commit_tree = head_commit.tree.diff_to_tree(swap=True)
+        extensions = {}
+        for p in head_commit_tree:
+            ext = self._get_file_extension(p.delta.new_file.path)
+            if ext not in extensions:
+                extensions[ext] = {'files': 0, 'lines': 0, 'size': 0}
+            _, lines_count, _ = p.line_stats
+            extensions[ext]['lines'] += lines_count
+            extensions[ext]['files'] += 1
+            extensions[ext]['size'] += p.delta.new_file.size
+        return extensions
 
     def refine(self):
         # authors
