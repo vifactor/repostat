@@ -2,8 +2,10 @@ import pygit2 as git
 from datetime import datetime, tzinfo, timedelta
 from collections import Counter
 import warnings
-from tools.timeit import Timeit
 import os
+
+from tools.timeit import Timeit
+from tools import sort_keys_by_value_of_key
 
 
 class FixedOffset(tzinfo):
@@ -139,6 +141,7 @@ class GitStatistics:
         """
         self.repo = git.Repository(path)
         self.created_time_stamp = datetime.now().timestamp()
+        self.analysed_branch = self.repo.head.shorthand
         self.author_of_year = {}
         self.author_of_month = {}
         self.yearly_commits_timeline = {}
@@ -164,6 +167,54 @@ class GitStatistics:
         self.changes_history, self.total_lines_added, \
             self.total_lines_removed, self.total_lines_count = self.fetch_total_history()
         self.repo_name = os.path.basename(os.path.abspath(path))
+
+        # timestamp -> files count
+        self.files_by_stamp = self._get_files_count_by_timestamp()
+        self.total_commits = len(self.files_by_stamp)
+
+        # extension -> files, lines, size
+        self.extensions = self.get_current_files_info()
+        self.total_files_count = sum(v['files'] for k, v in self.extensions.items())
+        self.total_tree_size = sum(v['size'] for k, v in self.extensions.items())
+
+        self._append_authors_info()
+
+    def _get_files_count_by_timestamp(self):
+        files_by_stamp = {}
+        for commit in self.repo.walk(self.repo.head.target, git.GIT_SORT_TIME):
+            diff = commit.tree.diff_to_tree()
+            files_count = len(diff)
+            # committer timestamp is chosen as we want to know when number of files changed on current branch
+            # author.time gives time stamp of the commit creation
+            timestamp = commit.committer.time
+            files_by_stamp[timestamp] = files_count
+        return files_by_stamp
+
+    @staticmethod
+    def _get_file_extension(git_file_path, max_ext_length=5):
+        filename = os.path.basename(git_file_path)
+        basename_parts = filename.split('.')
+        ext = basename_parts[1] if len(basename_parts) == 2 and basename_parts[0] else ''
+        if len(ext) > max_ext_length:
+            ext = ''
+        return ext
+
+    def get_current_files_info(self):
+        """
+        :return: returns total files count and distribution of lines and files count by file extensions
+        """
+        head_commit = self.repo.revparse_single('HEAD')
+        head_commit_tree = head_commit.tree.diff_to_tree(swap=True)
+        extensions = {}
+        for p in head_commit_tree:
+            ext = self._get_file_extension(p.delta.new_file.path)
+            if ext not in extensions:
+                extensions[ext] = {'files': 0, 'lines': 0, 'size': 0}
+            _, lines_count, _ = p.line_stats
+            extensions[ext]['lines'] += lines_count
+            extensions[ext]['files'] += 1
+            extensions[ext]['size'] += p.delta.new_file.size
+        return extensions
 
     @classmethod
     def get_fetching_tool_info(cls):
@@ -418,6 +469,26 @@ class GitStatistics:
         self.author_changes_history[ts][author_name]['lines_added'] = authors_info[author_name][
             AuthorDictFactory.LINES_ADDED]
         self.author_changes_history[ts][author_name]['commits'] = authors_info[author_name][AuthorDictFactory.COMMITS]
+
+    def _append_authors_info(self):
+        # name -> {place_by_commits, date_first, date_last, timedelta}
+        authors_by_commits = sort_keys_by_value_of_key(self.authors, 'commits')
+        authors_by_commits.reverse()  # most first
+        for i, name in enumerate(authors_by_commits):
+            self.authors[name]['place_by_commits'] = i + 1
+
+        for name in self.authors.keys():
+            a = self.authors[name]
+            date_first = datetime.fromtimestamp(a['first_commit_stamp'])
+            date_last = datetime.fromtimestamp(a['last_commit_stamp'])
+            delta = (date_last - date_first).days
+            a['date_first'] = date_first.strftime('%Y-%m-%d')
+            a['date_last'] = date_last.strftime('%Y-%m-%d')
+            a['timedelta'] = delta
+            if 'lines_added' not in a:
+                a['lines_added'] = 0
+            if 'lines_removed' not in a:
+                a['lines_removed'] = 0
 
     def _adjust_commits_timeline(self, datetime_obj):
         """

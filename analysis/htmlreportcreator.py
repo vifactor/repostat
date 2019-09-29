@@ -8,17 +8,16 @@ import collections
 import glob
 import warnings
 from jinja2 import Environment, FileSystemLoader
-from analysis.datacollector import GitDataCollector
 from analysis.gitstatistics import GitStatistics
 from tools.shellhelper import get_pipe_output
 from tools.configuration import Configuration
+from tools import sort_keys_by_value_of_key
 
 def getkeyssortedbyvalues(a_dict):
     return [el[1] for el in sorted([(el[1], el[0]) for el in a_dict.items()])]
 
 
 class HTMLReportCreator(object):
-    data: GitDataCollector = None
     configuration: Configuration = None
     conf: dict = None
     recent_activity_period_weeks = 32
@@ -26,7 +25,6 @@ class HTMLReportCreator(object):
     def __init__(self, config: Configuration, repo_stat):
         self.data = None
         self.path = None
-        self.title = None
         self.configuration = config
         self.conf = config.get_args_dict()
 
@@ -54,10 +52,13 @@ class HTMLReportCreator(object):
                 commits = self.git_repo_statistics.recent_activity_by_week.get(weeks[i], 0)
                 f.write("%d %d\n" % (self.recent_activity_period_weeks - i - 1, commits))
 
-    def create(self, data: GitDataCollector, path):
-        self.data = data
+    def _get_authors(self, limit=None):
+        res = sort_keys_by_value_of_key(self.git_repo_statistics.authors, 'commits')
+        res.reverse()
+        return res[:limit]
+
+    def create(self, path):
         self.path = path
-        self.title = data.projectname
 
         # copy static files
         for asset in ('gitrepostat.css', 'sortable.js', 'arrow-up.gif', 'arrow-down.gif', 'arrow-none.gif'):
@@ -74,13 +75,13 @@ class HTMLReportCreator(object):
 
         ###
         # General
-        general_html = self.render_general_page(data)
+        general_html = self.render_general_page(None)
         with open(os.path.join(path, "general.html"), 'w', encoding = 'utf-8') as f:
             f.write(general_html)
 
         ###
         # Activity
-        activity_html = self.render_activity_page(data)
+        activity_html = self.render_activity_page(None)
         with open(os.path.join(path, "activity.html"), 'w', encoding = 'utf-8') as f:
             f.write(activity_html)
 
@@ -99,7 +100,7 @@ class HTMLReportCreator(object):
 
         ###
         # Authors
-        authors_html = self.render_authors_page(data)
+        authors_html = self.render_authors_page(None)
         with open(os.path.join(path, "authors.html"), 'w', encoding='utf-8') as f:
             f.write(authors_html.decode('utf-8'))
 
@@ -117,35 +118,35 @@ class HTMLReportCreator(object):
         commits_by_authors = {}
         commits_by_other_authors = {}
 
-        authors_to_plot = data.get_authors(self.conf['max_authors'])
+        authors_to_plot = self._get_authors(self.conf['max_authors'])
         with open(os.path.join(path, 'lines_of_code_by_author.dat'), 'w') as fgl, \
                 open(os.path.join(path, 'commits_by_author.dat'), 'w') as fgc:
             header_row = '"timestamp" ' + ' '.join('"{0}"'.format(w) for w in authors_to_plot) + ' ' \
                          + '"others"' + '\n'
             fgl.write(header_row)
             fgc.write(header_row)
-            for stamp in sorted(data.changes_by_date_by_author.keys()):
+            for stamp in sorted(self.git_repo_statistics.author_changes_history.keys()):
                 fgl.write('%d' % stamp)
                 fgc.write('%d' % stamp)
                 for author in authors_to_plot:
-                    if author in data.changes_by_date_by_author[stamp].keys():
-                        lines_by_authors[author] = data.changes_by_date_by_author[stamp][author]['lines_added']
-                        commits_by_authors[author] = data.changes_by_date_by_author[stamp][author]['commits']
+                    if author in self.git_repo_statistics.author_changes_history[stamp].keys():
+                        lines_by_authors[author] = self.git_repo_statistics.author_changes_history[stamp][author]['lines_added']
+                        commits_by_authors[author] = self.git_repo_statistics.author_changes_history[stamp][author]['commits']
                     fgl.write(' %d' % lines_by_authors.get(author, 0))
                     fgc.write(' %d' % commits_by_authors.get(author, 0))
 
-                if len(data.get_authors()) > self.conf['max_authors']:
-                    for author in data.changes_by_date_by_author[stamp].keys():
+                if len(authors_to_plot) > self.conf['max_authors']:
+                    for author in self.git_repo_statistics.author_changes_history[stamp].keys():
                         if author not in authors_to_plot:
-                            lines_by_other_authors[author] = data.changes_by_date_by_author[stamp][author]['lines_added']
-                            commits_by_other_authors[author] = data.changes_by_date_by_author[stamp][author]['commits']
+                            lines_by_other_authors[author] = self.git_repo_statistics.author_changes_history[stamp][author]['lines_added']
+                            commits_by_other_authors[author] = self.git_repo_statistics.author_changes_history[stamp][author]['commits']
                     fgl.write(' %d' % sum(lines for lines in lines_by_other_authors.values()))
                     fgc.write(' %d' % sum(commits for commits in commits_by_other_authors.values()))
                 fgl.write('\n')
                 fgc.write('\n')
 
         # Domains
-        domains_by_commits = GitDataCollector.getkeyssortedbyvaluekey(self.git_repo_statistics.domains, 'commits')
+        domains_by_commits = sort_keys_by_value_of_key(self.git_repo_statistics.domains, 'commits')
         domains_by_commits.reverse()
         with open(os.path.join(path, 'domains.dat'), 'w') as fp:
             for i, domain in enumerate(domains_by_commits[:self.conf['max_domains']]):
@@ -154,13 +155,13 @@ class HTMLReportCreator(object):
 
         ###
         # Files
-        files_html = self.render_files_page(data)
+        files_html = self.render_files_page(None)
         with open(os.path.join(path, "files.html"), 'w', encoding = 'utf-8') as f:
             f.write(files_html)
 
         with open(os.path.join(path, 'files_by_date.dat'), 'w') as fg:
-            for timestamp in sorted(data.files_by_stamp.keys()):
-                fg.write('%d %d\n' % (timestamp, data.files_by_stamp[timestamp]))
+            for timestamp in sorted(self.git_repo_statistics.files_by_stamp.keys()):
+                fg.write('%d %d\n' % (timestamp, self.git_repo_statistics.files_by_stamp[timestamp]))
 
         with open(os.path.join(path, 'lines_of_code.dat'), 'w') as fg:
             for stamp in sorted(self.git_repo_statistics.changes_history.keys()):
@@ -168,7 +169,7 @@ class HTMLReportCreator(object):
 
         ###
         # tags.html
-        tags_html = self.render_tags_page(data)
+        tags_html = self.render_tags_page(None)
         with open(os.path.join(path, "tags.html"), 'w', encoding='utf-8') as f:
             f.write(tags_html.decode('utf-8'))
 
@@ -189,13 +190,13 @@ class HTMLReportCreator(object):
         last_commit_datetime = datetime.datetime.fromtimestamp(self.git_repo_statistics.last_commit_timestamp)
         # TODO: this conversion from old 'data' to new 'project data' should perhaps be removed in future
         project_data = {
-            "name": data.projectname,
-            "branch": data.analysed_branch,
+            "name": self.git_repo_statistics.repo_name,
+            "branch": self.git_repo_statistics.analysed_branch,
             "age": (last_commit_datetime - first_commit_datetime).days,
             "active_days_count": len(self.git_repo_statistics.active_days),
-            "commits_count": data.get_total_commits(),
+            "commits_count": self.git_repo_statistics.total_commits,
             "authors_count": len(self.git_repo_statistics.authors),
-            "files_count": data.total_files_count,
+            "files_count": self.git_repo_statistics.total_files_count,
             "total_lines_count": self.git_repo_statistics.total_lines_count,
             "added_lines_count": self.git_repo_statistics.total_lines_added,
             "removed_lines_count": self.git_repo_statistics.total_lines_removed,
@@ -205,7 +206,7 @@ class HTMLReportCreator(object):
 
         generation_data = {
             "datetime": datetime.datetime.today().strftime(date_format_str),
-            "duration": "{0:.3f}".format(time.time() - data.stamp_created)
+            "duration": "{0:.3f}".format(time.time() - self.git_repo_statistics.get_stamp_created())
         }
 
         # load and render template
@@ -263,10 +264,10 @@ class HTMLReportCreator(object):
         project_data = {
             'top_authors': [],
             'non_top_authors': [],
-            'total_commits_count': data.get_total_commits()
+            'total_commits_count': self.git_repo_statistics.total_commits
         }
 
-        all_authors = data.get_authors()
+        all_authors = self._get_authors()
         if len(all_authors) > self.conf['max_authors']:
             rest = all_authors[self.conf['max_authors']:]
             project_data['non_top_authors'] = rest
@@ -308,7 +309,7 @@ class HTMLReportCreator(object):
             project_data['years'].append(year_dict)
 
         for author in all_authors[:self.conf['max_authors']]:
-            info = data.get_author_info(author)
+            info = self.git_repo_statistics.authors[author]
             author_dict = {
                 'name': author,
                 'commits_count': info['commits'],
@@ -332,15 +333,15 @@ class HTMLReportCreator(object):
     def render_files_page(self, data):
         # TODO: this conversion from old 'data' to new 'project data' should perhaps be removed in future
         project_data = {
-            'files_count': data.total_files_count,
+            'files_count': self.git_repo_statistics.total_files_count,
             'lines_count': self.git_repo_statistics.total_lines_count,
-            'size': data.total_tree_size,
+            'size': self.git_repo_statistics.total_tree_size,
             'files': []
         }
 
-        for ext in sorted(data.extensions.keys()):
-            files = data.extensions[ext]['files']
-            lines = data.extensions[ext]['lines']
+        for ext in sorted(self.git_repo_statistics.extensions.keys()):
+            files = self.git_repo_statistics.extensions[ext]['files']
+            lines = self.git_repo_statistics.extensions[ext]['lines']
             file_type_dict = {"extension": ext,
                               "count": files,
                               "lines_count": lines
