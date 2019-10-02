@@ -34,7 +34,7 @@
     <tr>
         <th>Month</th>
         <th>Author</th><th>Commits count</th>
-        <th class="unsortable">Next top 5</th>
+        <th class="unsortable">Next top {{project.authors_top}}</th>
     </tr>
     {% for month in project.months %}
     <tr>
@@ -50,7 +50,7 @@
     <tr>
         <th>Year</th>
         <th>Author</th><th>Commits count</th>
-        <th class="unsortable">Next top 5</th>
+        <th class="unsortable">Next top {{project.authors_top}}</th>
     </tr>
     {% for year in project.years %}
     <tr>

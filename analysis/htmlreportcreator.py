@@ -264,6 +264,7 @@ class HTMLReportCreator(object):
         project_data = {
             'top_authors': [],
             'non_top_authors': [],
+            'authors_top': self.conf['authors_top'],
             'total_commits_count': self.git_repo_statistics.total_commits
         }
 
