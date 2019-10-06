@@ -1,10 +1,8 @@
 import os
-import sys
 import argparse
 import json
 import re
 import warnings
-from distutils.version import StrictVersion
 
 from tools.shellhelper import get_pipe_output
 
@@ -93,8 +91,7 @@ class UsageException(Exception):
 
 class Configuration:
 
-    GNUPLOT_VERSION_STRING = None
-    GNUPLOT_MINIMAL_VERSION = '5.2'
+    gnuplot_version_string = None
     # By default, gnuplot is searched from path, but can be overridden with the
     # environment variable "GNUPLOT"
     gnuplot_executable = os.environ.get('GNUPLOT', 'gnuplot')
@@ -145,36 +142,14 @@ class Configuration:
         if self.args.config_file == "-":
             LoadConfigJsonFile.setup_config(self.args, DEFAULT_CONFIG)
 
-    def query_gnuplot_version(self):
-        query_str = get_pipe_output(['%s --version' % self.gnuplot_executable]).split('\n')[0]
-        return query_str
-
     def get_gnuplot_version(self):
-        if self.GNUPLOT_VERSION_STRING is None:
-            reg = re.compile("(\d+)\.(\d+)\.?(\d+)?")
-            version_str = self.query_gnuplot_version()
+        if self.gnuplot_version_string is None:
+            reg = re.compile(r"(\d+)\.(\d+)\.?(\d+)?")
+            version_str = get_pipe_output(['%s --version' % self.gnuplot_executable]).split('\n')[0]
             match = reg.search(version_str)
             if match:
-                self.GNUPLOT_VERSION_STRING = version_str[match.span()[0]:match.span()[1]]
-            else:
-                self.GNUPLOT_VERSION_STRING = None
-        return self.GNUPLOT_VERSION_STRING
-
-    def is_valid_gnuplot_version(self, version: str = None) -> bool:
-        current_version = version if version else self.get_gnuplot_version()
-        if current_version:
-            try:
-                return StrictVersion(current_version) >= StrictVersion(self.GNUPLOT_MINIMAL_VERSION)
-            except Exception as ex:
-                warnings.warn('Gnuplot version number not aplicable. Error: %s \n version number str: %s' % (ex, current_version))
-                return False
-
-        else:
-            warnings.warn('Gnuplot not installed! Required minimal version: %s' % self.GNUPLOT_MINIMAL_VERSION)
-            return False
-
-    def get_gnuplot_executable(self) -> str:
-        return self.gnuplot_executable
+                self.gnuplot_version_string = version_str[match.span()[0]:match.span()[1]]
+        return self.gnuplot_version_string
 
     @staticmethod
     def get_jinja_version():
@@ -187,14 +162,6 @@ class Configuration:
     def is_csv_output(self) -> bool:
         return self.args.output_format == 'csv'
 
-    def _check_pre_reqs(self):
-        # Py version check
-        if sys.version_info < (3, 5):
-            raise ConfigurationException("Python 3.5+ is required for repostat")
-        # gnuplot version info
-        if not self.get_gnuplot_version():
-            raise ConfigurationException("gnuplot not found")
-
     def _process_and_validate_params(self, args_orig=None):
         args = self.get_gitstat_parser().parse_args(args_orig)
         try:
@@ -205,7 +172,6 @@ class Configuration:
             ConfigurationException(
                 'FATAL:Can\'t create Output path. Output path is not a directory ' 
                 'or does not exist: %s' % args.output_path)
-        self._check_pre_reqs()
 
         return args
 
@@ -216,7 +182,7 @@ class Configuration:
         return self.args.__dict__
 
     def is_append_csv(self) -> bool:
-        return self.args.append_csv == True
+        return self.args.append_csv
 
     @staticmethod
     def get_run_dir():

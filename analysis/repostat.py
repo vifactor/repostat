@@ -12,10 +12,31 @@ from analysis.htmlreportcreator import HTMLReportCreator
 from analysis import GitStatistics
 from tools.shellhelper import get_external_execution_time
 from tools.configuration import Configuration, ConfigurationException
+from distutils import version
 
 os.environ['LC_ALL'] = 'C'
 
 time_start = time.time()
+
+
+class Requirements:
+    gnuplot_minimal_version = version.StrictVersion('5.2')
+    python_minimal_version = version.StrictVersion('3.5')
+    gnuplot_executable = os.environ.get('GNUPLOT', 'gnuplot')
+
+    def __init__(self, config: Configuration):
+        self.gnuplot_version = version.StrictVersion(config.get_gnuplot_version())
+        self.python_version = version.StrictVersion(sys.version.split()[0])
+
+    def check(self):
+        if self.python_version < self.python_minimal_version:
+            raise EnvironmentError("Required Python version {}+".format(self.python_minimal_version))
+
+        if self.gnuplot_version is None:
+            EnvironmentError("Html output requires Gnuplot to be installed")
+
+        if self.gnuplot_version < self.gnuplot_minimal_version:
+            raise EnvironmentError("Required Gnuplot version {}+".format(self.gnuplot_minimal_version))
 
 
 def print_exec_times():
@@ -35,12 +56,7 @@ def main():
         warnings.warn(ce)
         sys.exit(1)
 
-    # check gnuplot version needed to HTML reports
-    if config.is_html_output() and not config.is_valid_gnuplot_version():
-        warnings.warn("Invalid gnuplot version. Required "
-                      "minimal version: %s. Current version: %s" % (Configuration.GNUPLOT_MINIMAL_VERSION,
-                                                                    config.get_gnuplot_version()))
-        sys.exit(1)
+    Requirements(config).check()
 
     print('Git path: %s' % args.git_repo)
     print('Collecting data...')

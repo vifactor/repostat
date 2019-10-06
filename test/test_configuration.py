@@ -207,7 +207,7 @@ class TestConfiguration(unittest.TestCase):
 
         config = Configuration(cli_params)
         # rewrite fields with test data
-        config.GNUPLOT_VERSION_STRING = '5.2'
+        config.gnuplot_version_string = '5.2'
         config.GNUPLOT_MINIMAL_VERSION = '5.2'
         self.assertTrue(config.is_valid_gnuplot_version())
 
@@ -221,7 +221,7 @@ class TestConfiguration(unittest.TestCase):
 
         config = Configuration(cli_params)
         # rewrite fields with test data
-        config.GNUPLOT_VERSION_STRING = '5.6'
+        config.gnuplot_version_string = '5.6'
         config.GNUPLOT_MINIMAL_VERSION = '5.2'
         self.assertTrue(config.is_valid_gnuplot_version())
 
@@ -235,7 +235,7 @@ class TestConfiguration(unittest.TestCase):
 
         config = Configuration(cli_params)
         # rewrite fields with test data
-        config.GNUPLOT_VERSION_STRING = '5.0'
+        config.gnuplot_version_string = '5.0'
         config.GNUPLOT_MINIMAL_VERSION = '5.2'
         self.assertFalse(config.is_valid_gnuplot_version())
 

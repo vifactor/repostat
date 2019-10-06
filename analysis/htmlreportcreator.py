@@ -414,7 +414,7 @@ class HTMLReportCreator(object):
         scripts = glob.glob(os.path.join(scripts_path, '*.plot'))
         os.chdir(output_images_path)
         for script in scripts:
-            gnuplot_command = '%s -e "data_folder=\'%s\'" "%s"' % (self.configuration.get_gnuplot_executable(), data_path, script)
+            gnuplot_command = '%s -e "data_folder=\'%s\'" "%s"' % (self.configuration.gnuplot_executable, data_path, script)
             out = get_pipe_output([gnuplot_command])
             if len(out) > 0:
                 print(out)
