@@ -11,7 +11,7 @@ from analysis.csvreportcreator import CSVReportCreator
 from analysis.htmlreportcreator import HTMLReportCreator
 from analysis import GitStatistics
 from tools.shellhelper import get_external_execution_time
-from tools.configuration import Configuration, ConfigurationException
+from tools.configuration import Configuration
 from distutils import version
 
 os.environ['LC_ALL'] = 'C'
@@ -50,22 +50,18 @@ def print_exec_times():
 def main():
     try:
         config = Configuration(sys.argv[1:])
-        args = config.get_args()
-    except ConfigurationException as ce:
-        warnings.warn("Configuration exception occurred:")
-        warnings.warn(ce)
+        Requirements(config).check()
+    except EnvironmentError as ee:
+        warnings.warn("Environment exception occurred: {}".format(ee))
         sys.exit(1)
 
-    Requirements(config).check()
-
-    print('Git path: %s' % args.git_repo)
+    print('Git path: %s' % config.git_repository_path)
     print('Collecting data...')
-    repository_statistics = GitStatistics(args.git_repo)
+    repository_statistics = GitStatistics(config.git_repository_path)
 
-    output_path = args.output_path
+    output_path = config.statistics_output_path
     print('Output path: %s' % output_path)
-
-    os.chdir(config.get_run_dir())
+    os.makedirs(output_path, exist_ok=True)
 
     if config.is_html_output():
         print('Generating HTML report...')
@@ -79,7 +75,7 @@ def main():
     elif config.is_csv_output():
         print('Generating CSV report...')
         report = CSVReportCreator()
-        report.create(repository_statistics, output_path, config.get_args_dict(), config.is_append_csv())
+        report.create(repository_statistics, output_path, {}, config.is_append_csv())
         print('CSV report created here: %s' % output_path)
     print_exec_times()
 

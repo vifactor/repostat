@@ -18,15 +18,12 @@ def getkeyssortedbyvalues(a_dict):
 
 
 class HTMLReportCreator(object):
-    configuration: Configuration = None
-    conf: dict = None
     recent_activity_period_weeks = 32
 
     def __init__(self, config: Configuration, repo_stat):
         self.data = None
         self.path = None
         self.configuration = config
-        self.conf = config.get_args_dict()
 
         self.git_repo_statistics = repo_stat
 
@@ -118,7 +115,7 @@ class HTMLReportCreator(object):
         commits_by_authors = {}
         commits_by_other_authors = {}
 
-        authors_to_plot = self._get_authors(self.conf['max_authors'])
+        authors_to_plot = self._get_authors(self.configuration['max_authors'])
         with open(os.path.join(path, 'lines_of_code_by_author.dat'), 'w') as fgl, \
                 open(os.path.join(path, 'commits_by_author.dat'), 'w') as fgc:
             header_row = '"timestamp" ' + ' '.join('"{0}"'.format(w) for w in authors_to_plot) + ' ' \
@@ -135,7 +132,7 @@ class HTMLReportCreator(object):
                     fgl.write(' %d' % lines_by_authors.get(author, 0))
                     fgc.write(' %d' % commits_by_authors.get(author, 0))
 
-                if len(authors_to_plot) > self.conf['max_authors']:
+                if len(authors_to_plot) > self.configuration['max_authors']:
                     for author in self.git_repo_statistics.author_changes_history[stamp].keys():
                         if author not in authors_to_plot:
                             lines_by_other_authors[author] = self.git_repo_statistics.author_changes_history[stamp][author]['lines_added']
@@ -149,7 +146,7 @@ class HTMLReportCreator(object):
         domains_by_commits = sort_keys_by_value_of_key(self.git_repo_statistics.domains, 'commits')
         domains_by_commits.reverse()
         with open(os.path.join(path, 'domains.dat'), 'w') as fp:
-            for i, domain in enumerate(domains_by_commits[:self.conf['max_domains']]):
+            for i, domain in enumerate(domains_by_commits[:self.configuration['max_domains']]):
                 info = self.git_repo_statistics.domains[domain]
                 fp.write('%s %d %d\n' % (domain, i, info['commits']))
 
@@ -264,24 +261,24 @@ class HTMLReportCreator(object):
         project_data = {
             'top_authors': [],
             'non_top_authors': [],
-            'authors_top': self.conf['authors_top'],
+            'authors_top': self.configuration['authors_top'],
             'total_commits_count': self.git_repo_statistics.total_commits
         }
 
         all_authors = self._get_authors()
-        if len(all_authors) > self.conf['max_authors']:
-            rest = all_authors[self.conf['max_authors']:]
+        if len(all_authors) > self.configuration['max_authors']:
+            rest = all_authors[self.configuration['max_authors']:]
             project_data['non_top_authors'] = rest
 
         project_data['months'] = []
         # print out only recent conf['max_authors_of_months'] authors of the month
         iter_months_with_authors = reversed(sorted(self.git_repo_statistics.author_of_month.keys()))
-        for yymm in itertools.islice(iter_months_with_authors, self.conf['max_authors_of_months']):
+        for yymm in itertools.islice(iter_months_with_authors, self.configuration['max_authors_of_months']):
             authordict = self.git_repo_statistics.author_of_month[yymm]
             authors = getkeyssortedbyvalues(authordict)
             authors.reverse()
             commits = self.git_repo_statistics.author_of_month[yymm][authors[0]]
-            next = ', '.join(authors[1:self.conf['authors_top'] + 1])
+            next = ', '.join(authors[1:self.configuration['authors_top'] + 1])
 
             month_dict = {
                 'date': yymm,
@@ -298,7 +295,7 @@ class HTMLReportCreator(object):
             authors = getkeyssortedbyvalues(authordict)
             authors.reverse()
             commits = self.git_repo_statistics.author_of_year[yy][authors[0]]
-            next = ', '.join(authors[1:self.conf['authors_top'] + 1])
+            next = ', '.join(authors[1:self.configuration['authors_top'] + 1])
 
             year_dict = {
                 'date': yy,
@@ -309,7 +306,7 @@ class HTMLReportCreator(object):
 
             project_data['years'].append(year_dict)
 
-        for author in all_authors[:self.conf['max_authors']]:
+        for author in all_authors[:self.configuration['max_authors']]:
             info = self.git_repo_statistics.authors[author]
             author_dict = {
                 'name': author,

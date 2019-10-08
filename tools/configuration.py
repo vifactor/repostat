@@ -73,7 +73,7 @@ class LoadConfigJsonFile(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
         file_name = values
         if not os.path.exists(file_name):
-            raise argparse.ArgumentTypeError("file:{0} is not exists".format(file_name))
+            raise argparse.ArgumentTypeError("file:{0} does not exists".format(file_name))
         if os.access(file_name, os.R_OK):
             self.load_config_from_file(namespace, file_name)
             setattr(namespace, self.dest, file_name)
@@ -81,15 +81,7 @@ class LoadConfigJsonFile(argparse.Action):
             raise argparse.ArgumentTypeError("file:{0} is not a readable file".format(file_name))
 
 
-class ConfigurationException(Exception):
-    pass
-
-
-class UsageException(Exception):
-    pass
-
-
-class Configuration:
+class Configuration(dict):
 
     gnuplot_version_string = None
     # By default, gnuplot is searched from path, but can be overridden with the
@@ -111,10 +103,24 @@ class Configuration:
             release_data = json.load(release_json_file)
             return release_data
 
+    def __init__(self, args_orig, **kwargs):
+        dict.__init__(kwargs)
+
+        self.args = self._parse_sys_argv(args_orig)
+        self.git_repository_path = self.args.git_repo
+        self.statistics_output_path = self.args.output_path
+
+        self._set_default_configuration()
+        if self.args.config_file == "-":
+            LoadConfigJsonFile.setup_config(self.args, DEFAULT_CONFIG)
+
+    def _set_default_configuration(self):
+        self.update(DEFAULT_CONFIG)
+
     @staticmethod
-    def get_gitstat_parser() -> argparse.ArgumentParser:
+    def _parse_sys_argv(argv):
         release_info = Configuration.get_release_data_info()
-        parser = argparse.ArgumentParser(prog='repo_stat',
+        parser = argparse.ArgumentParser(prog='repostat',
                                          description='Git repository desktop analyzer. '
                                                      'Analyze and generate git statistics '
                                                      'in HTML format, or export into csv files for further analysis.')
@@ -124,9 +130,6 @@ class Configuration:
                                  "This param currently used in csv output format.")
         parser.add_argument('--output_format', default='html', type=str, choices=['html', 'csv'],
                             help="Statistic output format. Valid values: [html, csv]")
-        parser.add_argument('--append_csv', action='store_true',
-                            help="This option operates in case csv output format. "
-                                 "Append exists csv, instead of rewrite.")
 
         parser.add_argument('--version', action='version', version='%(prog)s ' + release_info['develop_version'])
         parser.add_argument('--config_file', action=LoadConfigJsonFile, default="-")
@@ -134,13 +137,7 @@ class Configuration:
         parser.add_argument('git_repo', type=str, action=ReadableDir)
         parser.add_argument('output_path', type=str, action=WritableDir)
 
-        return parser
-
-    def __init__(self, args_orig=None):
-        self.conf = None
-        self.args = self._process_and_validate_params(args_orig)
-        if self.args.config_file == "-":
-            LoadConfigJsonFile.setup_config(self.args, DEFAULT_CONFIG)
+        return parser.parse_args(argv)
 
     def get_gnuplot_version(self):
         if self.gnuplot_version_string is None:
@@ -161,29 +158,3 @@ class Configuration:
 
     def is_csv_output(self) -> bool:
         return self.args.output_format == 'csv'
-
-    def _process_and_validate_params(self, args_orig=None):
-        args = self.get_gitstat_parser().parse_args(args_orig)
-        try:
-            os.makedirs(args.output_path)
-        except OSError:
-            pass
-        if not os.path.isdir(args.output_path):
-            ConfigurationException(
-                'FATAL:Can\'t create Output path. Output path is not a directory ' 
-                'or does not exist: %s' % args.output_path)
-
-        return args
-
-    def get_args(self):
-        return self.args
-
-    def get_args_dict(self):
-        return self.args.__dict__
-
-    def is_append_csv(self) -> bool:
-        return self.args.append_csv
-
-    @staticmethod
-    def get_run_dir():
-        return os.getcwd()
