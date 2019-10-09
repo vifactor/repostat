@@ -123,13 +123,7 @@ class Configuration(dict):
         parser = argparse.ArgumentParser(prog='repostat',
                                          description='Git repository desktop analyzer. '
                                                      'Analyze and generate git statistics '
-                                                     'in HTML format, or export into csv files for further analysis.')
-
-        parser.add_argument('--project_name', default="", type=str,
-                            help="Display name of the project git repo contain. "
-                                 "This param currently used in csv output format.")
-        parser.add_argument('--output_format', default='html', type=str, choices=['html', 'csv'],
-                            help="Statistic output format. Valid values: [html, csv]")
+                                                     'in HTML format')
 
         parser.add_argument('--version', action='version', version='%(prog)s ' + release_info['develop_version'])
         parser.add_argument('--config_file', action=LoadConfigJsonFile, default="-")
@@ -152,9 +146,3 @@ class Configuration(dict):
     def get_jinja_version():
         import jinja2 as j2
         return '{} v.{}'.format(j2.__name__, j2.__version__)
-
-    def is_html_output(self) -> bool:
-        return self.args.output_format == 'html'
-
-    def is_csv_output(self) -> bool:
-        return self.args.output_format == 'csv'

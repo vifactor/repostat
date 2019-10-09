@@ -7,7 +7,6 @@ import sys
 import warnings
 import time
 
-from analysis.csvreportcreator import CSVReportCreator
 from analysis.htmlreportcreator import HTMLReportCreator
 from analysis import GitStatistics
 from tools.shellhelper import get_external_execution_time
@@ -63,20 +62,15 @@ def main():
     print('Output path: %s' % output_path)
     os.makedirs(output_path, exist_ok=True)
 
-    if config.is_html_output():
-        print('Generating HTML report...')
-        report = HTMLReportCreator(config, repository_statistics)
-        report.create(output_path)
-        if sys.stdin.isatty():
-            print('You may now run:')
-            print('')
-            print('   sensible-browser \'%s\'' % os.path.join(output_path, 'general.html').replace("'", "'\\''"))
-            print('')
-    elif config.is_csv_output():
-        print('Generating CSV report...')
-        report = CSVReportCreator()
-        report.create(repository_statistics, output_path, {}, config.is_append_csv())
-        print('CSV report created here: %s' % output_path)
+    print('Generating HTML report...')
+    report = HTMLReportCreator(config, repository_statistics)
+    report.create(output_path)
+    if sys.stdin.isatty():
+        print('You may now run:')
+        print('')
+        print('   sensible-browser \'%s\'' % os.path.join(output_path, 'general.html').replace("'", "'\\''"))
+        print('')
+
     print_exec_times()
 
 
