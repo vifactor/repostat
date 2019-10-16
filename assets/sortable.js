@@ -9,7 +9,11 @@ Version 1.5.7
 */
 
 /* You can change these values */
-var image_path = "";
+var scripts= document.getElementsByTagName('script');
+var path= scripts[scripts.length-1].src.split('?')[0]; // remove any ?query
+var script_path= path.split('/').slice(0, -1).join('/')+'/'; // remove last filename part of path
+
+var image_path = script_path + "/images/";
 var image_up = "arrow-up.gif";
 var image_down = "arrow-down.gif";
 var image_none = "arrow-none.gif";
@@ -104,7 +108,7 @@ function ts_resortTable(lnk, clid) {
 	sortfn = ts_sort_caseinsensitive;
 	if (itm.match(/^\d\d[\/\.-][a-zA-z][a-zA-Z][a-zA-Z][\/\.-]\d\d\d\d$/)) sortfn = ts_sort_date;
 	if (itm.match(/^\d\d[\/\.-]\d\d[\/\.-]\d\d\d{2}?$/)) sortfn = ts_sort_date;
-	if (itm.match(/^-?[£$€Û¢´]\d/)) sortfn = ts_sort_numeric;
+	if (itm.match(/^-?[ï¿½$ï¿½Û¢ï¿½]\d/)) sortfn = ts_sort_numeric;
 	// ignore stuff in () after the numbers.
 	if (itm.match(/^-?(\d+[,\.]?)+(E[-+][\d]+)?%?( \(.*\))?$/)) sortfn = ts_sort_numeric;
 	SORT_COLUMN_INDEX = column;

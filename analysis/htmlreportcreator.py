@@ -1,12 +1,10 @@
 import os
 import datetime
 import calendar
-import shutil
 import itertools
 import time
 import collections
 import glob
-import warnings
 from jinja2 import Environment, FileSystemLoader
 from analysis.gitstatistics import GitStatistics
 from tools.shellhelper import get_pipe_output
@@ -24,6 +22,7 @@ class HTMLReportCreator(object):
         self.data = None
         self.path = None
         self.configuration = config
+        self.assets_path = os.path.join(self.configuration.repostat_root_dir, "assets")
 
         self.git_repo_statistics = repo_stat
 
@@ -57,29 +56,16 @@ class HTMLReportCreator(object):
     def create(self, path):
         self.path = path
 
-        # copy static files
-        for asset in ('gitrepostat.css', 'sortable.js', 'arrow-up.gif', 'arrow-down.gif', 'arrow-none.gif'):
-            src = os.path.join(self.configuration.repostat_root_dir, "assets")
-            if asset.endswith(".gif"):
-                src = os.path.join(src, "images", asset)
-            else:
-                src = os.path.join(src, asset)
-            dst = os.path.join(path, asset)
-            if os.path.exists(src):
-                shutil.copyfile(src, dst)
-            else:
-                warnings.warn('"%s" not found while searched in %s and, hence, not copied' % (asset, src))
-
         ###
         # General
         general_html = self.render_general_page(None)
-        with open(os.path.join(path, "general.html"), 'w', encoding = 'utf-8') as f:
+        with open(os.path.join(path, "general.html"), 'w', encoding='utf-8') as f:
             f.write(general_html)
 
         ###
         # Activity
         activity_html = self.render_activity_page(None)
-        with open(os.path.join(path, "activity.html"), 'w', encoding = 'utf-8') as f:
+        with open(os.path.join(path, "activity.html"), 'w', encoding='utf-8') as f:
             f.write(activity_html)
 
         # Commits by current year's months
@@ -153,7 +139,7 @@ class HTMLReportCreator(object):
         ###
         # Files
         files_html = self.render_files_page(None)
-        with open(os.path.join(path, "files.html"), 'w', encoding = 'utf-8') as f:
+        with open(os.path.join(path, "files.html"), 'w', encoding='utf-8') as f:
             f.write(files_html)
 
         with open(os.path.join(path, 'files_by_date.dat'), 'w') as fg:
@@ -210,7 +196,8 @@ class HTMLReportCreator(object):
         template_rendered = self.j2_env.get_template('general.html').render(
             project=project_data,
             generation=generation_data,
-            page_title="General"
+            page_title="General",
+            assets_path=self.assets_path
         )
         return template_rendered
 
@@ -252,7 +239,8 @@ class HTMLReportCreator(object):
         # load and render template
         template_rendered = self.j2_env.get_template('activity.html').render(
             project=project_data,
-            page_title="Activity"
+            page_title="Activity",
+            assets_path=self.assets_path
         )
         return template_rendered
 
@@ -324,7 +312,8 @@ class HTMLReportCreator(object):
         # load and render template
         template_rendered = self.j2_env.get_template('authors.html').render(
             project=project_data,
-            page_title="Authors"
+            page_title="Authors",
+            assets_path=self.assets_path
         )
         return template_rendered.encode('utf-8')
 
@@ -349,7 +338,8 @@ class HTMLReportCreator(object):
         # load and render template
         template_rendered = self.j2_env.get_template('files.html').render(
             project=project_data,
-            page_title="Files"
+            page_title="Files",
+            assets_path=self.assets_path
         )
         return template_rendered
 
@@ -387,7 +377,8 @@ class HTMLReportCreator(object):
         # load and render template
         template_rendered = self.j2_env.get_template('tags.html').render(
             project=project_data,
-            page_title="Tags"
+            page_title="Tags",
+            assets_path=self.assets_path
         )
         return template_rendered.encode('utf-8')
 
@@ -403,7 +394,8 @@ class HTMLReportCreator(object):
 
         template_rendered = self.j2_env.get_template('about.html').render(
             repostat=page_data,
-            page_title="About"
+            page_title="About",
+            assets_path=self.assets_path
         )
         return template_rendered.encode('utf-8')
 
