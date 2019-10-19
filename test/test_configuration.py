@@ -119,24 +119,6 @@ class TestConfiguration(unittest.TestCase):
             configuration = Configuration(cli_params)
         self.assertTrue(isinstance(context.exception, argparse.ArgumentTypeError))
 
-    def test_configuration_argparse_usage(self):
-        # FIXME: this mainly tests third-party argparse library
-        parser = Configuration.get_gitstat_parser()
-        parser.print_usage()
-        print()
-        parser.print_help()
-
-    def test_configuration_argparse_parse(self):
-        cli_params = list([
-            '--project_name=UTEST Project',
-            '--output_format=csv',
-            self.repo_folder,
-            self.output_folder
-        ])
-        args = Configuration(cli_params).get_args()
-        print(args.project_name)
-        print(args)
-
     def test_configuration_invalid_output_dir(self):
         cli_params = list([
             '--project_name=UTEST Project',
@@ -207,7 +189,7 @@ class TestConfiguration(unittest.TestCase):
 
         config = Configuration(cli_params)
         # rewrite fields with test data
-        config.GNUPLOT_VERSION_STRING = '5.2'
+        config.gnuplot_version_string = '5.2'
         config.GNUPLOT_MINIMAL_VERSION = '5.2'
         self.assertTrue(config.is_valid_gnuplot_version())
 
@@ -221,7 +203,7 @@ class TestConfiguration(unittest.TestCase):
 
         config = Configuration(cli_params)
         # rewrite fields with test data
-        config.GNUPLOT_VERSION_STRING = '5.6'
+        config.gnuplot_version_string = '5.6'
         config.GNUPLOT_MINIMAL_VERSION = '5.2'
         self.assertTrue(config.is_valid_gnuplot_version())
 
@@ -235,7 +217,7 @@ class TestConfiguration(unittest.TestCase):
 
         config = Configuration(cli_params)
         # rewrite fields with test data
-        config.GNUPLOT_VERSION_STRING = '5.0'
+        config.gnuplot_version_string = '5.0'
         config.GNUPLOT_MINIMAL_VERSION = '5.2'
         self.assertFalse(config.is_valid_gnuplot_version())
 
