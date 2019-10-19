@@ -58,10 +58,10 @@ index a700d4f..b96b262 100644
        include_package_data=True,
        zip_safe=False)
 diff --git a/tools/configuration.py b/tools/configuration.py
-index 31ccc2e..cebe2aa 100644
+index 774e253..9991474 100644
 --- a/tools/configuration.py
 +++ b/tools/configuration.py
-@@ -99,18 +99,18 @@ class Configuration:
+@@ -88,18 +88,18 @@ class Configuration(dict):
      # environment variable "GNUPLOT"
      gnuplot_executable = os.environ.get('GNUPLOT', 'gnuplot')
      release_data_dict = None
