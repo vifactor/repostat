@@ -595,22 +595,6 @@ class TestPygitMethods(unittest.TestCase):
         for k, v in expected_history.items():
             self.assertDictEqual(v, actual_history[k])
 
-    @unittest.skip("Kept for historical reasons.")
-    def test_rev_list(self):
-        revlines = get_pipe_output([
-            'git rev-list --pretty=format:"%%at %%T" %s' % getlogrange('HEAD'),
-            'grep -v ^commit']).strip().split('\n')
-        expected_data = []
-        for line in revlines:
-            ts, tree_id = line.split(' ')
-            expected_data.append((int(ts), tree_id))
-
-        actual_data = []
-        for t, r in self.gs.get_revisions():
-            actual_data.append((t, r))
-
-        self.assertListEqual(expected_data, actual_data)
-
 
 if __name__ == '__main__':
     unittest.main()

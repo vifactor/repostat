@@ -1,10 +1,8 @@
 import os
-import sys
 import argparse
 import json
 import re
 import warnings
-from distutils.version import StrictVersion
 
 from tools.shellhelper import get_pipe_output
 
@@ -75,7 +73,7 @@ class LoadConfigJsonFile(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
         file_name = values
         if not os.path.exists(file_name):
-            raise argparse.ArgumentTypeError("file:{0} is not exists".format(file_name))
+            raise argparse.ArgumentTypeError("file:{0} does not exists".format(file_name))
         if os.access(file_name, os.R_OK):
             self.load_config_from_file(namespace, file_name)
             setattr(namespace, self.dest, file_name)
@@ -83,18 +81,9 @@ class LoadConfigJsonFile(argparse.Action):
             raise argparse.ArgumentTypeError("file:{0} is not a readable file".format(file_name))
 
 
-class ConfigurationException(Exception):
-    pass
+class Configuration(dict):
 
-
-class UsageException(Exception):
-    pass
-
-
-class Configuration:
-
-    GNUPLOT_VERSION_STRING = None
-    GNUPLOT_MINIMAL_VERSION = '5.2'
+    gnuplot_version_string = None
     # By default, gnuplot is searched from path, but can be overridden with the
     # environment variable "GNUPLOT"
     gnuplot_executable = os.environ.get('GNUPLOT', 'gnuplot')
@@ -114,22 +103,27 @@ class Configuration:
             release_data = json.load(release_json_file)
             return release_data
 
+    def __init__(self, args_orig, **kwargs):
+        dict.__init__(kwargs)
+
+        self.args = self._parse_sys_argv(args_orig)
+        self.git_repository_path = self.args.git_repo
+        self.statistics_output_path = self.args.output_path
+
+        self._set_default_configuration()
+        if self.args.config_file == "-":
+            LoadConfigJsonFile.setup_config(self.args, DEFAULT_CONFIG)
+
+    def _set_default_configuration(self):
+        self.update(DEFAULT_CONFIG)
+
     @staticmethod
-    def get_gitstat_parser() -> argparse.ArgumentParser:
+    def _parse_sys_argv(argv):
         release_info = Configuration.get_release_data_info()
-        parser = argparse.ArgumentParser(prog='repo_stat',
+        parser = argparse.ArgumentParser(prog='repostat',
                                          description='Git repository desktop analyzer. '
                                                      'Analyze and generate git statistics '
-                                                     'in HTML format, or export into csv files for further analysis.')
-
-        parser.add_argument('--project_name', default="", type=str,
-                            help="Display name of the project git repo contain. "
-                                 "This param currently used in csv output format.")
-        parser.add_argument('--output_format', default='html', type=str, choices=['html', 'csv'],
-                            help="Statistic output format. Valid values: [html, csv]")
-        parser.add_argument('--append_csv', action='store_true',
-                            help="This option operates in case csv output format. "
-                                 "Append exists csv, instead of rewrite.")
+                                                     'in HTML format')
 
         parser.add_argument('--version', action='version', version='%(prog)s ' + release_info['develop_version'])
         parser.add_argument('--config_file', action=LoadConfigJsonFile, default="-")
@@ -137,87 +131,18 @@ class Configuration:
         parser.add_argument('git_repo', type=str, action=ReadableDir)
         parser.add_argument('output_path', type=str, action=WritableDir)
 
-        return parser
-
-    def __init__(self, args_orig=None):
-        self.conf = None
-        self.args = self._process_and_validate_params(args_orig)
-        if self.args.config_file == "-":
-            LoadConfigJsonFile.setup_config(self.args, DEFAULT_CONFIG)
-
-    def query_gnuplot_version(self):
-        query_str = get_pipe_output(['%s --version' % self.gnuplot_executable]).split('\n')[0]
-        return query_str
+        return parser.parse_args(argv)
 
     def get_gnuplot_version(self):
-        if self.GNUPLOT_VERSION_STRING is None:
-            reg = re.compile("(\d+)\.(\d+)\.?(\d+)?")
-            version_str = self.query_gnuplot_version()
+        if self.gnuplot_version_string is None:
+            reg = re.compile(r"(\d+)\.(\d+)\.?(\d+)?")
+            version_str = get_pipe_output(['%s --version' % self.gnuplot_executable]).split('\n')[0]
             match = reg.search(version_str)
             if match:
-                self.GNUPLOT_VERSION_STRING = version_str[match.span()[0]:match.span()[1]]
-            else:
-                self.GNUPLOT_VERSION_STRING = None
-        return self.GNUPLOT_VERSION_STRING
-
-    def is_valid_gnuplot_version(self, version: str = None) -> bool:
-        current_version = version if version else self.get_gnuplot_version()
-        if current_version:
-            try:
-                return StrictVersion(current_version) >= StrictVersion(self.GNUPLOT_MINIMAL_VERSION)
-            except Exception as ex:
-                warnings.warn('Gnuplot version number not aplicable. Error: %s \n version number str: %s' % (ex, current_version))
-                return False
-
-        else:
-            warnings.warn('Gnuplot not installed! Required minimal version: %s' % self.GNUPLOT_MINIMAL_VERSION)
-            return False
-
-    def get_gnuplot_executable(self) -> str:
-        return self.gnuplot_executable
+                self.gnuplot_version_string = version_str[match.span()[0]:match.span()[1]]
+        return self.gnuplot_version_string
 
     @staticmethod
     def get_jinja_version():
         import jinja2 as j2
         return '{} v.{}'.format(j2.__name__, j2.__version__)
-
-    def is_html_output(self) -> bool:
-        return self.args.output_format == 'html'
-
-    def is_csv_output(self) -> bool:
-        return self.args.output_format == 'csv'
-
-    def _check_pre_reqs(self):
-        # Py version check
-        if sys.version_info < (3, 5):
-            raise ConfigurationException("Python 3.5+ is required for repostat")
-        # gnuplot version info
-        if not self.get_gnuplot_version():
-            raise ConfigurationException("gnuplot not found")
-
-    def _process_and_validate_params(self, args_orig=None):
-        args = self.get_gitstat_parser().parse_args(args_orig)
-        try:
-            os.makedirs(args.output_path)
-        except OSError:
-            pass
-        if not os.path.isdir(args.output_path):
-            ConfigurationException(
-                'FATAL:Can\'t create Output path. Output path is not a directory ' 
-                'or does not exist: %s' % args.output_path)
-        self._check_pre_reqs()
-
-        return args
-
-    def get_args(self):
-        return self.args
-
-    def get_args_dict(self):
-        return self.args.__dict__
-
-    def is_append_csv(self) -> bool:
-        return self.args.append_csv == True
-
-    @staticmethod
-    def get_run_dir():
-        return os.getcwd()

@@ -1,6 +1,6 @@
 {
-    "develop_version": "v0.99",
-    "user_version": "2019-08",
+    "develop_version": "v1.0.0",
+    "user_version": "2019-10",
     "contributors": [
         "Viktor Kopp",
         "G\u00e1bor Bereczki",
@@ -8,6 +8,7 @@
         "Tobias Gruetzmacher",
         "Jan Beran",
         "Sven van Haastregt",
-        "Jani Hur"
+        "Jani Hur",
+        "Sylvain Joubert"
     ]
 }
