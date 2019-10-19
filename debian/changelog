@@ -1,3 +1,11 @@
+repostat (1.0.0-1) bionic; urgency=medium
+
+  * Html assets are not copied to report 
+  * Removed unsuported export csv
+  * Code cleanup
+
+ -- Viktor Kopp <vifactor@gmail.com>  Sat, 19 Oct 2019 17:05:04 +0200
+
 repostat (0.99-1) bionic; urgency=medium
 
   * Fix by-author plots
