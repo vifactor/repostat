@@ -117,6 +117,9 @@ class Configuration(dict):
     def _set_default_configuration(self):
         self.update(DEFAULT_CONFIG)
 
+    def do_open_in_browser(self):
+        return not self.args.no_browser
+
     @staticmethod
     def _parse_sys_argv(argv):
         release_info = Configuration.get_release_data_info()
@@ -125,11 +128,12 @@ class Configuration(dict):
                                                      'Analyze and generate git statistics '
                                                      'in HTML format')
 
-        parser.add_argument('--version', action='version', version='%(prog)s ' + release_info['develop_version'])
+        parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + release_info['develop_version'])
         parser.add_argument('--config_file', action=LoadConfigJsonFile, default="-")
+        parser.add_argument('--no-browser', action="store_true", help="Do not open report in browser")
 
-        parser.add_argument('git_repo', type=str, action=ReadableDir)
-        parser.add_argument('output_path', type=str, action=WritableDir)
+        parser.add_argument('git_repo', type=str, action=ReadableDir, help="Path to git repository")
+        parser.add_argument('output_path', type=str, action=WritableDir, help="Path to an output directory")
 
         return parser.parse_args(argv)
 

@@ -6,6 +6,7 @@ import os
 import sys
 import warnings
 import time
+import webbrowser
 
 from analysis.htmlreportcreator import HTMLReportCreator
 from analysis import GitStatistics
@@ -63,15 +64,14 @@ def main():
     os.makedirs(output_path, exist_ok=True)
 
     print('Generating HTML report...')
-    report = HTMLReportCreator(config, repository_statistics)
-    report.create(output_path)
-    if sys.stdin.isatty():
-        print('You may now run:')
-        print('')
-        print('   sensible-browser \'%s\'' % os.path.join(output_path, 'general.html').replace("'", "'\\''"))
-        print('')
-
+    HTMLReportCreator(config, repository_statistics).create(output_path)
     print_exec_times()
+
+    url = os.path.join(output_path, 'general.html').replace("'", "'\\''")
+    if config.do_open_in_browser():
+        webbrowser.open(url, new=2)
+    else:
+        print("You may open your report in a browser. Path: {}".format(url))
 
 
 if __name__ == '__main__':
