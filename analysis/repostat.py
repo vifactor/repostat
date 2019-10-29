@@ -20,13 +20,13 @@ time_start = time.time()
 
 
 class Requirements:
-    gnuplot_minimal_version = version.StrictVersion('5.2')
-    python_minimal_version = version.StrictVersion('3.5')
+    gnuplot_minimal_version = version.LooseVersion('5.2')
+    python_minimal_version = version.LooseVersion('3.5')
     gnuplot_executable = os.environ.get('GNUPLOT', 'gnuplot')
 
     def __init__(self, config: Configuration):
-        self.gnuplot_version = version.StrictVersion(config.get_gnuplot_version())
-        self.python_version = version.StrictVersion(sys.version.split()[0])
+        self.gnuplot_version = version.LooseVersion(config.get_gnuplot_version())
+        self.python_version = version.LooseVersion(sys.version.split()[0])
 
     def check(self):
         if self.python_version < self.python_minimal_version:
