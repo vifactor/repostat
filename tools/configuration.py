@@ -107,6 +107,9 @@ class Configuration(dict):
     def do_open_in_browser(self):
         return not self.args.no_browser
 
+    def is_report_relocatable(self):
+        return self.args.copy_assets
+
     @classmethod
     def _parse_sys_argv(cls, argv):
         release_info = cls.get_release_data_info()
@@ -118,6 +121,8 @@ class Configuration(dict):
         parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + release_info['develop_version'])
         parser.add_argument('-c', '--config-file', action=ReadableFile, help="Configuration file path")
         parser.add_argument('--no-browser', action="store_true", help="Do not open report in browser")
+        parser.add_argument('--copy-assets', action="store_true",
+                            help="Copy assets (images, css, etc.) into report folder (report becomes relocatable)")
 
         parser.add_argument('git_repo', type=str, action=ReadableDir, help="Path to git repository")
         parser.add_argument('output_path', type=str, action=WritableDir, help="Path to an output directory")

@@ -6,6 +6,8 @@ import time
 import collections
 import glob
 from jinja2 import Environment, FileSystemLoader
+from distutils.dir_util import copy_tree
+
 from analysis.gitstatistics import GitStatistics
 from tools.shellhelper import get_pipe_output
 from tools.configuration import Configuration
@@ -14,16 +16,16 @@ from tools import sort_keys_by_value_of_key
 
 class HTMLReportCreator(object):
     recent_activity_period_weeks = 32
+    assets_subdir = "assets"
+    templates_subdir = "templates"
 
     def __init__(self, config: Configuration, repo_stat):
-        self.data = None
         self.path = None
         self.configuration = config
-        self.assets_path = os.path.join(self.configuration.repostat_root_dir, "assets")
-
+        self.assets_path = os.path.join(self.configuration.repostat_root_dir, self.assets_subdir)
         self.git_repo_statistics = repo_stat
 
-        templates_dir = os.path.join(self.configuration.repostat_root_dir, 'templates')
+        templates_dir = os.path.join(self.configuration.repostat_root_dir, self.templates_subdir)
         self.j2_env = Environment(loader=FileSystemLoader(templates_dir), trim_blocks=True)
         self.j2_env.filters['to_month_name_abr'] = lambda im: calendar.month_abbr[im]
         self.j2_env.filters['to_weekday_name'] = lambda i: calendar.day_name[i]
@@ -49,8 +51,18 @@ class HTMLReportCreator(object):
         res = sort_keys_by_value_of_key(self.git_repo_statistics.authors, 'commits', reverse=True)
         return res[:limit]
 
+    def _bundle_assets(self):
+        # copy assets to report output folder
+        assets_local_abs_path = os.path.join(self.path, self.assets_subdir)
+        copy_tree(src=self.assets_path, dst=assets_local_abs_path)
+        # relative path to assets to embed into html pages
+        self.assets_path = os.path.relpath(assets_local_abs_path, self.path)
+
     def create(self, path):
         self.path = path
+
+        if self.configuration.is_report_relocatable():
+            self._bundle_assets()
 
         ###
         # General
