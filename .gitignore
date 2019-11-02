@@ -27,3 +27,6 @@ dist
 # stdeb files
 deb_dist/
 *.tar.gz
+
+# snap packages
+*.snap

@@ -1,0 +1,23 @@
+name: repostat
+version: git
+summary: Git repository analyser
+description: |
+  Repostat is desktop git repository analyser and report creator.
+base: core18
+confinement: devmode
+
+parts:
+  repostat:
+    plugin: python
+    python-version: python3
+    source: .
+    stage-packages:
+      - gnuplot-nox
+      - python3-pygit2
+    build-packages:
+      - python3-pygit2
+      - libgit2-dev
+
+apps:
+  repostat:
+    command: bin/repostat

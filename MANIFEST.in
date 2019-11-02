@@ -1,7 +1,6 @@
-include MANIFEST.in
 include gnuplot/*.plot
 include templates/*.html
 include assets/images/*.gif
 include assets/sortable.js
-include assets/gitstats.css
+include assets/gitrepostat.css
 include release_data.json
