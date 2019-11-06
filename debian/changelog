@@ -1,3 +1,11 @@
+repostat (1.1.0-1) bionic; urgency=medium
+
+  * Open generated html report in browser
+  * Provide option to make report dir relocatable
+  * Minor refactoring 
+
+ -- Viktor Kopp <vifactor@gmail.com>  Wed, 06 Nov 2019 21:19:12 +0100
+
 repostat (1.0.0-1) bionic; urgency=medium
 
   * Html assets are not copied to report 
