@@ -472,8 +472,7 @@ class GitStatistics:
 
     def _append_authors_info(self):
         # name -> {place_by_commits, date_first, date_last, timedelta}
-        authors_by_commits = sort_keys_by_value_of_key(self.authors, 'commits')
-        authors_by_commits.reverse()  # most first
+        authors_by_commits = sort_keys_by_value_of_key(self.authors, 'commits', reverse=True)
         for i, name in enumerate(authors_by_commits):
             self.authors[name]['place_by_commits'] = i + 1
 

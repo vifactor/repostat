@@ -8,20 +8,20 @@ from datetime import datetime
 import pygit2 as git
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-REPOSTAT_REPO = os.path.join(HERE, '..', '..')
-RELEASE_DATA_FILE = os.path.join(REPOSTAT_REPO, 'release_data.json')
+REPOSTAT_REPO_PATH = os.path.join(HERE, '..', '..')
+REPOSTAT_REPO = git.Repository(REPOSTAT_REPO_PATH)
+RELEASE_DATA_FILE = os.path.join(REPOSTAT_REPO_PATH, 'release_data.json')
 
 
-def fetch_contributors():
-    repostat_repo = git.Repository(REPOSTAT_REPO)
-    head_commit = repostat_repo.head.peel()
+def fetch_contributors(repo):
+    head_commit = repo.head.peel()
     contribution = {}
 
-    submodules_paths = repostat_repo.listall_submodules()
+    submodules_paths = repo.listall_submodules()
     for p in head_commit.tree.diff_to_tree():
         file_to_blame = p.delta.new_file.path
         if file_to_blame not in submodules_paths:
-            blob_blame = repostat_repo.blame(file_to_blame)
+            blob_blame = repo.blame(file_to_blame)
             for blame_hunk in blob_blame:
                 contribution[blame_hunk.final_committer.name] = contribution.get(blame_hunk.final_committer.name, 0) \
                                                                 + blame_hunk.lines_in_hunk
@@ -32,14 +32,14 @@ def fetch_contributors():
 
 
 # retrieve name of current branch
-git_branch_string = subprocess.check_output(['git', 'rev-parse', '--abbrev-ref', 'HEAD']).decode().strip()
+git_branch_string = REPOSTAT_REPO.head.shorthand
 if git_branch_string != 'master':
     print("Not the 'master' branch: {}. Do not perform any actions.".format(git_branch_string))
     sys.exit(0)
 
 # get most recent tag name in current branch
 # TODO: go for earlier tags in history?
-git_tag_string = subprocess.check_output(['git', 'describe', '--abbrev=0', '--tags']).decode().strip()
+git_tag_string = REPOSTAT_REPO.describe(describe_strategy=git.GIT_DESCRIBE_TAGS, abbreviated_size=0)
 # check if this is a version tag of type: vN.N[.N], e.g. "v0.1"
 if re.fullmatch(r'^v\d+\.\d+(\.\d+)?\Z', git_tag_string):
     print('The most recent version tag is: ', git_tag_string)
@@ -61,11 +61,23 @@ if not release_data or release_data['develop_version'] != git_tag_string:
     # create new release data and store, create commit
     release_data['develop_version'] = git_tag_string
 
-    release_tag_timestamp = subprocess.check_output(['git', 'log', '-1', '--format=%at', git_tag_string]).decode().strip()
-    release_tag_date_yymm = datetime.fromtimestamp(int(release_tag_timestamp)).strftime('%Y-%m')
-    release_data['user_version'] = release_tag_date_yymm
+    tag_object = REPOSTAT_REPO.revparse_single(git_tag_string)
+    if isinstance(tag_object, git.Commit):
+        release_commit = tag_object
+    elif isinstance(tag_object, git.Tag):
+        release_commit = tag_object.get_object()
+    else:
+        print("Unexpected tag object type {}".format(type(tag_object)))
+        sys.exit(1)
 
-    contributors = fetch_contributors()
+    release_tag_timestamp = release_commit.author.time
+    release_tag_date_yymmdd = datetime.fromtimestamp(release_tag_timestamp).strftime('%Y-%m-%d')
+    release_data['user_version'] = release_tag_date_yymmdd
+
+    # hash of release tag's commit (first 7 hex symbols like git describe)
+    release_data['git_sha1'] = release_commit.hex[:7]
+
+    contributors = fetch_contributors(REPOSTAT_REPO)
     release_data['contributors'] = contributors
 
     with open(RELEASE_DATA_FILE, 'w') as release_json_file:

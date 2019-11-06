@@ -6,27 +6,26 @@ import time
 import collections
 import glob
 from jinja2 import Environment, FileSystemLoader
+from distutils.dir_util import copy_tree
+
 from analysis.gitstatistics import GitStatistics
 from tools.shellhelper import get_pipe_output
 from tools.configuration import Configuration
 from tools import sort_keys_by_value_of_key
 
-def getkeyssortedbyvalues(a_dict):
-    return [el[1] for el in sorted([(el[1], el[0]) for el in a_dict.items()])]
-
 
 class HTMLReportCreator(object):
     recent_activity_period_weeks = 32
+    assets_subdir = "assets"
+    templates_subdir = "templates"
 
     def __init__(self, config: Configuration, repo_stat):
-        self.data = None
         self.path = None
         self.configuration = config
-        self.assets_path = os.path.join(self.configuration.repostat_root_dir, "assets")
-
+        self.assets_path = os.path.join(self.configuration.repostat_root_dir, self.assets_subdir)
         self.git_repo_statistics = repo_stat
 
-        templates_dir = os.path.join(self.configuration.repostat_root_dir, 'templates')
+        templates_dir = os.path.join(self.configuration.repostat_root_dir, self.templates_subdir)
         self.j2_env = Environment(loader=FileSystemLoader(templates_dir), trim_blocks=True)
         self.j2_env.filters['to_month_name_abr'] = lambda im: calendar.month_abbr[im]
         self.j2_env.filters['to_weekday_name'] = lambda i: calendar.day_name[i]
@@ -49,12 +48,21 @@ class HTMLReportCreator(object):
                 f.write("%d %d\n" % (self.recent_activity_period_weeks - i - 1, commits))
 
     def _get_authors(self, limit=None):
-        res = sort_keys_by_value_of_key(self.git_repo_statistics.authors, 'commits')
-        res.reverse()
+        res = sort_keys_by_value_of_key(self.git_repo_statistics.authors, 'commits', reverse=True)
         return res[:limit]
+
+    def _bundle_assets(self):
+        # copy assets to report output folder
+        assets_local_abs_path = os.path.join(self.path, self.assets_subdir)
+        copy_tree(src=self.assets_path, dst=assets_local_abs_path)
+        # relative path to assets to embed into html pages
+        self.assets_path = os.path.relpath(assets_local_abs_path, self.path)
 
     def create(self, path):
         self.path = path
+
+        if self.configuration.is_report_relocatable():
+            self._bundle_assets()
 
         ###
         # General
@@ -129,8 +137,7 @@ class HTMLReportCreator(object):
                 fgc.write('\n')
 
         # Domains
-        domains_by_commits = sort_keys_by_value_of_key(self.git_repo_statistics.domains, 'commits')
-        domains_by_commits.reverse()
+        domains_by_commits = sort_keys_by_value_of_key(self.git_repo_statistics.domains, 'commits', reverse=True)
         with open(os.path.join(path, 'domains.dat'), 'w') as fp:
             for i, domain in enumerate(domains_by_commits[:self.configuration['max_domains']]):
                 info = self.git_repo_statistics.domains[domain]
@@ -255,16 +262,14 @@ class HTMLReportCreator(object):
 
         all_authors = self._get_authors()
         if len(all_authors) > self.configuration['max_authors']:
-            rest = all_authors[self.configuration['max_authors']:]
-            project_data['non_top_authors'] = rest
+            project_data['non_top_authors'] = all_authors[self.configuration['max_authors']:]
 
         project_data['months'] = []
         # print out only recent conf['max_authors_of_months'] authors of the month
-        iter_months_with_authors = reversed(sorted(self.git_repo_statistics.author_of_month.keys()))
+        iter_months_with_authors = sorted(self.git_repo_statistics.author_of_month.keys(), reverse=True)
         for yymm in itertools.islice(iter_months_with_authors, self.configuration['max_authors_of_months']):
             authordict = self.git_repo_statistics.author_of_month[yymm]
-            authors = getkeyssortedbyvalues(authordict)
-            authors.reverse()
+            authors = [name for name, _ in sorted(authordict.items(), key=lambda kv: kv[1], reverse=True)]
             commits = self.git_repo_statistics.author_of_month[yymm][authors[0]]
             next = ', '.join(authors[1:self.configuration['authors_top'] + 1])
 
@@ -278,10 +283,9 @@ class HTMLReportCreator(object):
             project_data['months'].append(month_dict)
 
         project_data['years'] = []
-        for yy in reversed(sorted(self.git_repo_statistics.author_of_year.keys())):
+        for yy in sorted(self.git_repo_statistics.author_of_year.keys(), reverse=True):
             authordict = self.git_repo_statistics.author_of_year[yy]
-            authors = getkeyssortedbyvalues(authordict)
-            authors.reverse()
+            authors = [name for name, _ in sorted(authordict.items(), key=lambda kv: kv[1], reverse=True)]
             commits = self.git_repo_statistics.author_of_year[yy][authors[0]]
             next = ', '.join(authors[1:self.configuration['authors_top'] + 1])
 
@@ -356,14 +360,15 @@ class HTMLReportCreator(object):
         Use '--' to separate paths from revisions, like this:
         'git <command> [<revision>...] -- [<file>...]'
         """
-
-        # TODO: refactor the following code
-        tags_sorted_by_date_desc = [el[1] for el in reversed(sorted([(el[1]['date'], el[0]) for el in self.git_repo_statistics.tags.items()]))]
+        tags_sorted_by_date_desc = sort_keys_by_value_of_key(self.git_repo_statistics.tags, 'date', reverse=True)
         for tag in tags_sorted_by_date_desc:
             # there are tags containing no commits
             if 'authors' in self.git_repo_statistics.tags[tag].keys():
+                authordict = self.git_repo_statistics.tags[tag]['authors']
+                authors_by_commits = [
+                    name for name, _ in sorted(authordict.items(), key=lambda kv: kv[1], reverse=True)
+                ]
                 authorinfo = []
-                authors_by_commits = getkeyssortedbyvalues(self.git_repo_statistics.tags[tag]['authors'])
                 for i in reversed(authors_by_commits):
                     authorinfo.append('%s (%d)' % (i, self.git_repo_statistics.tags[tag]['authors'][i]))
                 tag_dict = {
