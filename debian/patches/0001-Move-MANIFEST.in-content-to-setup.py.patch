@@ -6,8 +6,8 @@ Fix repostat root dir
 ---
  MANIFEST.in            |  7 -------
  setup.py               | 14 +++++++++++---
- tools/configuration.py | 12 ++++++------
- 3 files changed, 17 insertions(+), 16 deletions(-)
+ tools/configuration.py | 18 +++++++++---------
+ 3 files changed, 20 insertions(+), 19 deletions(-)
  delete mode 100644 MANIFEST.in
 
 diff --git a/MANIFEST.in b/MANIFEST.in
@@ -58,10 +58,10 @@ index a700d4f..b96b262 100644
        include_package_data=True,
        zip_safe=False)
 diff --git a/tools/configuration.py b/tools/configuration.py
-index 774e253..9991474 100644
+index d24473f..c42cf00 100644
 --- a/tools/configuration.py
 +++ b/tools/configuration.py
-@@ -88,18 +88,18 @@ class Configuration(dict):
+@@ -60,25 +60,25 @@ class Configuration(dict):
      # environment variable "GNUPLOT"
      gnuplot_executable = os.environ.get('GNUPLOT', 'gnuplot')
      release_data_dict = None
@@ -76,13 +76,23 @@ index 774e253..9991474 100644
 +            cls.release_data_dict = cls._read_release_data(root_dir)
          return cls.release_data_dict
  
-     @classmethod
+-    @classmethod
 -    def _read_release_data(cls):
--        RELEASE_DATA_FILE = os.path.join(cls.repostat_root_dir, 'release_data.json')
--        with open(RELEASE_DATA_FILE) as release_json_file:
+-        release_data_file_path = os.path.join(cls.repostat_root_dir, 'release_data.json')
+-        with open(release_data_file_path) as release_json_file:
+-            return json.load(release_json_file)
+-
+     @classmethod
+     def _read_config_data(cls, path):
+         with open(path) as f:
+             return json.load(f)
+ 
++    @classmethod
 +    def _read_release_data(cls, root_dir):
 +        release_data_file = os.path.join(root_dir, 'release_data.json')
 +        with open(release_data_file) as release_json_file:
-             release_data = json.load(release_json_file)
-             return release_data
++            return json.load(release_json_file)
++
+     def __init__(self, args_orig, **kwargs):
+         dict.__init__(kwargs)
  
