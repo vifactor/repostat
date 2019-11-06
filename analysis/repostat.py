@@ -6,6 +6,7 @@ import os
 import sys
 import warnings
 import time
+import webbrowser
 
 from analysis.htmlreportcreator import HTMLReportCreator
 from analysis import GitStatistics
@@ -19,13 +20,13 @@ time_start = time.time()
 
 
 class Requirements:
-    gnuplot_minimal_version = version.StrictVersion('5.2')
-    python_minimal_version = version.StrictVersion('3.5')
+    gnuplot_minimal_version = version.LooseVersion('5.2')
+    python_minimal_version = version.LooseVersion('3.5')
     gnuplot_executable = os.environ.get('GNUPLOT', 'gnuplot')
 
     def __init__(self, config: Configuration):
-        self.gnuplot_version = version.StrictVersion(config.get_gnuplot_version())
-        self.python_version = version.StrictVersion(sys.version.split()[0])
+        self.gnuplot_version = version.LooseVersion(config.get_gnuplot_version())
+        self.python_version = version.LooseVersion(sys.version.split()[0])
 
     def check(self):
         if self.python_version < self.python_minimal_version:
@@ -63,15 +64,14 @@ def main():
     os.makedirs(output_path, exist_ok=True)
 
     print('Generating HTML report...')
-    report = HTMLReportCreator(config, repository_statistics)
-    report.create(output_path)
-    if sys.stdin.isatty():
-        print('You may now run:')
-        print('')
-        print('   sensible-browser \'%s\'' % os.path.join(output_path, 'general.html').replace("'", "'\\''"))
-        print('')
-
+    HTMLReportCreator(config, repository_statistics).create(output_path)
     print_exec_times()
+
+    url = os.path.join(output_path, 'general.html').replace("'", "'\\''")
+    if config.do_open_in_browser():
+        webbrowser.open(url, new=2)
+    else:
+        print("You may open your report in a browser. Path: {}".format(url))
 
 
 if __name__ == '__main__':
