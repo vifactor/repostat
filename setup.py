@@ -18,7 +18,13 @@ setup(name='repo_stat',
           "Topic :: Software Development :: Version Control",
           "Topic :: Utilities"
       ],
-      packages=['analysis', 'tools'],
+      packages=['analysis', 'tools', 'report'],
+      package_data={'report': ['gnuplot/*.plot',
+                               'templates/*.html',
+                               'assets/images/*.gif',
+                               'assets/sortable.js',
+                               'assets/gitstats.css',
+                               'release_data.json']},
       install_requires=[
           'cffi==1.11.5',
           'Jinja2>=2.10.1',
@@ -27,8 +33,6 @@ setup(name='repo_stat',
           'pytz==2018.5',
           'six>=1.11.0'
       ],
-      test_suite='nose.collector',
-      tests_require=['nose'],
       entry_points={"console_scripts": ["repostat = analysis.repostat:main"]},
       include_package_data=True,
       zip_safe=False)
