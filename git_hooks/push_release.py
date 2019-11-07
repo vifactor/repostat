@@ -10,7 +10,7 @@ import pygit2 as git
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPOSTAT_REPO_PATH = os.path.join(HERE, '..', '..')
 REPOSTAT_REPO = git.Repository(REPOSTAT_REPO_PATH)
-RELEASE_DATA_FILE = os.path.join(REPOSTAT_REPO_PATH, 'release_data.json')
+RELEASE_DATA_FILE = os.path.join(REPOSTAT_REPO_PATH, "tools", 'release_data.json')
 
 
 def fetch_contributors(repo):
