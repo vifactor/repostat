@@ -1,6 +1,6 @@
 {
-    "develop_version": "v1.1.0",
-    "user_version": "2019-11-03",
+    "develop_version": "v1.1.1",
+    "user_version": "2019-11-08",
     "contributors": [
         "Viktor Kopp",
         "G\u00e1bor Bereczki",
@@ -11,5 +11,5 @@
         "Sylvain Joubert",
         "Jani Hur"
     ],
-    "git_sha1": "68203f6"
+    "git_sha1": "bc29fd1"
 }
