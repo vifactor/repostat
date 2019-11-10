@@ -81,6 +81,7 @@ class AuthorDictFactory:
     COMMITS = 'commits'
     FIRST_COMMIT = 'first_commit_stamp'
     LAST_COMMIT = 'last_commit_stamp'
+    # FIXME: this key is unused and redundant
     LAST_ACTIVE_DAY = 'last_active_day'
     FIELD_LIST = [AUTHOR_NAME, LINES_ADDED, LINES_REMOVED, COMMITS, ACTIVE_DAYS, FIRST_COMMIT, LAST_COMMIT,
                   LAST_ACTIVE_DAY]
@@ -481,6 +482,7 @@ class GitStatistics:
             date_first = datetime.fromtimestamp(a['first_commit_stamp'])
             date_last = datetime.fromtimestamp(a['last_commit_stamp'])
             delta = (date_last - date_first).days
+            # FIXME: next two values are redundant (can be estimated from timestamps)
             a['date_first'] = date_first.strftime('%Y-%m-%d')
             a['date_last'] = date_last.strftime('%Y-%m-%d')
             a['timedelta'] = delta
