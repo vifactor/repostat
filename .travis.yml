@@ -1,0 +1,13 @@
+dist: bionic
+language: python
+python:
+  - "3.6"
+cache: pip
+before_install:
+  - sudo apt-get -y install python3-pygit2
+install:
+  - pip3 install .
+virtualenv:
+  system_site_packages: true
+script:
+  - python3 test/test_single_commit_stats.py
