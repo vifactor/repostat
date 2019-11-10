@@ -30,7 +30,7 @@ setup(name='repo_stat',
           'cffi==1.11.5',
           'Jinja2>=2.10.1',
           'MarkupSafe==1.0',
-          'pygit2>=0.24.2,<=0.28',
+          'pygit2>=0.24.2',
           'pytz>=2018.5',
           'six>=1.11.0'
       ],
