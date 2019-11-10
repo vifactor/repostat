@@ -3,6 +3,7 @@ from datetime import datetime, tzinfo, timedelta
 from collections import Counter
 import warnings
 import os
+from distutils import version
 
 from tools.timeit import Timeit
 from tools import sort_keys_by_value_of_key, split_email_address
@@ -121,11 +122,19 @@ class AuthorDictFactory:
 
 
 class GitStatistics:
+    is_mailmap_supported = True if version.LooseVersion(git.LIBGIT2_VERSION) >= '0.28.0' else False
+
     def __init__(self, path):
         """
         :param path: path to a repository
         """
         self.repo = git.Repository(path)
+        if GitStatistics.is_mailmap_supported:
+            self.mailmap = git.Mailmap.from_repository(self.repo)
+            self.signature_mapper = lambda signature: self.mailmap.resolve_signature(signature)
+        else:
+            self.signature_mapper = lambda signature: signature
+
         self.created_time_stamp = datetime.now().timestamp()
         self.analysed_branch = self.repo.head.shorthand
         self.author_of_year = {}
@@ -286,7 +295,9 @@ class GitStatistics:
         result = {}
         for commit in self.repo.walk(self.repo.head.target):
             try:
-                _, domain = split_email_address(commit.author.email)
+                author_signature = self.signature_mapper(commit.author)
+                print(commit.author.name, commit.author.email, "->", author_signature.name, author_signature.email)
+                _, domain = split_email_address(author_signature.email)
             except ValueError as ex:
                 warnings.warn(str(ex))
                 result["unknown"] = result.get("unknown", 0) + 1
