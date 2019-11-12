@@ -1,15 +1,16 @@
 {
-    "develop_version": "v1.1.1",
-    "user_version": "2019-11-08",
+    "develop_version": "v1.1.2",
+    "user_version": "2019-11-12",
     "contributors": [
         "Viktor Kopp",
-        "G\u00e1bor Bereczki",
         "Heikki Hokkanen",
+        "G\u00e1bor Bereczki",
         "Tobias Gruetzmacher",
-        "Jan Beran",
         "Sven van Haastregt",
         "Sylvain Joubert",
-        "Jani Hur"
+        "Jan Beran",
+        "Jani Hur",
+        "Matthew Jones"
     ],
-    "git_sha1": "bc29fd1"
+    "git_sha1": "70b14ef"
 }
