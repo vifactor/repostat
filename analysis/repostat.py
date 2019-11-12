@@ -7,12 +7,12 @@ import sys
 import warnings
 import time
 import webbrowser
+from distutils import version
 
-from analysis.htmlreportcreator import HTMLReportCreator
+from report.htmlreportcreator import HTMLReportCreator
 from analysis import GitStatistics
 from tools.shellhelper import get_external_execution_time
 from tools.configuration import Configuration
-from distutils import version
 
 os.environ['LC_ALL'] = 'C'
 

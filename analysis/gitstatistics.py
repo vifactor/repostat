@@ -5,7 +5,7 @@ import warnings
 import os
 
 from tools.timeit import Timeit
-from tools import sort_keys_by_value_of_key
+from tools import sort_keys_by_value_of_key, split_email_address
 
 
 class FixedOffset(tzinfo):
@@ -24,13 +24,6 @@ class FixedOffset(tzinfo):
     def dst(self, dt):
         # we don't know about DST
         return timedelta(0)
-
-
-def split_email_address(email_address):
-    parts = email_address.split('@')
-    if len(parts) != 2:
-        raise ValueError('Not an email passed: %s' % email_address)
-    return parts[0], parts[1]
 
 
 class CommitDictFactory:
@@ -81,9 +74,7 @@ class AuthorDictFactory:
     COMMITS = 'commits'
     FIRST_COMMIT = 'first_commit_stamp'
     LAST_COMMIT = 'last_commit_stamp'
-    LAST_ACTIVE_DAY = 'last_active_day'
-    FIELD_LIST = [AUTHOR_NAME, LINES_ADDED, LINES_REMOVED, COMMITS, ACTIVE_DAYS, FIRST_COMMIT, LAST_COMMIT,
-                  LAST_ACTIVE_DAY]
+    FIELD_LIST = [AUTHOR_NAME, LINES_ADDED, LINES_REMOVED, COMMITS, ACTIVE_DAYS, FIRST_COMMIT, LAST_COMMIT]
 
     @classmethod
     def create_author(cls, author_name: str, lines_removed: int, lines_added: int, active_days: str, commits: int,
@@ -95,16 +86,12 @@ class AuthorDictFactory:
             cls.ACTIVE_DAYS: {active_days},
             cls.COMMITS: commits,
             cls.FIRST_COMMIT: first_commit_stamp,
-            cls.LAST_COMMIT: last_commit_stamp,
-            cls.LAST_ACTIVE_DAY: datetime.fromtimestamp(last_commit_stamp).strftime('%Y-%m-%d')
+            cls.LAST_COMMIT: last_commit_stamp
         }
         return result
 
     def _set_last_commit_stamp(self, time):
         self.last_commit_stamp = time
-        # it seems that there is a mistake (or my misunderstanding) in 'last_active_day' value
-        # my calculations give are not the same as those done by Heikki Hokkanen for this parameter
-        self.last_active_day = datetime.fromtimestamp(time).strftime('%Y-%m-%d')
 
     @classmethod
     def add_active_day(cls, author, active_day):
@@ -131,7 +118,6 @@ class AuthorDictFactory:
     def check_last_commit_stamp(cls, author: dict, time):
         if author[cls.LAST_COMMIT] < time:
             author[cls.LAST_COMMIT] = time
-            author[cls.LAST_ACTIVE_DAY] = datetime.fromtimestamp(time).strftime('%Y-%m-%d')
 
 
 class GitStatistics:
@@ -301,9 +287,11 @@ class GitStatistics:
         for commit in self.repo.walk(self.repo.head.target):
             try:
                 _, domain = split_email_address(commit.author.email)
-                result[domain] = result.get(domain, 0) + 1
             except ValueError as ex:
-                warnings.warn(ex)
+                warnings.warn(str(ex))
+                result["unknown"] = result.get("unknown", 0) + 1
+            else:
+                result[domain] = result.get(domain, 0) + 1
         # TODO: this is done to save compatibility with gitstats' structures
         result = {k: {'commits': v} for k, v in result.items()}
         return result
@@ -481,6 +469,7 @@ class GitStatistics:
             date_first = datetime.fromtimestamp(a['first_commit_stamp'])
             date_last = datetime.fromtimestamp(a['last_commit_stamp'])
             delta = (date_last - date_first).days
+            # FIXME: next two values are redundant (can be estimated from timestamps)
             a['date_first'] = date_first.strftime('%Y-%m-%d')
             a['date_last'] = date_last.strftime('%Y-%m-%d')
             a['timedelta'] = delta

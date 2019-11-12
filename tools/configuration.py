@@ -6,6 +6,8 @@ import warnings
 
 from tools.shellhelper import get_pipe_output
 
+here = os.path.dirname(os.path.abspath(__file__))
+
 
 class ReadableDir(argparse.Action):
 
@@ -60,7 +62,6 @@ class Configuration(dict):
     # environment variable "GNUPLOT"
     gnuplot_executable = os.environ.get('GNUPLOT', 'gnuplot')
     release_data_dict = None
-    repostat_root_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
 
     @classmethod
     def get_release_data_info(cls):
@@ -70,7 +71,7 @@ class Configuration(dict):
 
     @classmethod
     def _read_release_data(cls):
-        release_data_file_path = os.path.join(cls.repostat_root_dir, 'release_data.json')
+        release_data_file_path = os.path.join(here, 'release_data.json')
         with open(release_data_file_path) as release_json_file:
             return json.load(release_json_file)
 
