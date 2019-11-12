@@ -1,3 +1,12 @@
+repostat (1.1.2-1) bionic; urgency=medium
+
+  * New option to make html report relocatable
+  * Add simple unit test
+  * Restructure packaging and handling of assets
+  * Fix erroneous exception handling when author email has wrong format
+
+ -- Viktor Kopp <vifactor@gmail.com>  Tue, 12 Nov 2019 23:26:21 +0100
+
 repostat (1.1.0-1) bionic; urgency=medium
 
   * Open generated html report in browser
