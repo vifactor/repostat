@@ -13,6 +13,8 @@ from tools.shellhelper import get_pipe_output
 from tools.configuration import Configuration
 from tools import sort_keys_by_value_of_key
 
+HERE = os.path.dirname(os.path.abspath(__file__))
+
 
 class HTMLReportCreator(object):
     recent_activity_period_weeks = 32
@@ -22,10 +24,10 @@ class HTMLReportCreator(object):
     def __init__(self, config: Configuration, repo_stat):
         self.path = None
         self.configuration = config
-        self.assets_path = os.path.join(self.configuration.repostat_root_dir, self.assets_subdir)
+        self.assets_path = os.path.join(HERE, self.assets_subdir)
         self.git_repo_statistics = repo_stat
 
-        templates_dir = os.path.join(self.configuration.repostat_root_dir, self.templates_subdir)
+        templates_dir = os.path.join(HERE, self.templates_subdir)
         self.j2_env = Environment(loader=FileSystemLoader(templates_dir), trim_blocks=True)
         self.j2_env.filters['to_month_name_abr'] = lambda im: calendar.month_abbr[im]
         self.j2_env.filters['to_weekday_name'] = lambda i: calendar.day_name[i]
@@ -170,7 +172,7 @@ class HTMLReportCreator(object):
             f.write(about_html.decode('utf-8'))
 
         print('Generating graphs...')
-        self.process_gnuplot_scripts(scripts_path=os.path.join(self.configuration.repostat_root_dir, 'gnuplot'),
+        self.process_gnuplot_scripts(scripts_path=os.path.join(HERE, 'gnuplot'),
                                      data_path=path,
                                      output_images_path=path)
 
@@ -404,7 +406,7 @@ class HTMLReportCreator(object):
         )
         return template_rendered.encode('utf-8')
 
-    def process_gnuplot_scripts(self,scripts_path, data_path, output_images_path):
+    def process_gnuplot_scripts(self, scripts_path, data_path, output_images_path):
         scripts = glob.glob(os.path.join(scripts_path, '*.plot'))
         os.chdir(output_images_path)
         for script in scripts:
