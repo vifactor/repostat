@@ -243,7 +243,7 @@ class GitStatistics:
 
             commit_day_str = datetime.fromtimestamp(child_commit.author.time).strftime('%Y-%m-%d')
 
-            author_name = child_commit.author.name
+            author_name = self.signature_mapper(child_commit.author).name
             lines_added = st.insertions if not is_merge_commit else 0
             lines_removed = st.deletions if not is_merge_commit else 0
 
@@ -279,7 +279,8 @@ class GitStatistics:
         commit_count = 0
         for commit in self.repo.walk(self.repo.head.target, git.GIT_SORT_TOPOLOGICAL | git.GIT_SORT_REVERSE):
             commit_count += 1
-            authors[commit.author.name] = authors.get(commit.author.name, 0) + 1
+            commit_author = self.signature_mapper(commit.author)
+            authors[commit_author.name] = authors.get(commit_author.name, 0) + 1
             if commit.oid in commit_tag.keys():
                 tagname = commit_tag[commit.oid]
                 result[tagname]['commits'] = commit_count
@@ -296,7 +297,6 @@ class GitStatistics:
         for commit in self.repo.walk(self.repo.head.target):
             try:
                 author_signature = self.signature_mapper(commit.author)
-                print(commit.author.name, commit.author.email, "->", author_signature.name, author_signature.email)
                 _, domain = split_email_address(author_signature.email)
             except ValueError as ex:
                 warnings.warn(str(ex))
@@ -342,14 +342,15 @@ class GitStatistics:
             year_month = date.strftime('%Y-%m')
             activity[month] = activity.get(month, 0) + 1
             activity_year_month[year_month] = activity_year_month.get(year_month, 0) + 1
+            commit_author = self.signature_mapper(commit.author)
             try:
-                authors[month].add(commit.author.name)
+                authors[month].add(commit_author.name)
             except KeyError:
-                authors[month] = {commit.author.name}
+                authors[month] = {commit_author.name}
             try:
-                authors_year_month[year_month].add(commit.author.name)
+                authors_year_month[year_month].add(commit_author.name)
             except KeyError:
-                authors_year_month[year_month] = {commit.author.name}
+                authors_year_month[year_month] = {commit_author.name}
 
             self._adjust_commits_timeline(date)
         return activity, authors, activity_year_month, authors_year_month
@@ -368,14 +369,14 @@ class GitStatistics:
 
         return activity
 
-    @staticmethod
-    def build_history_item(child_commit, stat) -> dict:
+    def build_history_item(self, child_commit, stat) -> dict:
+        author = self.signature_mapper(child_commit.author)
         return {
             'files': stat.files_changed,
             'ins': stat.insertions,
             'del': stat.deletions,
-            'author': child_commit.author.name,
-            'author_mail': child_commit.author.email,
+            'author': author.name,
+            'author_mail': author.email,
             'is_merge': len(child_commit.parents) > 1,
             'commit_time': child_commit.commit_time,
             'oid': child_commit.oid,
@@ -460,7 +461,7 @@ class GitStatistics:
     def _adjust_author_changes_history(self, commit, authors_info: dict):
         ts = commit.author.time
 
-        author_name = commit.author.name
+        author_name = self.signature_mapper(commit.author).name
         if ts not in self.author_changes_history:
             self.author_changes_history[ts] = {}
         if author_name not in self.author_changes_history[ts]:
