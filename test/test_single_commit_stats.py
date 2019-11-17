@@ -1,39 +1,24 @@
 import unittest
 
-import tempfile
-import os
-import pygit2 as git
 import datetime
 
 from analysis import GitStatistics
+import test
 
 
 class TestSingleCommitRepository(unittest.TestCase):
-    git_repository_dir = None
 
     @classmethod
     def setUpClass(cls):
-        cls.git_repository_dir = tempfile.mkdtemp(prefix="repostat_")
-        print(f"Repo is going to be initialized in {cls.git_repository_dir}")
-        cls.git_repository = git.init_repository(cls.git_repository_dir)
-        (_, file_abs_path) = tempfile.mkstemp(dir=cls.git_repository_dir)
-        file_rel_path = os.path.basename(file_abs_path)
+        cls.git_repository = test.GitRepository()
 
-        cls.git_repository.index.add(file_rel_path)
-        cls.git_repository.index.write()
-        tree = cls.git_repository.index.write_tree()
+        cls.git_repository.commit_builder\
+            .set_author("John Doe", "john@doe.com")\
+            .add_file()\
+            .commit()
 
-        cls.commit_author = git.Signature("John Doe", "john@doe.com")
-        committer = cls.commit_author
-        commit_message = "First commit"
-        commit_oid = cls.git_repository.create_commit('HEAD', cls.commit_author, committer, commit_message, tree, [])
-        print(f"Commit {commit_oid.hex[:7]} has been created")
-
-        cls.gs = GitStatistics(cls.git_repository_dir)
-
-    @classmethod
-    def tearDownClass(cls):
-        print(f"Repo {cls.git_repository_dir} is being deleted")
+        cls.commit_author, = cls.git_repository.commit_builder.author_signatures
+        cls.gs = GitStatistics(cls.git_repository.location)
 
     def test_total_commits_number(self):
         self.assertEqual(self.gs.total_commits, 1)

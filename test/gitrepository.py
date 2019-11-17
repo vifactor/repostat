@@ -22,9 +22,10 @@ class GitRepository(git.Repository):
             else:
                 file_rel_path = filename
 
-            with open(os.path.join(self.repository.location, file_rel_path), 'w') as f:
-                for line in content:
-                    f.write(line + "\n")
+            if content is not None:
+                with open(os.path.join(self.repository.location, file_rel_path), 'w') as f:
+                    for line in content:
+                        f.write(line + "\n")
 
             self.repository.index.add(file_rel_path)
             self.repository.index.write()
@@ -56,5 +57,5 @@ class GitRepository(git.Repository):
         self.commit_builder = GitRepository.CommitBuilder(self)
 
     def __del__(self):
-        # shutil.rmtree(self.path)
+        shutil.rmtree(self.path)
         print(f"Repo has been removed from {self.location}")
