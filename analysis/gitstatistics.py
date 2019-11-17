@@ -369,6 +369,22 @@ class GitStatistics:
 
         return activity
 
+    @Timeit("Fetching current tree contributors")
+    def fetch_contributors(self):
+        head_commit = self.repo.head.peel()
+        contribution = {}
+
+        submodules_paths = self.repo.listall_submodules()
+        for p in head_commit.tree.diff_to_tree():
+            file_to_blame = p.delta.new_file.path
+            if file_to_blame not in submodules_paths:
+                blob_blame = self.repo.blame(file_to_blame)
+                for blame_hunk in blob_blame:
+                    committer = self.signature_mapper(blame_hunk.final_committer)
+                    contribution[committer.name] = contribution.get(committer.name, 0) + blame_hunk.lines_in_hunk
+
+        return contribution
+
     def build_history_item(self, child_commit, stat) -> dict:
         author = self.signature_mapper(child_commit.author)
         return {

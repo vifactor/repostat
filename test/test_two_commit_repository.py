@@ -19,7 +19,7 @@ class TestTwoCommitRepository(unittest.TestCase):
 
         cls.git_repository.commit_builder\
             .set_author("John Doe II", "john2@doe.com")\
-            .add_file(content=["Line by John Doe II"])\
+            .add_file(content=["Line 1 by John Doe II", "Line 2 by John Doe II"])\
             .commit()
 
     @unittest.skipIf(not GitStatistics.is_mailmap_supported, "Mailmap is not supported")
@@ -46,3 +46,9 @@ class TestTwoCommitRepository(unittest.TestCase):
         # author of the year are estimated similarly so only author of the month is checked
         nominated_authors = {author for val in gs.author_of_month.values() for author in val.keys()}
         self.assertSetEqual({commit_author1.name}, nominated_authors)
+
+    def test_contributors(self):
+        gs = GitStatistics(self.git_repository.location)
+        contributors = gs.fetch_contributors()
+        # TODO: make commit builder remember the number of added lines and use info here
+        self.assertDictEqual({'John Doe II': 2, 'John Doe I': 1}, contributors)

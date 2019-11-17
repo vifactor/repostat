@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import sys
-import subprocess
 import os
 import json
 from datetime import datetime
@@ -23,11 +22,10 @@ def rl_input(prompt, prefill=''):
 
 
 def fetch_contributors(repo):
-    head_commit = repo.head.peel()
     contribution = {}
 
     submodules_paths = repo.listall_submodules()
-    for p in head_commit.tree.diff_to_tree():
+    for p in repo.head.peel().tree.diff_to_tree():
         file_to_blame = p.delta.new_file.path
         if file_to_blame not in submodules_paths:
             blob_blame = repo.blame(file_to_blame)
