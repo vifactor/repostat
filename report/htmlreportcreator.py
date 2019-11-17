@@ -123,16 +123,20 @@ class HTMLReportCreator(object):
                 fgc.write('%d' % stamp)
                 for author in authors_to_plot:
                     if author in self.git_repo_statistics.author_changes_history[stamp].keys():
-                        lines_by_authors[author] = self.git_repo_statistics.author_changes_history[stamp][author]['lines_added']
-                        commits_by_authors[author] = self.git_repo_statistics.author_changes_history[stamp][author]['commits']
+                        lines_by_authors[author] = self.git_repo_statistics.author_changes_history[stamp][author][
+                            'lines_added']
+                        commits_by_authors[author] = self.git_repo_statistics.author_changes_history[stamp][author][
+                            'commits']
                     fgl.write(' %d' % lines_by_authors.get(author, 0))
                     fgc.write(' %d' % commits_by_authors.get(author, 0))
 
                 if len(authors_to_plot) > self.configuration['max_authors']:
                     for author in self.git_repo_statistics.author_changes_history[stamp].keys():
                         if author not in authors_to_plot:
-                            lines_by_other_authors[author] = self.git_repo_statistics.author_changes_history[stamp][author]['lines_added']
-                            commits_by_other_authors[author] = self.git_repo_statistics.author_changes_history[stamp][author]['commits']
+                            lines_by_other_authors[author] = \
+                                self.git_repo_statistics.author_changes_history[stamp][author]['lines_added']
+                            commits_by_other_authors[author] = \
+                                self.git_repo_statistics.author_changes_history[stamp][author]['commits']
                     fgl.write(' %d' % sum(lines for lines in lines_by_other_authors.values()))
                     fgc.write(' %d' % sum(commits for commits in commits_by_other_authors.values()))
                 fgl.write('\n')
@@ -216,7 +220,8 @@ class HTMLReportCreator(object):
             'hourly_activity': [],
             'weekday_hourly_activity': {},
             'weekday_activity': {},
-            'timezones_activity': collections.OrderedDict(sorted(self.git_repo_statistics.timezones.items(), key=lambda n: int(n[0]))),
+            'timezones_activity': collections.OrderedDict(
+                sorted(self.git_repo_statistics.timezones.items(), key=lambda n: int(n[0]))),
             'month_in_year_activity': self.git_repo_statistics.activity_monthly,
             'weekday_hour_max_commits_count': self.git_repo_statistics.max_weekly_hourly_activity
         }
@@ -259,7 +264,8 @@ class HTMLReportCreator(object):
             'top_authors': [],
             'non_top_authors': [],
             'authors_top': self.configuration['authors_top'],
-            'total_commits_count': self.git_repo_statistics.total_commits
+            'total_commits_count': self.git_repo_statistics.total_commits,
+            'total_lines_count': self.git_repo_statistics.total_lines_count
         }
 
         all_authors = self._get_authors()
@@ -300,6 +306,8 @@ class HTMLReportCreator(object):
 
             project_data['years'].append(year_dict)
 
+        total_lines_count = self.git_repo_statistics.total_lines_count \
+            if self.git_repo_statistics.total_lines_count != 0 else 1
         for author in all_authors[:self.configuration['max_authors']]:
             info = self.git_repo_statistics.authors[author]
             author_dict = {
@@ -311,6 +319,7 @@ class HTMLReportCreator(object):
                 'latest_commit_date': info['date_last'],
                 'contributed_days_count': info['timedelta'],
                 'active_days_count': len(info['active_days']),
+                'contribution': self.git_repo_statistics.contribution.get(author, 0),
             }
 
             project_data['top_authors'].append(author_dict)
@@ -410,7 +419,8 @@ class HTMLReportCreator(object):
         scripts = glob.glob(os.path.join(scripts_path, '*.plot'))
         os.chdir(output_images_path)
         for script in scripts:
-            gnuplot_command = '%s -e "data_folder=\'%s\'" "%s"' % (self.configuration.gnuplot_executable, data_path, script)
+            gnuplot_command = '%s -e "data_folder=\'%s\'" "%s"' % (
+                self.configuration.gnuplot_executable, data_path, script)
             out = get_pipe_output([gnuplot_command])
             if len(out) > 0:
                 print(out)

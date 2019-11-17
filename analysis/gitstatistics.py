@@ -144,6 +144,7 @@ class GitStatistics:
         self.author_changes_history = {}
         self.commits = []
         self.authors = self.fetch_authors_info()
+        self.contribution = self.fetch_contributors()
         self.tags = self.fetch_tags_info()
         self.domains = self.fetch_domains_info()
         self.timezones = self.fetch_timezone_info()
