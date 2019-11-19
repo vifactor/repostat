@@ -30,9 +30,10 @@ setup(name='repo_stat',
           'cffi==1.11.5',
           'Jinja2>=2.10.1',
           'MarkupSafe==1.0',
-          'pygit2>=0.24.2',
+          'pygit2~=1.0.0',
           'pytz>=2018.5',
-          'six>=1.11.0'
+          'six>=1.11.0',
+          'pandas~=0.25.3'
       ],
       entry_points={"console_scripts": ["repostat = analysis.repostat:main"]},
       include_package_data=True,

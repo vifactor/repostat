@@ -3,8 +3,8 @@ language: python
 python:
   - "3.6"
 cache: pip
-before_install:
-  - sudo apt-get -y install python3-pygit2
+install:
+  - pip install -r requirements.txt
 virtualenv:
   system_site_packages: true
 script:
