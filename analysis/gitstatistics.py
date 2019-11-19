@@ -376,13 +376,18 @@ class GitStatistics:
         contribution = {}
 
         submodules_paths = self.repo.listall_submodules()
-        for p in head_commit.tree.diff_to_tree():
+        diff_to_tree = head_commit.tree.diff_to_tree()
+        diff_len = len(list(diff_to_tree))
+        i = 0
+        for p in diff_to_tree:
             file_to_blame = p.delta.new_file.path
-            if file_to_blame not in submodules_paths:
+            if file_to_blame not in submodules_paths and not p.delta.is_binary:
                 blob_blame = self.repo.blame(file_to_blame)
                 for blame_hunk in blob_blame:
                     committer = self.signature_mapper(blame_hunk.final_committer)
                     contribution[committer.name] = contribution.get(committer.name, 0) + blame_hunk.lines_in_hunk
+            i += 1
+            print(f"Working... ({i} / {diff_len})", end="\r", flush=True)
 
         return contribution
 
