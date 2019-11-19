@@ -39,7 +39,7 @@ class GitRepository(git.Repository):
             tree = self.repository.index.write_tree()
             committer = self.author_signature
             commit_message = f"Commit number {self.commits_count}"
-            parents = [self.latest_commit] if self.latest_commit is not None else []
+            parents = [self.repository.head.peel().oid] if self.latest_commit is not None else []
             commit_oid = self.repository.create_commit('HEAD',
                                                        self.author_signature, committer,
                                                        commit_message, tree, parents)
@@ -57,5 +57,5 @@ class GitRepository(git.Repository):
         self.commit_builder = GitRepository.CommitBuilder(self)
 
     def __del__(self):
-        shutil.rmtree(self.path)
+        # shutil.rmtree(self.path)
         print(f"Repo has been removed from {self.location}")
