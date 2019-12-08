@@ -306,8 +306,6 @@ class HTMLReportCreator(object):
 
             project_data['years'].append(year_dict)
 
-        total_lines_count = self.git_repo_statistics.total_lines_count \
-            if self.git_repo_statistics.total_lines_count != 0 else 1
         for author in all_authors[:self.configuration['max_authors']]:
             info = self.git_repo_statistics.authors[author]
             author_dict = {
@@ -319,7 +317,7 @@ class HTMLReportCreator(object):
                 'latest_commit_date': info['date_last'],
                 'contributed_days_count': info['timedelta'],
                 'active_days_count': len(info['active_days']),
-                'contribution': self.git_repo_statistics.contribution.get(author, 0),
+                'contribution': self.git_repo_statistics.contribution.get(author, 0) if self.git_repo_statistics.contribution else None,
             }
 
             project_data['top_authors'].append(author_dict)

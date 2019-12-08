@@ -111,6 +111,9 @@ class Configuration(dict):
     def is_report_relocatable(self):
         return self.args.copy_assets
 
+    def do_calculate_contribution(self):
+        return self.args.contribution
+
     @classmethod
     def _parse_sys_argv(cls, argv):
         release_info = cls.get_release_data_info()
@@ -122,6 +125,8 @@ class Configuration(dict):
         parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + release_info['develop_version'])
         parser.add_argument('-c', '--config-file', action=ReadableFile, help="Configuration file path")
         parser.add_argument('--no-browser', action="store_true", help="Do not open report in browser")
+        parser.add_argument('--contribution', action="store_true", help="Add to html report contribution by author."
+                                                                        "Attention: this is slow calculation!")
         parser.add_argument('--copy-assets', action="store_true",
                             help="Copy assets (images, css, etc.) into report folder (report becomes relocatable)")
 

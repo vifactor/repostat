@@ -56,8 +56,8 @@ def main():
         sys.exit(1)
 
     print('Git path: %s' % config.git_repository_path)
-    print('Collecting data...')
-    repository_statistics = GitStatistics(config.git_repository_path)
+    print('Collecting data...', config.do_calculate_contribution())
+    repository_statistics = GitStatistics(config.git_repository_path, config.do_calculate_contribution())
 
     output_path = config.statistics_output_path
     print('Output path: %s' % output_path)
