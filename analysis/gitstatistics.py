@@ -131,7 +131,23 @@ class GitStatistics:
         self.repo = git.Repository(path)
         if GitStatistics.is_mailmap_supported:
             self.mailmap = git.Mailmap.from_repository(self.repo)
-            self.signature_mapper = lambda signature: self.mailmap.resolve_signature(signature)
+
+            def mapsig(sig: git.Signature):
+                try:
+                    mapped_signature = self.mailmap.resolve_signature(sig)
+                except ValueError as e:
+                    name = sig.name
+                    email = sig.email
+                    if not name:
+                        name = "Empty Empty"
+                        warnings.warn(f"{str(e)}. Name will be replaced with '{name}'")
+                    if not email:
+                        email = "empty@empty.empty"
+                        warnings.warn(f"{str(e)}. Email will be replaced with '{email}'")
+                    return git.Signature(name, email, sig.time, sig.offset, 'utf-8')
+                else:
+                    return mapped_signature
+            self.signature_mapper = mapsig
         else:
             self.signature_mapper = lambda signature: signature
 
@@ -296,8 +312,8 @@ class GitStatistics:
     def fetch_domains_info(self):
         result = {}
         for commit in self.repo.walk(self.repo.head.target):
+            author_signature = self.signature_mapper(commit.author)
             try:
-                author_signature = self.signature_mapper(commit.author)
                 _, domain = split_email_address(author_signature.email)
             except ValueError as ex:
                 warnings.warn(str(ex))
@@ -384,7 +400,13 @@ class GitStatistics:
             if file_to_blame not in submodules_paths and not p.delta.is_binary:
                 blob_blame = self.repo.blame(file_to_blame)
                 for blame_hunk in blob_blame:
-                    committer = self.signature_mapper(blame_hunk.final_committer)
+                    hunk_committer = blame_hunk.final_committer
+                    if not hunk_committer:
+                        # if committer configured an empty email when created commit
+                        # blame hunk corresponding to that commit will produce a None signature
+                        # the following substitutes hunk's final committer with an author of the commit
+                        hunk_committer = self.repo[blame_hunk.orig_commit_id].author
+                    committer = self.signature_mapper(hunk_committer)
                     contribution[committer.name] = contribution.get(committer.name, 0) + blame_hunk.lines_in_hunk
             i += 1
             print(f"Working... ({i} / {diff_len})", end="\r", flush=True)
