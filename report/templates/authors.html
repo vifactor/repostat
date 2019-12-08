@@ -18,7 +18,11 @@
         <td>{{author.lines_added_count}}</td><td>{{author.lines_removed_count}}</td>
         <td>{{author.first_commit_date}}</td><td>{{author.latest_commit_date}}</td>
         <td>{{author.contributed_days_count}}</td><td>{{author.active_days_count}}</td>
-        <td>{{'%0.2f'| format(author.contribution|to_percentage(project.total_lines_count))}}%</td>
+        {% if author.contribution is not none %}
+            <td>{{'%0.2f'| format(author.contribution|to_percentage(project.total_lines_count))}}%</td>
+        {% else %}
+            <td>N/A</td>
+        {% endif %}
     </tr>
     {% endfor %}
 </table>
