@@ -3,7 +3,7 @@
 Git repository analysis report generator:
  - Python3 - compatible
  - removed redundancy in plots and tables
- - couple visualizations added and some improved
+ - a couple of visualizations added and some improved
  - code cleaned up (e.g. [Jinja2](https://jinja.palletsprojects.com/en/2.10.x/)
   used for html generation)
  - git output text parsing replaced with pygit2 library calls
@@ -11,15 +11,15 @@ Git repository analysis report generator:
 Enhanced fork of [gitstats](https://github.com/hoxu/gitstats) tool.
 
 ## Ubuntu installation
-### Using pip
+### Using pip (recommended)
 ```bash
-sudo pip3 install [-e] https://github.com/vifactor/repostat
+sudo pip3 install git+https://github.com/vifactor/repostat
 ```
 This installation procedure may require manual installation 
 of required dependencies, e.g. libgit2, gnuplot. But should also
 work in other non-Debian Linux distributions.
 
-### Using ppa
+### Using ppa (discontinued)
 ```bash
 sudo add-apt-repository ppa:vifactor/ppa
 sudo apt update
