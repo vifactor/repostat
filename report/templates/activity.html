@@ -24,12 +24,8 @@
             <th>Commits</th>
             {% set max_commits_count = project.hourly_activity | max %}
             {% for activity in project.hourly_activity %}
-                {% if activity > 0 %}
-                <td style="background-color: rgb({{activity|to_intensity(max_commits_count)}}, 0, 0)">
+                <td style="background-color: rgb({{activity|to_heatmap(max_commits_count)}})">
                     {{activity}}</td>
-                {% else %}
-                <td>0</td>
-                {% endif %}
             {% endfor %}
             <th></th>
             <th></th>
@@ -38,13 +34,9 @@
             <th>%</th>
             {% set total_commits_count = project.hourly_activity | sum %}
             {% for activity in project.hourly_activity %}
-                {% if activity > 0 %}
-                <td style="background-color: rgb({{activity|to_intensity(max_commits_count)}}, 0, 0)">
+                <td style="background-color: rgb({{activity|to_heatmap(max_commits_count)}})">
                     {{'%0.2f'| format(activity|to_percentage(total_commits_count))}}
                 </td>
-                {% else %}
-                <td>0.00</td>
-                {% endif %}
             {% endfor %}
             <th></th>
             <th>Total</th>
@@ -63,16 +55,12 @@
         <tr>
             <th>{{weekday|to_weekday_name}}</th>
             {% for commits_count in project.weekday_hourly_activity[weekday] %}
-                {% if commits_count > 0 %}
-                <td style="background-color: rgb({{commits_count|to_intensity(project.weekday_hour_max_commits_count)}}, 0, 0)">
+                <td style="background-color: rgb({{commits_count|to_heatmap(project.weekday_hour_max_commits_count)}})">
                     {{commits_count}}</td>
-                {% else %}
-                <td>0</td>
-                {% endif %}
             {% endfor %}
             <td></td>
             {% set commits_count = project.weekday_activity[weekday] %}
-            <td style="background-color: rgb({{commits_count|to_intensity(weekday_max_commits_count)}}, 0, 0)">
+            <td style="background-color: rgb({{commits_count|to_heatmap(weekday_max_commits_count)}})">
                 {{commits_count}}</td>
         </tr>
         {% endfor %}
@@ -92,12 +80,8 @@
             {% set max_commits_count = project.month_in_year_activity.values() | max %}
             {% for imonth in range(1, 13) %}
                 {% set commits_count = project.month_in_year_activity.get(imonth, 0) %}
-                {% if commits_count > 0 %}
-                    <td style="background-color: rgb({{commits_count|to_intensity(max_commits_count)}}, 0, 0)">
+                    <td style="background-color: rgb({{commits_count|to_heatmap(max_commits_count)}})">
                         {{commits_count}}</td>
-                {% else %}
-                    <td></td>
-                {% endif %}
             {% endfor %}
         </tr>
      </table>
@@ -115,12 +99,8 @@
             <th>Commits</th>
             {% set tz_max_commits_count = project.timezones_activity.values() | max %}
             {% for commits_count in project.timezones_activity.values() %}
-                {% if commits_count > 0 %}
-                <td style="background-color: rgb({{commits_count|to_intensity(tz_max_commits_count)}}, 0, 0)">
+                <td style="background-color: rgb({{commits_count|to_heatmap(tz_max_commits_count)}})">
                     {{commits_count}}</td>
-                {% else %}
-                <td></td>
-                {% endif %}
             {% endfor %}
         </tr>
     </table>
