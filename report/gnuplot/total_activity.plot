@@ -12,16 +12,17 @@ set ylabel "Commits"
 set yrange [0:]
 plot 'commits_by_year.dat' using 1:2:(0.9) w boxes fs solid
 
-set origin .55, .55
+set origin .06, .54
 set size .45,.45
-clear
+
+set object rectangle from graph 0,0 to graph 1,1 behind fillcolor rgb 'white' fillstyle transparent solid 0.35 noborder
 
 current_year = strftime("%Y", time(0))
 first_month_of_year = current_year.'-01'
 last_month_of_year = current_year.'-12'
 
 unset xrange
-set title "Commits in ".current_year font ", 12"
+set title "Commits in ".current_year font ", 11" offset 0, -1
 set yrange [0:]
 set ytics font ", 9"
 set xdata time
@@ -33,7 +34,7 @@ set xtics first_month_of_year,2592000,last_month_of_year
 set xrange [first_month_of_year:last_month_of_year]
 set bmargin 2
 set grid y
-set ylabel "Commits" font ", 10"
+set ylabel "Commits" font ", 10" offset 2, 0
 set boxwidth 0.7 relative
 plot 'commits_by_year_month.dat' using 1:2 w boxes fs solid
 
