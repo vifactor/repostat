@@ -124,7 +124,7 @@ class AuthorDictFactory:
 class GitStatistics:
     is_mailmap_supported = True if version.LooseVersion(git.LIBGIT2_VERSION) >= '0.28.0' else False
 
-    def __init__(self, path, fetch_contribution=False):
+    def __init__(self, path, fetch_contribution=False, fetch_tags=True):
         """
         :param path: path to a repository
         """
@@ -165,7 +165,10 @@ class GitStatistics:
             self.contribution = self.fetch_contributors()
         else:
             self.contribution = {}
-        self.tags = self.fetch_tags_info()
+        if fetch_tags:
+            self.tags = self.fetch_tags_info()
+        else:
+            self.tags = {}
         self.domains = self.fetch_domains_info()
         self.timezones = self.fetch_timezone_info()
         self.first_commit_timestamp = min(commit.author.time for commit in self.repo.walk(self.repo.head.target))
