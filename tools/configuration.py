@@ -102,7 +102,7 @@ class Configuration(dict):
             "max_ext_length": 10,
             "max_authors": 10,
             "max_authors_of_months": 6,
-            "authors_top": 5
+            "authors_top": 5,
         })
 
     def do_open_in_browser(self):
@@ -113,6 +113,9 @@ class Configuration(dict):
 
     def do_calculate_contribution(self):
         return self.args.contribution
+
+    def do_process_tags(self):
+        return self["max_recent_tags"] > 0 if "max_recent_tags" in self else True
 
     @classmethod
     def _parse_sys_argv(cls, argv):

@@ -26,6 +26,12 @@ class HTMLReportCreator(object):
         self.configuration = config
         self.assets_path = os.path.join(HERE, self.assets_subdir)
         self.git_repo_statistics = repo_stat
+        self.has_tags_page = config.do_process_tags()
+
+        self.common_rendering_data = {
+            "assets_path": self.assets_path,
+            "has_tags_page": self.has_tags_page
+        }
 
         templates_dir = os.path.join(HERE, self.templates_subdir)
         self.j2_env = Environment(loader=FileSystemLoader(templates_dir), trim_blocks=True)
@@ -65,16 +71,19 @@ class HTMLReportCreator(object):
 
         if self.configuration.is_report_relocatable():
             self._bundle_assets()
+            self.common_rendering_data.update({
+                "assets_path": self.assets_path
+            })
 
         ###
         # General
-        general_html = self.render_general_page(None)
+        general_html = self.render_general_page()
         with open(os.path.join(path, "general.html"), 'w', encoding='utf-8') as f:
             f.write(general_html)
 
         ###
         # Activity
-        activity_html = self.render_activity_page(None)
+        activity_html = self.render_activity_page()
         with open(os.path.join(path, "activity.html"), 'w', encoding='utf-8') as f:
             f.write(activity_html)
 
@@ -93,7 +102,7 @@ class HTMLReportCreator(object):
 
         ###
         # Authors
-        authors_html = self.render_authors_page(None)
+        authors_html = self.render_authors_page()
         with open(os.path.join(path, "authors.html"), 'w', encoding='utf-8') as f:
             f.write(authors_html.decode('utf-8'))
 
@@ -151,7 +160,7 @@ class HTMLReportCreator(object):
 
         ###
         # Files
-        files_html = self.render_files_page(None)
+        files_html = self.render_files_page()
         with open(os.path.join(path, "files.html"), 'w', encoding='utf-8') as f:
             f.write(files_html)
 
@@ -165,9 +174,11 @@ class HTMLReportCreator(object):
 
         ###
         # tags.html
-        tags_html = self.render_tags_page(None)
-        with open(os.path.join(path, "tags.html"), 'w', encoding='utf-8') as f:
-            f.write(tags_html.decode('utf-8'))
+
+        if self.has_tags_page:
+            tags_html = self.render_tags_page()
+            with open(os.path.join(path, "tags.html"), 'w', encoding='utf-8') as f:
+                f.write(tags_html.decode('utf-8'))
 
         ###
         # about.html
@@ -180,7 +191,7 @@ class HTMLReportCreator(object):
                                      data_path=path,
                                      output_images_path=path)
 
-    def render_general_page(self, data):
+    def render_general_page(self):
         date_format_str = '%Y-%m-%d %H:%M'
         first_commit_datetime = datetime.datetime.fromtimestamp(self.git_repo_statistics.first_commit_timestamp)
         last_commit_datetime = datetime.datetime.fromtimestamp(self.git_repo_statistics.last_commit_timestamp)
@@ -210,11 +221,11 @@ class HTMLReportCreator(object):
             project=project_data,
             generation=generation_data,
             page_title="General",
-            assets_path=self.assets_path
+            **self.common_rendering_data
         )
         return template_rendered
 
-    def render_activity_page(self, data):
+    def render_activity_page(self):
         # TODO: this conversion from old 'data' to new 'project data' should perhaps be removed in future
         project_data = {
             'hourly_activity': [],
@@ -254,11 +265,11 @@ class HTMLReportCreator(object):
         template_rendered = self.j2_env.get_template('activity.html').render(
             project=project_data,
             page_title="Activity",
-            assets_path=self.assets_path
+            **self.common_rendering_data
         )
         return template_rendered
 
-    def render_authors_page(self, data):
+    def render_authors_page(self):
         # TODO: this conversion from old 'data' to new 'project data' should perhaps be removed in future
         project_data = {
             'top_authors': [],
@@ -317,7 +328,8 @@ class HTMLReportCreator(object):
                 'latest_commit_date': info['date_last'],
                 'contributed_days_count': info['timedelta'],
                 'active_days_count': len(info['active_days']),
-                'contribution': self.git_repo_statistics.contribution.get(author, 0) if self.git_repo_statistics.contribution else None,
+                'contribution': self.git_repo_statistics.contribution.get(author,
+                                                                          0) if self.git_repo_statistics.contribution else None,
             }
 
             project_data['top_authors'].append(author_dict)
@@ -326,11 +338,11 @@ class HTMLReportCreator(object):
         template_rendered = self.j2_env.get_template('authors.html').render(
             project=project_data,
             page_title="Authors",
-            assets_path=self.assets_path
+            **self.common_rendering_data
         )
         return template_rendered.encode('utf-8')
 
-    def render_files_page(self, data):
+    def render_files_page(self):
         # TODO: this conversion from old 'data' to new 'project data' should perhaps be removed in future
         project_data = {
             'files_count': self.git_repo_statistics.total_files_count,
@@ -352,11 +364,11 @@ class HTMLReportCreator(object):
         template_rendered = self.j2_env.get_template('files.html').render(
             project=project_data,
             page_title="Files",
-            assets_path=self.assets_path
+            **self.common_rendering_data
         )
         return template_rendered
 
-    def render_tags_page(self, data):
+    def render_tags_page(self):
         # TODO: this conversion from old 'data' to new 'project data' should perhaps be removed in future
         project_data = {
             'tags_count': len(self.git_repo_statistics.tags),
@@ -371,6 +383,9 @@ class HTMLReportCreator(object):
         """
         tags_sorted_by_date_desc = sort_keys_by_value_of_key(self.git_repo_statistics.tags, 'date', reverse=True)
         for tag in tags_sorted_by_date_desc:
+            if 'max_recent_tags' in self.configuration \
+                    and self.configuration['max_recent_tags'] <= len(project_data['tags']):
+                break
             # there are tags containing no commits
             if 'authors' in self.git_repo_statistics.tags[tag].keys():
                 authordict = self.git_repo_statistics.tags[tag]['authors']
@@ -392,7 +407,7 @@ class HTMLReportCreator(object):
         template_rendered = self.j2_env.get_template('tags.html').render(
             project=project_data,
             page_title="Tags",
-            assets_path=self.assets_path
+            **self.common_rendering_data
         )
         return template_rendered.encode('utf-8')
 
@@ -409,7 +424,7 @@ class HTMLReportCreator(object):
         template_rendered = self.j2_env.get_template('about.html').render(
             repostat=page_data,
             page_title="About",
-            assets_path=self.assets_path
+            **self.common_rendering_data
         )
         return template_rendered.encode('utf-8')
 
