@@ -78,8 +78,11 @@ class HTMLReportCreator(object):
         ###
         # General
         general_html = self.render_general_page()
-        with open(os.path.join(path, "general.html"), 'w', encoding='utf-8') as f:
+        general_html_path = os.path.join(path, "general.html")
+        with open(general_html_path, 'w', encoding='utf-8') as f:
             f.write(general_html)
+        # make the landing page for a web server
+        os.symlink(general_html_path, os.path.join(path, "index.html"))
 
         ###
         # Activity
