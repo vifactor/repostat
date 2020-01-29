@@ -61,5 +61,18 @@ absolute paths to assets located in repostat installed package.
 Starting from v.1.0.x, the *--copy-assets* command-line option forces
 program to copy assets to generated report and embed relative paths
 in html-files (see #74)
-  
 
+### Tags rendering
+Some git repositories contain thousands of tags most of which are not 
+worth to check. Since v.1.3.0 there is a possibility to limit number 
+of tags displayed in "Tags" tab of the HTML report or even hide the tab.
+The feature is controlled by "max_recent_tags" field in JSON 
+file fed into script as follows:
+```
+repostat --config-file <path_to_config.json> <repo_path> <out_path>
+```
+If JSON file has following content `{ [...], "max_recent_tags": 8 }`,
+the report will contain 8 most recent tags in "Tags" page. Setting the
+field `max_recent_tags` to zero will not render "Tags" page at all. If
+no such field provided in JSON settings, report will contain "Tags" page
+with all tags in the analysed repository.
