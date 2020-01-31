@@ -41,12 +41,15 @@
         <th>Month</th>
         <th>Author</th><th>Commits count</th>
         <th class="unsortable">Next top {{project.authors_top}}</th>
+        <th>Total authors count</th>
     </tr>
     {% for month in project.months %}
     <tr>
         <td>{{month.date}}</td>
-        <td>{{month.top_author.name}}</td><td>{{month.top_author.commits_count}} (of {{month.all_commits_count}})</td>
+        <td>{{month.top_author.name}}</td>
+        <td align="center">{{month.top_author.commits_count}} (of {{month.all_commits_count}})</td>
         <td>{{month.next_top_authors}}</td>
+        <td align="center">{{month.total_authors_count}}</td>
     </tr>
     {% endfor %}
 </table>
@@ -57,12 +60,15 @@
         <th>Year</th>
         <th>Author</th><th>Commits count</th>
         <th class="unsortable">Next top {{project.authors_top}}</th>
+        <th>Total authors count</th>
     </tr>
     {% for year in project.years %}
     <tr>
         <td>{{year.date}}</td>
-        <td>{{year.top_author.name}}</td><td>{{year.top_author.commits_count}} (of {{year.all_commits_count}})</td>
+        <td>{{year.top_author.name}}</td>
+        <td align="center">{{year.top_author.commits_count}} (of {{year.all_commits_count}})</td>
         <td>{{year.next_top_authors}}</td>
+        <td align="center">{{year.total_authors_count}}</td>
     </tr>
     {% endfor %}
 </table>

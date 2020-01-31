@@ -299,8 +299,10 @@ class HTMLReportCreator(object):
                 'date': yymm,
                 'top_author': {'name': authors[0], 'commits_count': commits},
                 'next_top_authors': next,
-                'all_commits_count': self.git_repo_statistics.monthly_commits_timeline[yymm]
+                'all_commits_count': self.git_repo_statistics.monthly_commits_timeline[yymm],
+                'total_authors_count': len(self.git_repo_statistics.author_of_month[yymm])
             }
+            print(month_dict)
 
             project_data['months'].append(month_dict)
 
@@ -315,7 +317,8 @@ class HTMLReportCreator(object):
                 'date': yy,
                 'top_author': {'name': authors[0], 'commits_count': commits},
                 'next_top_authors': next,
-                'all_commits_count': self.git_repo_statistics.yearly_commits_timeline[yy]
+                'all_commits_count': self.git_repo_statistics.yearly_commits_timeline[yy],
+                'total_authors_count': len(self.git_repo_statistics.author_of_year[yy])
             }
 
             project_data['years'].append(year_dict)
