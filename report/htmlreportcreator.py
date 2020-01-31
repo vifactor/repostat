@@ -81,8 +81,15 @@ class HTMLReportCreator(object):
         general_html_path = os.path.join(path, "general.html")
         with open(general_html_path, 'w', encoding='utf-8') as f:
             f.write(general_html)
-        # make the landing page for a web server
-        os.symlink(general_html_path, os.path.join(path, "index.html"))
+
+        try:
+            # make the landing page for a web server
+            os.symlink(general_html_path, os.path.join(path, "index.html"))
+        except FileExistsError:
+            # if symlink exists, it points to "general.html" so no need to re-create it
+            # other solution would be to use approach from
+            # https://stackoverflow.com/questions/8299386/modifying-a-symlink-in-python/8299671
+            pass
 
         ###
         # Activity
@@ -290,33 +297,32 @@ class HTMLReportCreator(object):
         # print out only recent conf['max_authors_of_months'] authors of the month
         iter_months_with_authors = sorted(self.git_repo_statistics.author_of_month.keys(), reverse=True)
         for yymm in itertools.islice(iter_months_with_authors, self.configuration['max_authors_of_months']):
-            authordict = self.git_repo_statistics.author_of_month[yymm]
-            authors = [name for name, _ in sorted(authordict.items(), key=lambda kv: kv[1], reverse=True)]
+            authors_dict = self.git_repo_statistics.author_of_month[yymm]
+            authors = [name for name, _ in sorted(authors_dict.items(), key=lambda kv: kv[1], reverse=True)]
             commits = self.git_repo_statistics.author_of_month[yymm][authors[0]]
-            next = ', '.join(authors[1:self.configuration['authors_top'] + 1])
+            next_top_authors_str = ', '.join(authors[1:self.configuration['authors_top'] + 1])
 
             month_dict = {
                 'date': yymm,
                 'top_author': {'name': authors[0], 'commits_count': commits},
-                'next_top_authors': next,
+                'next_top_authors': next_top_authors_str,
                 'all_commits_count': self.git_repo_statistics.monthly_commits_timeline[yymm],
                 'total_authors_count': len(self.git_repo_statistics.author_of_month[yymm])
             }
-            print(month_dict)
 
             project_data['months'].append(month_dict)
 
         project_data['years'] = []
         for yy in sorted(self.git_repo_statistics.author_of_year.keys(), reverse=True):
-            authordict = self.git_repo_statistics.author_of_year[yy]
-            authors = [name for name, _ in sorted(authordict.items(), key=lambda kv: kv[1], reverse=True)]
+            authors_dict = self.git_repo_statistics.author_of_year[yy]
+            authors = [name for name, _ in sorted(authors_dict.items(), key=lambda kv: kv[1], reverse=True)]
             commits = self.git_repo_statistics.author_of_year[yy][authors[0]]
-            next = ', '.join(authors[1:self.configuration['authors_top'] + 1])
+            next_top_authors_str = ', '.join(authors[1:self.configuration['authors_top'] + 1])
 
             year_dict = {
                 'date': yy,
                 'top_author': {'name': authors[0], 'commits_count': commits},
-                'next_top_authors': next,
+                'next_top_authors': next_top_authors_str,
                 'all_commits_count': self.git_repo_statistics.yearly_commits_timeline[yy],
                 'total_authors_count': len(self.git_repo_statistics.author_of_year[yy])
             }
