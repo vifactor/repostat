@@ -44,3 +44,25 @@ class GitRepository(object):
 
         # re-create series with formatted index
         return pd.Series(ts.values, index=formatted_offsets_ts.values).to_dict()
+
+    def get_recent_weekly_activity(self, recent_weeks_count: int):
+        """
+        Calculates commits activity on weekly basis
+        :param recent_weeks_count: time period in weeks
+        :return: sampled number of commits
+        """
+        assert recent_weeks_count > 0
+
+        today = pd.Timestamp.today().normalize()
+        # Monday `recent_weeks_count` weeks ago
+        start_activity_date = today - pd.Timedelta(days=today.weekday(), weeks=recent_weeks_count)
+        # Next Monday
+        last_activity_date = today + pd.Timedelta(days=-today.weekday(), weeks=1)
+
+        # TODO: committer timestamp better reflects recent activity on a current branch
+        ts = pd.to_datetime(self.whole_history_df['author_timestamp'], unit='s')
+        ddf = pd.DataFrame({'timestamp': ts[ts >= start_activity_date]})
+        intervals = pd.date_range(start=start_activity_date, end=last_activity_date, freq='W')
+        histogram = pd.cut(ddf.timestamp, bins=intervals)
+
+        return histogram.groupby(histogram.values).count().values

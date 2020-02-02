@@ -122,8 +122,7 @@ class GitStatistics:
             for _, commits_count in hourly_activity.items())
         self.activity_monthly, self.authors_monthly, self.activity_year_monthly, self.author_year_monthly \
             = self.fetch_monthly_activity()
-        self.recent_activity_by_week = self.fetch_recent_activity()
-        self.recent_activity_peak = max(activity for activity in self.recent_activity_by_week.values())
+
         self.changes_history, self.total_lines_added, self.total_lines_removed, self.total_lines_count \
             = self.fetch_total_history()
 
@@ -302,20 +301,6 @@ class GitStatistics:
 
             self._adjust_commits_timeline(date)
         return activity, authors, activity_year_month, authors_year_month
-
-    @Timeit("Fetching recent activity info")
-    def fetch_recent_activity(self, weeks=None):
-        # this returns whole activity on week basis, use the weeks argument to skip unused data
-        activity = {}
-        for commit in self.repo.walk(self.repo.head.target):
-            date = datetime.fromtimestamp(commit.author.time)
-            yyw = date.strftime('%Y-%W')
-            if weeks is None:
-                activity[yyw] = activity.get(yyw, 0) + 1
-            elif yyw in weeks:
-                activity[yyw] = activity.get(yyw, 0) + 1
-
-        return activity
 
     @Timeit("Fetching current tree contributors")
     def fetch_contributors(self):
