@@ -211,7 +211,7 @@ class HTMLReportCreator(object):
             "name": self.git_repo_statistics.repo_name,
             "branch": self.git_repo_statistics.analysed_branch,
             "age": (last_commit_datetime - first_commit_datetime).days,
-            "active_days_count": len(self.git_repo_statistics.active_days),
+            "active_days_count": self.git_repository_statistics.active_days_count,
             "commits_count": self.git_repo_statistics.total_commits,
             "authors_count": len(self.git_repo_statistics.authors),
             "files_count": self.git_repo_statistics.total_files_count,

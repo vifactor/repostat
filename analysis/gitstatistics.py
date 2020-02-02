@@ -147,11 +147,13 @@ class GitStatistics:
                     return git.Signature(name, email, sig.time, sig.offset, 'utf-8')
                 else:
                     return mapped_signature
+
             self.signature_mapper = mapsig
         else:
             self.signature_mapper = lambda signature: signature
 
         self.created_time_stamp = datetime.now().timestamp()
+        self.repo_name = os.path.basename(os.path.abspath(path))
         self.analysed_branch = self.repo.head.shorthand
         self.author_of_year = {}
         self.author_of_month = {}
@@ -171,19 +173,19 @@ class GitStatistics:
             self.tags = {}
         self.domains = self.fetch_domains_info()
         self.timezones = self.fetch_timezone_info()
-        self.active_days = {datetime.fromtimestamp(commit.author.time).strftime('%Y-%m-%d')
-                            for commit in self.repo.walk(self.repo.head.target)}
+
+        # Weekday activity should be calculated in local timezones
+        # https://stackoverflow.com/questions/36648995/how-to-add-timezone-offset-to-pandas-datetime
         self.activity_weekly_hourly = self.fetch_weekly_hourly_activity()
         self.max_weekly_hourly_activity = max(
             commits_count for _, hourly_activity in self.activity_weekly_hourly.items()
             for _, commits_count in hourly_activity.items())
-        self.activity_monthly, self.authors_monthly, \
-            self.activity_year_monthly, self.author_year_monthly = self.fetch_monthly_activity()
+        self.activity_monthly, self.authors_monthly, self.activity_year_monthly, self.author_year_monthly \
+            = self.fetch_monthly_activity()
         self.recent_activity_by_week = self.fetch_recent_activity()
         self.recent_activity_peak = max(activity for activity in self.recent_activity_by_week.values())
-        self.changes_history, self.total_lines_added, \
-            self.total_lines_removed, self.total_lines_count = self.fetch_total_history()
-        self.repo_name = os.path.basename(os.path.abspath(path))
+        self.changes_history, self.total_lines_added, self.total_lines_removed, self.total_lines_count \
+            = self.fetch_total_history()
 
         # timestamp -> files count
         self.files_by_stamp = self._get_files_count_by_timestamp()
@@ -550,9 +552,6 @@ class GitStatistics:
         yy = datetime_obj.year
         self.yearly_commits_timeline[yy] = self.yearly_commits_timeline.get(yy, 0) + 1
 
-    def get_active_days(self):
-        return self.active_days
-
     def get_total_line_count(self):
         return self.total_lines_count
 
@@ -564,4 +563,3 @@ class GitStatistics:
 
     def get_stamp_created(self):
         return self.created_time_stamp
-
