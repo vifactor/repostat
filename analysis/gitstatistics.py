@@ -1,5 +1,5 @@
 import pygit2 as git
-from datetime import datetime, tzinfo, timedelta
+from datetime import datetime
 from collections import Counter
 import warnings
 import os
@@ -7,24 +7,6 @@ from distutils import version
 
 from tools.timeit import Timeit
 from tools import sort_keys_by_value_of_key, split_email_address
-
-
-class FixedOffset(tzinfo):
-    """Fixed offset in minutes east from UTC."""
-
-    def __init__(self, offset):
-        self.__offset = timedelta(minutes=offset)
-
-    def utcoffset(self, dt):
-        return self.__offset
-
-    def tzname(self, dt):
-        # we don't know the time zone's name
-        return None
-
-    def dst(self, dt):
-        # we don't know about DST
-        return timedelta(0)
 
 
 class AuthorDictFactory:
@@ -131,7 +113,6 @@ class GitStatistics:
         else:
             self.tags = {}
         self.domains = self.fetch_domains_info()
-        self.timezones = self.fetch_timezone_info()
 
         # Weekday activity should be calculated in local timezones
         # https://stackoverflow.com/questions/36648995/how-to-add-timezone-offset-to-pandas-datetime
@@ -283,17 +264,6 @@ class GitStatistics:
                 result[domain] = result.get(domain, 0) + 1
         # TODO: this is done to save compatibility with gitstats' structures
         result = {k: {'commits': v} for k, v in result.items()}
-        return result
-
-    @Timeit("Fetching timezone info")
-    def fetch_timezone_info(self):
-        result = {}
-        for commit in self.repo.walk(self.repo.head.target):
-            # hint from https://github.com/libgit2/pygit2/blob/master/docs/recipes/git-show.rst
-            tz = FixedOffset(commit.author.offset)
-            dt = datetime.fromtimestamp(float(commit.author.time), tz)
-            timezone_str = dt.strftime('%z')
-            result[timezone_str] = result.get(timezone_str, 0) + 1
         return result
 
     @Timeit("Fetching weekly/hourly activity info")

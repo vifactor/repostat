@@ -243,7 +243,7 @@ class HTMLReportCreator(object):
             'weekday_hourly_activity': {},
             'weekday_activity': {},
             'timezones_activity': collections.OrderedDict(
-                sorted(self.git_repo_statistics.timezones.items(), key=lambda n: int(n[0]))),
+                sorted(self.git_repository_statistics.timezones_distribution.items(), key=lambda n: int(n[0]))),
             'month_in_year_activity': self.git_repo_statistics.activity_monthly,
             'weekday_hour_max_commits_count': self.git_repo_statistics.max_weekly_hourly_activity
         }
