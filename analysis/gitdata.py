@@ -18,7 +18,9 @@ class History:
         repo_walker = self._get_repo_walker()
         records = []
         for commit in repo_walker:
-            records.append({'commit_sha': commit.hex[:7], 'author_timestamp': commit.author.time})
+            records.append({'commit_sha': commit.hex[:7],
+                            'author_tz_offset': commit.author.offset,
+                            'author_timestamp': commit.author.time})
         return records
 
     @abc.abstractmethod

@@ -116,7 +116,7 @@
             {% set tz_max_commits_count = project.timezones_activity.values() | max %}
             {% for commits_count in project.timezones_activity.values() %}
                 {% if commits_count > 0 %}
-                <td style="background-color: rgb({{commits_count|to_intensity(weekday_max_commits_count)}}, 0, 0)">
+                <td style="background-color: rgb({{commits_count|to_intensity(tz_max_commits_count)}}, 0, 0)">
                     {{commits_count}}</td>
                 {% else %}
                 <td></td>
