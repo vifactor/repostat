@@ -307,21 +307,18 @@ class HTMLReportCreator(object):
             project_data['months'].append(month_dict)
 
         project_data['years'] = []
-        for yy in sorted(self.git_repo_statistics.author_of_year.keys(), reverse=True):
-            authors_dict = self.git_repo_statistics.author_of_year[yy]
-            authors = [name for name, _ in sorted(authors_dict.items(), key=lambda kv: kv[1], reverse=True)]
-            commits = self.git_repo_statistics.author_of_year[yy][authors[0]]
-            next_top_authors_str = ', '.join(authors[1:self.configuration['authors_top'] + 1])
-
-            year_dict = {
-                'date': yy,
-                'top_author': {'name': authors[0], 'commits_count': commits},
-                'next_top_authors': next_top_authors_str,
-                'all_commits_count': self.git_repo_statistics.yearly_commits_timeline[yy],
-                'total_authors_count': len(self.git_repo_statistics.author_of_year[yy])
-            }
-
-            project_data['years'].append(year_dict)
+        raw_authors_data = self.git_repository_statistics.get_authors_ranking_by_year()
+        max_top_authors_index = self.configuration['authors_top'] + 1
+        ordered_years = raw_authors_data.index.get_level_values(0).unique().sort_values(ascending=False)
+        for y in ordered_years:
+            authors_in_year = raw_authors_data.loc[y]
+            project_data['years'].append({
+                'date': y,
+                'top_author': {'name': authors_in_year.index[0], 'commits_count': authors_in_year[0]},
+                'next_top_authors': ', '.join(list(authors_in_year.index[1:max_top_authors_index])),
+                'all_commits_count': authors_in_year.sum(),
+                'total_authors_count': authors_in_year.size
+            })
 
         for author in all_authors[:self.configuration['max_authors']]:
             info = self.git_repo_statistics.authors[author]
