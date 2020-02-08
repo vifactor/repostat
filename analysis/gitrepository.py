@@ -73,3 +73,24 @@ class GitRepository(object):
 
         result_ts = histogram.groupby(histogram.values).count()
         return result_ts.values
+
+    def get_authors_ranking_by_year(self):
+        """
+        Top authors by all years of repo existence as pandas timeseries, e.g
+        timestamp  author_name
+        2007       Author3        1
+        2020       Author1        2
+                   Author2        1
+
+        :return: Pandas multiindex timeseries:  (<year>, <author_name>) -> <commits count>
+        """
+        df = pd.DataFrame({'author_name': self.whole_history_df['author_name'],
+                           'timestamp': pd.to_datetime(self.whole_history_df['author_timestamp'], unit='s')})
+        ts_agg = df.groupby([df.timestamp.dt.year, df.author_name]).size()
+        # https://stackoverflow.com/questions/27842613/pandas-groupby-sort-within-groups
+        # group by the first level of the index
+        ts_agg = ts_agg.groupby(level=0, group_keys=False)
+        # then sort each group
+        res = ts_agg.apply(lambda x: x.sort_values(ascending=False))
+
+        return res
