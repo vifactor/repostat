@@ -43,10 +43,6 @@ class TestTwoCommitRepository(unittest.TestCase):
         authors_in_history = {author for val in gs.author_changes_history.values() for author in val.keys()}
         self.assertSetEqual({commit_author1.name}, authors_in_history)
 
-        # author of the year are estimated similarly so only author of the month is checked
-        nominated_authors = {author for val in gs.author_of_month.values() for author in val.keys()}
-        self.assertSetEqual({commit_author1.name}, nominated_authors)
-
     def test_contributors(self):
         gs = GitStatistics(self.git_repository.location)
         contributors = gs.fetch_contributors()

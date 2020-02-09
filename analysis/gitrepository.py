@@ -94,3 +94,25 @@ class GitRepository(object):
         res = ts_agg.apply(lambda x: x.sort_values(ascending=False))
 
         return res
+
+    def get_authors_ranking_by_month(self):
+        """
+        Top authors by all month of repo existence as pandas timeseries, e.g
+        timestamp  author_name
+        2007-07    Author3        2
+        2020-02    Author2        1
+                   Author1        1
+
+        :return: Pandas multiindex timeseries:  (<year>-<month>, <author_name>) -> <commits count>
+        """
+
+        df = pd.DataFrame({'author_name': self.whole_history_df['author_name'],
+                           'timestamp': pd.to_datetime(self.whole_history_df['author_timestamp'], unit='s')
+                          .dt.strftime('%Y-%m')})
+
+        # https://stackoverflow.com/questions/27842613/pandas-groupby-sort-within-groups
+        ts_agg = df.groupby([df.timestamp, df.author_name]).size()\
+            .groupby(level=0, group_keys=False)
+
+        # sort each group by value
+        return ts_agg.apply(lambda x: x.sort_values(ascending=False))

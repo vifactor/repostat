@@ -287,24 +287,18 @@ class HTMLReportCreator(object):
         if len(all_authors) > self.configuration['max_authors']:
             project_data['non_top_authors'] = all_authors[self.configuration['max_authors']:]
 
+        raw_authors_data = self.git_repository_statistics.get_authors_ranking_by_month()
+        ordered_months = raw_authors_data.index.get_level_values(0).unique().sort_values(ascending=False)
         project_data['months'] = []
-        # print out only recent conf['max_authors_of_months'] authors of the month
-        iter_months_with_authors = sorted(self.git_repo_statistics.author_of_month.keys(), reverse=True)
-        for yymm in itertools.islice(iter_months_with_authors, self.configuration['max_authors_of_months']):
-            authors_dict = self.git_repo_statistics.author_of_month[yymm]
-            authors = [name for name, _ in sorted(authors_dict.items(), key=lambda kv: kv[1], reverse=True)]
-            commits = self.git_repo_statistics.author_of_month[yymm][authors[0]]
-            next_top_authors_str = ', '.join(authors[1:self.configuration['authors_top'] + 1])
-
-            month_dict = {
+        for yymm in ordered_months[0:self.configuration['max_authors_of_months']]:
+            authors_in_month = raw_authors_data.loc[yymm]
+            project_data['months'].append({
                 'date': yymm,
-                'top_author': {'name': authors[0], 'commits_count': commits},
-                'next_top_authors': next_top_authors_str,
-                'all_commits_count': self.git_repo_statistics.monthly_commits_timeline[yymm],
-                'total_authors_count': len(self.git_repo_statistics.author_of_month[yymm])
-            }
-
-            project_data['months'].append(month_dict)
+                'top_author': {'name': authors_in_month.index[0], 'commits_count': authors_in_month[0]},
+                'next_top_authors': ', '.join(list(authors_in_month.index[1:5])),
+                'all_commits_count': authors_in_month.sum(),
+                'total_authors_count': authors_in_month.size
+            })
 
         project_data['years'] = []
         raw_authors_data = self.git_repository_statistics.get_authors_ranking_by_year()
