@@ -1,4 +1,5 @@
 import unittest
+import os
 from pygit2 import Signature
 
 import test
@@ -53,6 +54,25 @@ class GitHistoryTest(unittest.TestCase):
         # linear history cache still contains 2 records: initial commit + merge commit
         linear_history_df = LinearHistory(self.test_repo).as_dataframe()
         self.assertEqual(2, len(linear_history_df.index))
+
+    def test_mailmap(self):
+        # create second commit with another signature
+        self.test_repo.commit_builder \
+            .set_author("Author Author", "author@author.net") \
+            .add_file(content=["some content"]) \
+            .commit()
+
+        # map second author's signature as first one using mailmap file
+        commit_author1, commit_author2 = self.test_repo.commit_builder.author_signatures
+        with open(os.path.join(self.test_repo.location, ".mailmap"), 'w') as mm:
+            mm.write(f"{commit_author1.name} <{commit_author1.email}> "
+                     f"{commit_author2.name} <{commit_author2.email}>")
+
+        # Mailmap might be tested either on Whole or Linear history
+        wh_df = WholeHistory(self.test_repo).as_dataframe()
+
+        authors = wh_df['author_name'].values
+        self.assertSetEqual({"John Doe"}, set(authors))
 
 
 if __name__ == '__main__':
