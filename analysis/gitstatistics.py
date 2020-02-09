@@ -97,7 +97,6 @@ class GitStatistics:
         self.created_time_stamp = datetime.now().timestamp()
         self.repo_name = os.path.basename(os.path.abspath(path))
         self.analysed_branch = self.repo.head.shorthand
-        self.author_of_month = {}
         self.yearly_commits_timeline = {}
         self.monthly_commits_timeline = {}
         self.author_changes_history = {}
@@ -119,7 +118,7 @@ class GitStatistics:
         self.max_weekly_hourly_activity = max(
             commits_count for _, hourly_activity in self.activity_weekly_hourly.items()
             for _, commits_count in hourly_activity.items())
-        self.activity_monthly, self.authors_monthly, self.activity_year_monthly, self.author_year_monthly \
+        self.activity_monthly, self.authors_monthly, self.activity_year_monthly, self.author_yewhar_monthly \
             = self.fetch_monthly_activity()
 
         self.changes_history, self.total_lines_added, self.total_lines_removed, self.total_lines_count \
@@ -205,7 +204,6 @@ class GitStatistics:
             lines_added = st.insertions if not is_merge_commit else 0
             lines_removed = st.deletions if not is_merge_commit else 0
 
-            self._adjust_winners(author_name, child_commit.author.time)
             if author_name not in result:
                 result[author_name] = AuthorDictFactory.create_author(
                     author_name, lines_removed, lines_added, commit_day_str, 1, child_commit.author.time,
@@ -402,14 +400,6 @@ class GitStatistics:
         res = sum((Counter({datetime.fromtimestamp(ts).strftime('%Y-%m'): data['del']})
                    for ts, data in self.changes_history.items()), Counter())
         return dict(res)
-
-    def _adjust_winners(self, author, timestamp):
-        date = datetime.fromtimestamp(timestamp)
-        yymm = date.strftime('%Y-%m')
-        if yymm in self.author_of_month:
-            self.author_of_month[yymm][author] = self.author_of_month[yymm].get(author, 0) + 1
-        else:
-            self.author_of_month[yymm] = {author: 1}
 
     def _adjust_author_changes_history(self, commit, authors_info: dict):
         ts = commit.author.time

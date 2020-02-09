@@ -86,13 +86,23 @@ class RepoStatisticsTest(unittest.TestCase):
             two_weeks_activity = stat.get_recent_weekly_activity(2)
             self.assertListEqual([0, 1], list(two_weeks_activity))
 
-    @patch.object(WholeHistory, 'fetch', return_value=test_whole_history_records)
+    @patch.object(WholeHistory, 'fetch', return_value=[
+        {'commit_sha': 'aaaaaaa', 'author_name': 'Author1', 'author_tz_offset': 60,
+         'author_timestamp': to_unix_time(datetime(2020, 1, 17))},
+        {'commit_sha': 'bbbbbbb', 'author_name': 'Author2', 'author_tz_offset': 60,
+         'author_timestamp': to_unix_time(datetime(2019, 11, 15))},
+        {'commit_sha': 'ccccccc', 'author_name': 'Author1', 'author_tz_offset': -120,
+         'author_timestamp': to_unix_time(datetime(2020, 3, 1))},
+    ])
     def test_authors_top(self, mock_fetch):
         with patch("pygit2.Repository"),\
                 patch("pygit2.Mailmap"):
             stat = GitRepository(MagicMock())
 
-            # TODO: think of better testing
             authors_ts = stat.get_authors_ranking_by_year()
-            # the timestamps in `test_whole_history_records` contain two entries for year 2020
             self.assertEqual(2, authors_ts.loc[(2020, 'Author1')])
+            self.assertEqual(1, authors_ts.loc[(2019, 'Author2')])
+
+            authors_ts = stat.get_authors_ranking_by_month()
+            self.assertEqual(1, authors_ts.loc[('2020-03', 'Author1')])
+            self.assertEqual(1, authors_ts.loc[('2019-11', 'Author2')])
