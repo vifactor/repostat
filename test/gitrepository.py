@@ -57,5 +57,5 @@ class GitRepository(git.Repository):
         self.commit_builder = GitRepository.CommitBuilder(self)
 
     def __del__(self):
-        # shutil.rmtree(self.path)
+        shutil.rmtree(self.path)
         print(f"Repo has been removed from {self.location}")
