@@ -424,9 +424,10 @@ class HTMLReportCreator(object):
         return template_rendered.encode('utf-8')
 
     def render_about_page(self):
+        repostat_version = self.configuration.get_release_data_info()['develop_version']
+        repostat_version_date = self.configuration.get_release_data_info()['user_version']
         page_data = {
-            "url": "https://github.com/vifactor/repostat",
-            "version": self.configuration.get_release_data_info()['user_version'],
+            "version": f"{repostat_version} ({repostat_version_date})",
             "tools": [GitStatistics.get_fetching_tool_info(),
                       self.configuration.get_jinja_version(),
                       'gnuplot ' + self.configuration.get_gnuplot_version()],

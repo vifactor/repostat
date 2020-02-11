@@ -1,0 +1,11 @@
+## used to remove files from deployment using `git archive`
+# git files
+.gitattributes export-ignore
+.gitignore export-ignore
+
+# dev files
+make_release.py
+requirements.py
+
+# travis CI config
+.travis.yml

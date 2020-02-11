@@ -6,11 +6,13 @@ from datetime import datetime
 import pygit2 as git
 import readline
 from distutils import version
+import subprocess as cmd
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPOSTAT_REPO_PATH = HERE
 REPOSTAT_REPO = git.Repository(REPOSTAT_REPO_PATH)
 RELEASE_DATA_FILE = os.path.join(REPOSTAT_REPO_PATH, "tools", 'release_data.json')
+CHANGELOG_FILE_NAME = "CHANGELOG.rst"
 
 
 def rl_input(prompt, prefill=''):
@@ -36,6 +38,16 @@ def fetch_contributors(repo):
     # this gives only the contributors to the current code tree, not all the commiters to the project
     contribution = sorted(contribution.items(), key=lambda kv: kv[1], reverse=True)
     return [contributor for contributor, lines_contributed in contribution]
+
+
+def prepare_changelog(new_version):
+    with open(CHANGELOG_FILE_NAME, 'r') as f:
+        original_content = f.read()
+    version_date = datetime.today().date()
+    with open(CHANGELOG_FILE_NAME, 'w') as f:
+        f.write(f"{new_version} ({version_date})\n")
+        f.write("-------------------------\n\n")
+        f.write(original_content)
 
 
 # retrieve name of current branch
@@ -65,7 +77,6 @@ new_version_str = f'{current_version_tuple[0]}.{current_version_tuple[1] + 1}.{c
 new_version_str = rl_input("Enter new version: v", prefill=new_version_str)
 
 if version.StrictVersion(new_version_str) <= current_version:
-    # TODO: give user a possibility to re-enter version
     print(f"New version {new_version_str} cannot be less or equal than the current one {current_version}.")
     sys.exit(0)
 
@@ -73,6 +84,15 @@ new_version_tag = f"v{new_version_str}"
 repo_references_names = [ref.shorthand for ref in REPOSTAT_REPO.references.objects]
 if new_version_tag in repo_references_names:
     print(f"Cannot create tag {new_version_tag}. Already exists.")
+    sys.exit(0)
+
+# changelog file prepended with new section for the new version
+prepare_changelog(new_version_str)
+EDITOR = "nano"
+# start editor to add changelog entries
+retcode = cmd.call([EDITOR, CHANGELOG_FILE_NAME])
+if retcode != 0:
+    print("Could not start editor to modify changelog")
     sys.exit(0)
 
 # create new release data and store, create commit
@@ -107,8 +127,13 @@ release_commit_message = f"Release {new_version_tag}"
 release_commit_oid = REPOSTAT_REPO.create_commit('refs/heads/master', author, committer,
                                                  release_commit_message, tree, [head_commit.hex])
 
-# create (TODO: signed) annotated tag on release commit
+# create annotated tag on release commit
+# there is no way to do it with py git, so raw shell call to git is used
+"""
 tagger = author
 release_tag_oid = REPOSTAT_REPO.create_tag(new_version_tag, release_commit_oid, git.GIT_OBJ_COMMIT, tagger,
                                            release_commit_message)
-print("Commit ", release_commit_oid, " tagged with ", release_tag_oid)
+"""
+out = cmd.run(f"git tag -s -a {new_version_tag} -m '{release_commit_message}'", check=True, shell=True)
+print(out)
+print("Commit ", release_commit_oid, " tagged with ", new_version_tag)
