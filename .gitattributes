@@ -4,8 +4,8 @@
 .gitignore export-ignore
 
 # dev files
-make_release.py
-requirements.py
+make_release.py export-ignore
+requirements.py export-ignore
 
 # travis CI config
-.travis.yml
+.travis.yml export-ignore
