@@ -1,4 +1,8 @@
 # [repostat](https://github.com/vifactor/repostat)
+<p align="left">
+    <a href="https://travis-ci.org/vifactor/repostat" alt="Build status">
+        <img src="https://travis-ci.com/vifactor/repostat.svg?branch=master" /></a>
+</p>
 
 Git repository analysis report generator:
  - Python3 - compatible
