@@ -4,9 +4,11 @@ from collections import Counter
 import warnings
 import os
 from distutils import version
+import pandas as pd
 
 from tools.timeit import Timeit
 from tools import sort_keys_by_value_of_key, split_email_address
+from analysis.gitdata import WholeHistory
 
 
 class AuthorDictFactory:
@@ -20,13 +22,12 @@ class AuthorDictFactory:
     FIELD_LIST = [AUTHOR_NAME, LINES_ADDED, LINES_REMOVED, COMMITS, ACTIVE_DAYS, FIRST_COMMIT, LAST_COMMIT]
 
     @classmethod
-    def create_author(cls, author_name: str, lines_removed: int, lines_added: int, active_days: str, commits: int,
+    def create_author(cls, author_name: str, lines_removed: int, lines_added: int, commits: int,
                       first_commit_stamp, last_commit_stamp):
         result = {
             cls.AUTHOR_NAME: author_name,
             cls.LINES_ADDED: lines_added,
             cls.LINES_REMOVED: lines_removed,
-            cls.ACTIVE_DAYS: {active_days},
             cls.COMMITS: commits,
             cls.FIRST_COMMIT: first_commit_stamp,
             cls.LAST_COMMIT: last_commit_stamp
@@ -35,10 +36,6 @@ class AuthorDictFactory:
 
     def _set_last_commit_stamp(self, time):
         self.last_commit_stamp = time
-
-    @classmethod
-    def add_active_day(cls, author, active_day):
-        author[cls.ACTIVE_DAYS].add(active_day)
 
     @classmethod
     def add_lines_added(cls, author, lines_added):
@@ -71,6 +68,7 @@ class GitStatistics:
         :param path: path to a repository
         """
         self.repo = git.Repository(path)
+        self.whole_history_df = WholeHistory(self.repo).as_dataframe()
         if GitStatistics.is_mailmap_supported:
             self.mailmap = git.Mailmap.from_repository(self.repo)
 
@@ -198,20 +196,17 @@ class GitStatistics:
             else:  # if len(child_commit.parents) == 2 (merge commit)
                 is_merge_commit = True
 
-            commit_day_str = datetime.fromtimestamp(child_commit.author.time).strftime('%Y-%m-%d')
-
             author_name = self.signature_mapper(child_commit.author).name
             lines_added = st.insertions if not is_merge_commit else 0
             lines_removed = st.deletions if not is_merge_commit else 0
 
             if author_name not in result:
                 result[author_name] = AuthorDictFactory.create_author(
-                    author_name, lines_removed, lines_added, commit_day_str, 1, child_commit.author.time,
+                    author_name, lines_removed, lines_added, 1, child_commit.author.time,
                     child_commit.author.time)
             else:
                 AuthorDictFactory.add_lines_removed(result[author_name], st.deletions if not is_merge_commit else 0)
                 AuthorDictFactory.add_lines_added(result[author_name], st.insertions if not is_merge_commit else 0)
-                AuthorDictFactory.add_active_day(result[author_name], commit_day_str)
                 AuthorDictFactory.add_commit(result[author_name], 1)
                 AuthorDictFactory.check_first_commit_stamp(result[author_name], child_commit.author.time)
                 AuthorDictFactory.check_last_commit_stamp(result[author_name], child_commit.author.time)
@@ -421,13 +416,6 @@ class GitStatistics:
 
         for name in self.authors.keys():
             a = self.authors[name]
-            date_first = datetime.fromtimestamp(a['first_commit_stamp'])
-            date_last = datetime.fromtimestamp(a['last_commit_stamp'])
-            delta = (date_last - date_first).days
-            # FIXME: next two values are redundant (can be estimated from timestamps)
-            a['date_first'] = date_first.strftime('%Y-%m-%d')
-            a['date_last'] = date_last.strftime('%Y-%m-%d')
-            a['timedelta'] = delta
             if 'lines_added' not in a:
                 a['lines_added'] = 0
             if 'lines_removed' not in a:

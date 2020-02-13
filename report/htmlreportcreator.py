@@ -316,15 +316,16 @@ class HTMLReportCreator(object):
 
         for author in all_authors[:self.configuration['max_authors']]:
             info = self.git_repo_statistics.authors[author]
+            git_author = self.git_repository_statistics.get_author(author)
             author_dict = {
                 'name': author,
-                'commits_count': info['commits'],
+                'commits_count': git_author.commits_count,
                 'lines_added_count': info['lines_added'],
                 'lines_removed_count': info['lines_removed'],
-                'first_commit_date': info['date_first'],
-                'latest_commit_date': info['date_last'],
-                'contributed_days_count': info['timedelta'],
-                'active_days_count': len(info['active_days']),
+                'first_commit_date': git_author.first_commit_date.strftime('%Y-%m-%d'),
+                'latest_commit_date': git_author.latest_commit_date.strftime('%Y-%m-%d'),
+                'contributed_days_count': git_author.contributed_days_count,
+                'active_days_count': git_author.active_days_count,
                 'contribution': self.git_repo_statistics.contribution.get(author,
                                                                           0) if self.git_repo_statistics.contribution else None,
             }

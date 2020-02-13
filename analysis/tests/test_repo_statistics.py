@@ -106,3 +106,13 @@ class RepoStatisticsTest(unittest.TestCase):
             authors_ts = stat.get_authors_ranking_by_month()
             self.assertEqual(1, authors_ts.loc[('2020-03', 'Author1')])
             self.assertEqual(1, authors_ts.loc[('2019-11', 'Author2')])
+
+    @patch.object(WholeHistory, 'fetch', return_value=test_whole_history_records)
+    def test_authors_group_set_after_get_author(self, mock_fetch):
+        with patch("pygit2.Repository"), patch("pygit2.Mailmap"):
+            stat = GitRepository(MagicMock())
+
+            from analysis.gitauthor import GitAuthor
+            self.assertIsNone(GitAuthor.author_groups)
+            author = stat.get_author('Author1')
+            self.assertIsNotNone(author.author_groups)
