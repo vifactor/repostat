@@ -1,4 +1,5 @@
 # [repostat](https://github.com/vifactor/repostat)
+[![Build Status](https://travis-ci.com/vifactor/repostat.svg?branch=v1.3.x)](https://travis-ci.com/vifactor/repostat)
 
 Git repository analysis report generator:
  - Python3 - compatible
@@ -10,22 +11,17 @@ Git repository analysis report generator:
 
 Enhanced fork of [gitstats](https://github.com/hoxu/gitstats) tool.
 
+## Version
+This is v1.3.x branch which will receive only bug-fixes and perhaps minor improvements. For new features, please, refer to `master` branch. 
+
 ## Ubuntu installation
-### Using pip (recommended)
+### Using pip
 ```bash
 sudo pip3 install git+https://github.com/vifactor/repostat
 ```
 This installation procedure may require manual installation 
 of required dependencies, e.g. libgit2, gnuplot. But should also
 work in other non-Debian Linux distributions.
-
-### Using ppa (discontinued)
-```bash
-sudo add-apt-repository ppa:vifactor/ppa
-sudo apt update
-sudo apt install repostat
-```
-**Currently only Ubuntu 18.04 is supported**
 
 ## Windows installation
 Check issue #57
