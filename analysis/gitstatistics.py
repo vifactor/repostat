@@ -171,8 +171,6 @@ class GitStatistics:
             self.tags = {}
         self.domains = self.fetch_domains_info()
         self.timezones = self.fetch_timezone_info()
-        self.first_commit_timestamp = min(commit.author.time for commit in self.repo.walk(self.repo.head.target))
-        self.last_commit_timestamp = max(commit.author.time for commit in self.repo.walk(self.repo.head.target))
         self.active_days = {datetime.fromtimestamp(commit.author.time).strftime('%Y-%m-%d')
                             for commit in self.repo.walk(self.repo.head.target)}
         self.activity_weekly_hourly = self.fetch_weekly_hourly_activity()
@@ -551,9 +549,6 @@ class GitStatistics:
 
         yy = datetime_obj.year
         self.yearly_commits_timeline[yy] = self.yearly_commits_timeline.get(yy, 0) + 1
-
-    def get_commit_delta_days(self):
-        return (self.last_commit_timestamp / 86400 - self.first_commit_timestamp / 86400) + 1
 
     def get_active_days(self):
         return self.active_days

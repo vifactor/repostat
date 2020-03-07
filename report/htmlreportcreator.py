@@ -9,6 +9,7 @@ from jinja2 import Environment, FileSystemLoader
 from distutils.dir_util import copy_tree
 
 from analysis.gitstatistics import GitStatistics
+from analysis.gitrepository import GitRepository
 from tools.shellhelper import get_pipe_output
 from tools.configuration import Configuration
 from tools import sort_keys_by_value_of_key
@@ -21,11 +22,12 @@ class HTMLReportCreator(object):
     assets_subdir = "assets"
     templates_subdir = "templates"
 
-    def __init__(self, config: Configuration, repo_stat):
+    def __init__(self, config: Configuration, repo_stat: GitStatistics, repository: GitRepository):
         self.path = None
         self.configuration = config
         self.assets_path = os.path.join(HERE, self.assets_subdir)
         self.git_repo_statistics = repo_stat
+        self.git_repository_statistics = repository
         self.has_tags_page = config.do_process_tags()
 
         self.common_rendering_data = {
@@ -202,8 +204,8 @@ class HTMLReportCreator(object):
 
     def render_general_page(self):
         date_format_str = '%Y-%m-%d %H:%M'
-        first_commit_datetime = datetime.datetime.fromtimestamp(self.git_repo_statistics.first_commit_timestamp)
-        last_commit_datetime = datetime.datetime.fromtimestamp(self.git_repo_statistics.last_commit_timestamp)
+        first_commit_datetime = datetime.datetime.fromtimestamp(self.git_repository_statistics.first_commit_timestamp)
+        last_commit_datetime = datetime.datetime.fromtimestamp(self.git_repository_statistics.last_commit_timestamp)
         # TODO: this conversion from old 'data' to new 'project data' should perhaps be removed in future
         project_data = {
             "name": self.git_repo_statistics.repo_name,

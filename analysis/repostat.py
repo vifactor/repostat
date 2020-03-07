@@ -11,6 +11,7 @@ from distutils import version
 
 from report.htmlreportcreator import HTMLReportCreator
 from analysis import GitStatistics
+from analysis.gitrepository import GitRepository
 from tools.shellhelper import get_external_execution_time
 from tools.configuration import Configuration
 
@@ -57,16 +58,17 @@ def main():
 
     print('Git path: %s' % config.git_repository_path)
     print('Collecting data...', config.do_calculate_contribution())
-    repository_statistics = GitStatistics(config.git_repository_path,
+    repo_statistics = GitStatistics(config.git_repository_path,
                                           config.do_calculate_contribution(),
                                           config.do_process_tags())
+    repository_statistics = GitRepository(config.git_repository_path)
 
     output_path = config.statistics_output_path
     print('Output path: %s' % output_path)
     os.makedirs(output_path, exist_ok=True)
 
     print('Generating HTML report...')
-    HTMLReportCreator(config, repository_statistics).create(output_path)
+    HTMLReportCreator(config, repo_statistics, repository_statistics).create(output_path)
     print_exec_times()
 
     url = os.path.join(output_path, 'general.html').replace("'", "'\\''")
