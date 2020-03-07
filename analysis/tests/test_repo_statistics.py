@@ -7,6 +7,11 @@ from analysis.gitdata import WholeHistory
 from analysis.gitrepository import GitRepository
 
 
+def to_unix_time(dt: datetime):
+    epoch = datetime.utcfromtimestamp(0)
+    return (dt - epoch).total_seconds()
+
+
 class RepoStatisticsTest(unittest.TestCase):
     test_whole_history_records = [
         {'commit_sha': '6c40597', 'author_tz_offset': 60, 'author_timestamp': 1580666336},
@@ -64,3 +69,12 @@ class RepoStatisticsTest(unittest.TestCase):
             stat = GitRepository(MagicMock())
             expected_timezones = self.get_expected_timezones_dict()
             self.assertDictEqual(expected_timezones, stat.timezones_distribution)
+
+    @patch.object(WholeHistory, 'fetch', return_value=[
+        {'commit_sha': 'fdc28ab', 'author_tz_offset': 0, 'author_timestamp': to_unix_time(datetime.utcnow())}
+    ])
+    def test_recent_activity(self, mock_fetch):
+        with patch("pygit2.Repository"):
+            stat = GitRepository(MagicMock())
+            two_weeks_activity = stat.get_recent_weekly_activity(2)
+            self.assertListEqual([0, 1], list(two_weeks_activity))
