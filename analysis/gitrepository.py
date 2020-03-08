@@ -47,22 +47,29 @@ class GitRepository(object):
 
     def get_recent_weekly_activity(self, recent_weeks_count: int):
         """
-        Calculates commits activity on weekly basis
+        Calculates contributors' weekly activity (number of commits per week)
         :param recent_weeks_count: time period in weeks
         :return: sampled number of commits
         """
         assert recent_weeks_count > 0
 
-        today = pd.Timestamp.today().normalize()
+        today = pd.Timestamp.today()
+        if today.weekday() == 6:  # 'today' is Sunday
+            # set Sunday within a week as last day of recent activity ('today' is already in next week)
+            last_activity_date = today + pd.Timedelta(weeks=1)
+        else:
+            # set last day of recent activity interval as next Monday
+            last_activity_date = today + pd.Timedelta(days=-today.weekday(), weeks=1)
         # Monday `recent_weeks_count` weeks ago
-        start_activity_date = today - pd.Timedelta(days=today.weekday(), weeks=recent_weeks_count)
-        # Next Monday
-        last_activity_date = today + pd.Timedelta(days=-today.weekday(), weeks=1)
+        start_activity_date = last_activity_date - pd.Timedelta(weeks=recent_weeks_count)
 
         # TODO: committer timestamp better reflects recent activity on a current branch
         ts = pd.to_datetime(self.whole_history_df['author_timestamp'], unit='s')
         ddf = pd.DataFrame({'timestamp': ts[ts >= start_activity_date]})
-        intervals = pd.date_range(start=start_activity_date, end=last_activity_date, freq='W')
+        # weekly intervals
+        intervals = pd.date_range(end=last_activity_date, periods=recent_weeks_count + 1, freq='W-SUN', normalize=True)
+        # sample commits number by weekly intervals
         histogram = pd.cut(ddf.timestamp, bins=intervals)
 
-        return histogram.groupby(histogram.values).count().values
+        result_ts = histogram.groupby(histogram.values).count()
+        return result_ts.values
