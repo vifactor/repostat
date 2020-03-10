@@ -5,6 +5,7 @@ from datetime import datetime
 
 from analysis.gitdata import WholeHistory
 from analysis.gitrepository import GitRepository
+from analysis.gitauthor import GitAuthor
 
 
 def to_unix_time(dt: datetime):
@@ -19,6 +20,10 @@ class RepoStatisticsTest(unittest.TestCase):
         {'commit_sha': '358604e', 'author_name': 'Author1', 'author_tz_offset': -120, 'author_timestamp': 1583449674},
         {'commit_sha': 'fdc28ab', 'author_name': 'Author3', 'author_tz_offset': 0, 'author_timestamp': 1185807283}
     ]
+
+    @classmethod
+    def setUpClass(cls):
+        GitAuthor.author_groups = None
 
     @patch.object(WholeHistory, 'fetch', return_value=test_whole_history_records)
     def test_whole_history_fetched(self, mock_fetch):

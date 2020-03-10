@@ -4,38 +4,27 @@ from collections import Counter
 import warnings
 import os
 from distutils import version
-import pandas as pd
 
 from tools.timeit import Timeit
 from tools import sort_keys_by_value_of_key, split_email_address
-from analysis.gitdata import WholeHistory
 
 
 class AuthorDictFactory:
     AUTHOR_NAME = "author_name"
     LINES_REMOVED = "lines_removed"
     LINES_ADDED = "lines_added"
-    ACTIVE_DAYS = 'active_days'
     COMMITS = 'commits'
-    FIRST_COMMIT = 'first_commit_stamp'
-    LAST_COMMIT = 'last_commit_stamp'
-    FIELD_LIST = [AUTHOR_NAME, LINES_ADDED, LINES_REMOVED, COMMITS, ACTIVE_DAYS, FIRST_COMMIT, LAST_COMMIT]
+    FIELD_LIST = [AUTHOR_NAME, LINES_ADDED, LINES_REMOVED, COMMITS]
 
     @classmethod
-    def create_author(cls, author_name: str, lines_removed: int, lines_added: int, commits: int,
-                      first_commit_stamp, last_commit_stamp):
+    def create_author(cls, author_name: str, lines_removed: int, lines_added: int, commits: int):
         result = {
             cls.AUTHOR_NAME: author_name,
             cls.LINES_ADDED: lines_added,
             cls.LINES_REMOVED: lines_removed,
             cls.COMMITS: commits,
-            cls.FIRST_COMMIT: first_commit_stamp,
-            cls.LAST_COMMIT: last_commit_stamp
         }
         return result
-
-    def _set_last_commit_stamp(self, time):
-        self.last_commit_stamp = time
 
     @classmethod
     def add_lines_added(cls, author, lines_added):
@@ -49,16 +38,6 @@ class AuthorDictFactory:
     def add_commit(cls, author, commit_count=1):
         author[cls.COMMITS] += commit_count
 
-    @classmethod
-    def check_first_commit_stamp(cls, author: dict, time):
-        if author[cls.FIRST_COMMIT] > time:
-            author[cls.FIRST_COMMIT] = time
-
-    @classmethod
-    def check_last_commit_stamp(cls, author: dict, time):
-        if author[cls.LAST_COMMIT] < time:
-            author[cls.LAST_COMMIT] = time
-
 
 class GitStatistics:
     is_mailmap_supported = True if version.LooseVersion(git.LIBGIT2_VERSION) >= '0.28.0' else False
@@ -68,7 +47,6 @@ class GitStatistics:
         :param path: path to a repository
         """
         self.repo = git.Repository(path)
-        self.whole_history_df = WholeHistory(self.repo).as_dataframe()
         if GitStatistics.is_mailmap_supported:
             self.mailmap = git.Mailmap.from_repository(self.repo)
 
@@ -202,14 +180,11 @@ class GitStatistics:
 
             if author_name not in result:
                 result[author_name] = AuthorDictFactory.create_author(
-                    author_name, lines_removed, lines_added, 1, child_commit.author.time,
-                    child_commit.author.time)
+                    author_name, lines_removed, lines_added, 1)
             else:
                 AuthorDictFactory.add_lines_removed(result[author_name], st.deletions if not is_merge_commit else 0)
                 AuthorDictFactory.add_lines_added(result[author_name], st.insertions if not is_merge_commit else 0)
                 AuthorDictFactory.add_commit(result[author_name], 1)
-                AuthorDictFactory.check_first_commit_stamp(result[author_name], child_commit.author.time)
-                AuthorDictFactory.check_last_commit_stamp(result[author_name], child_commit.author.time)
 
             self._adjust_author_changes_history(child_commit, result)
 
@@ -409,11 +384,6 @@ class GitStatistics:
         self.author_changes_history[ts][author_name]['commits'] = authors_info[author_name][AuthorDictFactory.COMMITS]
 
     def _append_authors_info(self):
-        # name -> {place_by_commits, date_first, date_last, timedelta}
-        authors_by_commits = sort_keys_by_value_of_key(self.authors, 'commits', reverse=True)
-        for i, name in enumerate(authors_by_commits):
-            self.authors[name]['place_by_commits'] = i + 1
-
         for name in self.authors.keys():
             a = self.authors[name]
             if 'lines_added' not in a:

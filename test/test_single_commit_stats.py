@@ -23,21 +23,6 @@ class TestSingleCommitRepository(unittest.TestCase):
     def test_total_commits_number(self):
         self.assertEqual(self.gs.total_commits, 1)
 
-    def test_authors_statistics(self):
-        self.assertIn(self.commit_author.name, self.gs.authors)
-
-        author_stats = self.gs.authors[self.commit_author.name]
-        self.assertEqual(author_stats['lines_added'], 0)
-        self.assertEqual(author_stats['lines_removed'], 0)
-        self.assertEqual(len(author_stats['active_days']), 1)
-        self.assertEqual(author_stats['commits'], 1)
-        self.assertEqual(author_stats['place_by_commits'], 1)
-
-        today = str(datetime.datetime.today().date())
-        self.assertEqual(author_stats['date_first'], today)
-        self.assertEqual(author_stats['date_last'], today)
-        # total activity days count is not checked
-
     def test_missing_authors_email(self):
         import tempfile
         import os
