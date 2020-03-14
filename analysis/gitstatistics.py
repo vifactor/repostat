@@ -6,22 +6,20 @@ import os
 from distutils import version
 
 from tools.timeit import Timeit
-from tools import sort_keys_by_value_of_key, split_email_address
+from tools import split_email_address
 
 
 class AuthorDictFactory:
     AUTHOR_NAME = "author_name"
-    LINES_REMOVED = "lines_removed"
     LINES_ADDED = "lines_added"
     COMMITS = 'commits'
-    FIELD_LIST = [AUTHOR_NAME, LINES_ADDED, LINES_REMOVED, COMMITS]
+    FIELD_LIST = [AUTHOR_NAME, LINES_ADDED, COMMITS]
 
     @classmethod
-    def create_author(cls, author_name: str, lines_removed: int, lines_added: int, commits: int):
+    def create_author(cls, author_name: str, lines_added: int, commits: int):
         result = {
             cls.AUTHOR_NAME: author_name,
             cls.LINES_ADDED: lines_added,
-            cls.LINES_REMOVED: lines_removed,
             cls.COMMITS: commits,
         }
         return result
@@ -29,10 +27,6 @@ class AuthorDictFactory:
     @classmethod
     def add_lines_added(cls, author, lines_added):
         author[cls.LINES_ADDED] += lines_added
-
-    @classmethod
-    def add_lines_removed(cls, author, lines_removed):
-        author[cls.LINES_REMOVED] += lines_removed
 
     @classmethod
     def add_commit(cls, author, commit_count=1):
@@ -172,17 +166,23 @@ class GitStatistics:
 
             author_name = self.signature_mapper(child_commit.author).name
             lines_added = st.insertions if not is_merge_commit else 0
-            lines_removed = st.deletions if not is_merge_commit else 0
 
             if author_name not in result:
                 result[author_name] = AuthorDictFactory.create_author(
-                    author_name, lines_removed, lines_added, 1)
+                    author_name, lines_added, 1)
             else:
-                AuthorDictFactory.add_lines_removed(result[author_name], st.deletions if not is_merge_commit else 0)
                 AuthorDictFactory.add_lines_added(result[author_name], st.insertions if not is_merge_commit else 0)
                 AuthorDictFactory.add_commit(result[author_name], 1)
 
-            self._adjust_author_changes_history(child_commit, result)
+            ts = child_commit.author.time
+            if ts not in self.author_changes_history:
+                self.author_changes_history[ts] = {}
+            if author_name not in self.author_changes_history[ts]:
+                self.author_changes_history[ts][author_name] = {}
+            self.author_changes_history[ts][author_name]['lines_added'] = result[author_name][
+                AuthorDictFactory.LINES_ADDED]
+            self.author_changes_history[ts][author_name]['commits'] = result[author_name][
+                AuthorDictFactory.COMMITS]
 
         return result
 
@@ -366,18 +366,6 @@ class GitStatistics:
         res = sum((Counter({datetime.fromtimestamp(ts).strftime('%Y-%m'): data['del']})
                    for ts, data in self.changes_history.items()), Counter())
         return dict(res)
-
-    def _adjust_author_changes_history(self, commit, authors_info: dict):
-        ts = commit.author.time
-
-        author_name = self.signature_mapper(commit.author).name
-        if ts not in self.author_changes_history:
-            self.author_changes_history[ts] = {}
-        if author_name not in self.author_changes_history[ts]:
-            self.author_changes_history[ts][author_name] = {}
-        self.author_changes_history[ts][author_name]['lines_added'] = authors_info[author_name][
-            AuthorDictFactory.LINES_ADDED]
-        self.author_changes_history[ts][author_name]['commits'] = authors_info[author_name][AuthorDictFactory.COMMITS]
 
     def _adjust_commits_timeline(self, datetime_obj):
         """
