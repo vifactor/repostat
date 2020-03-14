@@ -6,61 +6,31 @@ import os
 from distutils import version
 
 from tools.timeit import Timeit
-from tools import sort_keys_by_value_of_key, split_email_address
+from tools import split_email_address
 
 
 class AuthorDictFactory:
     AUTHOR_NAME = "author_name"
-    LINES_REMOVED = "lines_removed"
     LINES_ADDED = "lines_added"
-    ACTIVE_DAYS = 'active_days'
     COMMITS = 'commits'
-    FIRST_COMMIT = 'first_commit_stamp'
-    LAST_COMMIT = 'last_commit_stamp'
-    FIELD_LIST = [AUTHOR_NAME, LINES_ADDED, LINES_REMOVED, COMMITS, ACTIVE_DAYS, FIRST_COMMIT, LAST_COMMIT]
+    FIELD_LIST = [AUTHOR_NAME, LINES_ADDED, COMMITS]
 
     @classmethod
-    def create_author(cls, author_name: str, lines_removed: int, lines_added: int, active_days: str, commits: int,
-                      first_commit_stamp, last_commit_stamp):
+    def create_author(cls, author_name: str, lines_added: int, commits: int):
         result = {
             cls.AUTHOR_NAME: author_name,
             cls.LINES_ADDED: lines_added,
-            cls.LINES_REMOVED: lines_removed,
-            cls.ACTIVE_DAYS: {active_days},
             cls.COMMITS: commits,
-            cls.FIRST_COMMIT: first_commit_stamp,
-            cls.LAST_COMMIT: last_commit_stamp
         }
         return result
-
-    def _set_last_commit_stamp(self, time):
-        self.last_commit_stamp = time
-
-    @classmethod
-    def add_active_day(cls, author, active_day):
-        author[cls.ACTIVE_DAYS].add(active_day)
 
     @classmethod
     def add_lines_added(cls, author, lines_added):
         author[cls.LINES_ADDED] += lines_added
 
     @classmethod
-    def add_lines_removed(cls, author, lines_removed):
-        author[cls.LINES_REMOVED] += lines_removed
-
-    @classmethod
     def add_commit(cls, author, commit_count=1):
         author[cls.COMMITS] += commit_count
-
-    @classmethod
-    def check_first_commit_stamp(cls, author: dict, time):
-        if author[cls.FIRST_COMMIT] > time:
-            author[cls.FIRST_COMMIT] = time
-
-    @classmethod
-    def check_last_commit_stamp(cls, author: dict, time):
-        if author[cls.LAST_COMMIT] < time:
-            author[cls.LAST_COMMIT] = time
 
 
 class GitStatistics:
@@ -133,8 +103,6 @@ class GitStatistics:
         self.total_files_count = sum(v['files'] for k, v in self.extensions.items())
         self.total_tree_size = sum(v['size'] for k, v in self.extensions.items())
 
-        self._append_authors_info()
-
     def _get_files_count_by_timestamp(self):
         files_by_stamp = {}
         for commit in self.repo.walk(self.repo.head.target, git.GIT_SORT_TIME):
@@ -181,9 +149,7 @@ class GitStatistics:
     def fetch_authors_info(self):
         """
         e.g.
-        {'Stefano Mosconi': {'lines_removed': 1, 'last_commit_stamp': 1302027851, 'active_days': set(['2011-04-05']),
-                             'lines_added': 1, 'commits': 1, 'first_commit_stamp': 1302027851,
-                             'last_active_day': '2011-04-05'}
+        {'Stefano Mosconi': {'lines_removed': 1, 'lines_added': 1, 'commits': 1}
         """
         result = {}
         for child_commit in self.repo.walk(self.repo.head.target, git.GIT_SORT_TIME | git.GIT_SORT_REVERSE):
@@ -198,25 +164,25 @@ class GitStatistics:
             else:  # if len(child_commit.parents) == 2 (merge commit)
                 is_merge_commit = True
 
-            commit_day_str = datetime.fromtimestamp(child_commit.author.time).strftime('%Y-%m-%d')
-
             author_name = self.signature_mapper(child_commit.author).name
             lines_added = st.insertions if not is_merge_commit else 0
-            lines_removed = st.deletions if not is_merge_commit else 0
 
             if author_name not in result:
                 result[author_name] = AuthorDictFactory.create_author(
-                    author_name, lines_removed, lines_added, commit_day_str, 1, child_commit.author.time,
-                    child_commit.author.time)
+                    author_name, lines_added, 1)
             else:
-                AuthorDictFactory.add_lines_removed(result[author_name], st.deletions if not is_merge_commit else 0)
                 AuthorDictFactory.add_lines_added(result[author_name], st.insertions if not is_merge_commit else 0)
-                AuthorDictFactory.add_active_day(result[author_name], commit_day_str)
                 AuthorDictFactory.add_commit(result[author_name], 1)
-                AuthorDictFactory.check_first_commit_stamp(result[author_name], child_commit.author.time)
-                AuthorDictFactory.check_last_commit_stamp(result[author_name], child_commit.author.time)
 
-            self._adjust_author_changes_history(child_commit, result)
+            ts = child_commit.author.time
+            if ts not in self.author_changes_history:
+                self.author_changes_history[ts] = {}
+            if author_name not in self.author_changes_history[ts]:
+                self.author_changes_history[ts][author_name] = {}
+            self.author_changes_history[ts][author_name]['lines_added'] = result[author_name][
+                AuthorDictFactory.LINES_ADDED]
+            self.author_changes_history[ts][author_name]['commits'] = result[author_name][
+                AuthorDictFactory.COMMITS]
 
         return result
 
@@ -400,38 +366,6 @@ class GitStatistics:
         res = sum((Counter({datetime.fromtimestamp(ts).strftime('%Y-%m'): data['del']})
                    for ts, data in self.changes_history.items()), Counter())
         return dict(res)
-
-    def _adjust_author_changes_history(self, commit, authors_info: dict):
-        ts = commit.author.time
-
-        author_name = self.signature_mapper(commit.author).name
-        if ts not in self.author_changes_history:
-            self.author_changes_history[ts] = {}
-        if author_name not in self.author_changes_history[ts]:
-            self.author_changes_history[ts][author_name] = {}
-        self.author_changes_history[ts][author_name]['lines_added'] = authors_info[author_name][
-            AuthorDictFactory.LINES_ADDED]
-        self.author_changes_history[ts][author_name]['commits'] = authors_info[author_name][AuthorDictFactory.COMMITS]
-
-    def _append_authors_info(self):
-        # name -> {place_by_commits, date_first, date_last, timedelta}
-        authors_by_commits = sort_keys_by_value_of_key(self.authors, 'commits', reverse=True)
-        for i, name in enumerate(authors_by_commits):
-            self.authors[name]['place_by_commits'] = i + 1
-
-        for name in self.authors.keys():
-            a = self.authors[name]
-            date_first = datetime.fromtimestamp(a['first_commit_stamp'])
-            date_last = datetime.fromtimestamp(a['last_commit_stamp'])
-            delta = (date_last - date_first).days
-            # FIXME: next two values are redundant (can be estimated from timestamps)
-            a['date_first'] = date_first.strftime('%Y-%m-%d')
-            a['date_last'] = date_last.strftime('%Y-%m-%d')
-            a['timedelta'] = delta
-            if 'lines_added' not in a:
-                a['lines_added'] = 0
-            if 'lines_removed' not in a:
-                a['lines_removed'] = 0
 
     def _adjust_commits_timeline(self, datetime_obj):
         """

@@ -74,6 +74,8 @@ class GitHistoryTest(unittest.TestCase):
         authors = wh_df['author_name'].values
         self.assertSetEqual({"John Doe"}, set(authors))
 
+    # TODO: add test for inserted/deleted lines count
+
 
 if __name__ == '__main__':
     unittest.main()

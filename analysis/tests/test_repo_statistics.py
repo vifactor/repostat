@@ -5,6 +5,7 @@ from datetime import datetime
 
 from analysis.gitdata import WholeHistory
 from analysis.gitrepository import GitRepository
+from analysis.gitauthor import GitAuthor
 
 
 def to_unix_time(dt: datetime):
@@ -14,11 +15,19 @@ def to_unix_time(dt: datetime):
 
 class RepoStatisticsTest(unittest.TestCase):
     test_whole_history_records = [
-        {'commit_sha': '6c40597', 'author_name': 'Author1', 'author_tz_offset': 60, 'author_timestamp': 1580666336},
-        {'commit_sha': '6c50597', 'author_name': 'Author2', 'author_tz_offset': 60, 'author_timestamp': 1580666146},
-        {'commit_sha': '358604e', 'author_name': 'Author1', 'author_tz_offset': -120, 'author_timestamp': 1583449674},
-        {'commit_sha': 'fdc28ab', 'author_name': 'Author3', 'author_tz_offset': 0, 'author_timestamp': 1185807283}
+        {'commit_sha': '6c40597', 'author_name': 'Author1', 'author_tz_offset': 60, 'author_timestamp': 1580666336,
+         'insertions': 1, 'deletions': 0},
+        {'commit_sha': '6c50597', 'author_name': 'Author2', 'author_tz_offset': 60, 'author_timestamp': 1580666146,
+         'insertions': 1, 'deletions': 0},
+        {'commit_sha': '358604e', 'author_name': 'Author1', 'author_tz_offset': -120, 'author_timestamp': 1583449674,
+         'insertions': 1, 'deletions': 0},
+        {'commit_sha': 'fdc28ab', 'author_name': 'Author3', 'author_tz_offset': 0, 'author_timestamp': 1185807283,
+         'insertions': 1, 'deletions': 0}
     ]
+
+    @classmethod
+    def setUpClass(cls):
+        GitAuthor.author_groups = None
 
     @patch.object(WholeHistory, 'fetch', return_value=test_whole_history_records)
     def test_whole_history_fetched(self, mock_fetch):
@@ -106,3 +115,13 @@ class RepoStatisticsTest(unittest.TestCase):
             authors_ts = stat.get_authors_ranking_by_month()
             self.assertEqual(1, authors_ts.loc[('2020-03', 'Author1')])
             self.assertEqual(1, authors_ts.loc[('2019-11', 'Author2')])
+
+    @patch.object(WholeHistory, 'fetch', return_value=test_whole_history_records)
+    def test_authors_group_set_after_get_author(self, mock_fetch):
+        with patch("pygit2.Repository"), patch("pygit2.Mailmap"):
+            stat = GitRepository(MagicMock())
+
+            from analysis.gitauthor import GitAuthor
+            self.assertIsNone(GitAuthor.author_groups)
+            author = stat.get_author('Author1')
+            self.assertIsNotNone(author.author_groups)

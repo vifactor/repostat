@@ -36,10 +36,24 @@ class History:
         records = []
         for commit in repo_walker:
             mapped_author_signature = self.map_signature(commit.author)
+
+            insertions, deletions = 0, 0
+            # merge commits are ignored: changes in merge commits are normally because of integration issues
+            # TODO: this should not be ignored for linear history fetch
+            if len(commit.parents) == 0:  # initial commit
+                st = commit.tree.diff_to_tree(swap=True).stats
+                insertions, deletions = st.insertions, st.deletions
+            elif len(commit.parents) == 1:
+                parent_commit = commit.parents[0]
+                st = self.repo.diff(parent_commit, commit).stats
+                insertions, deletions = st.insertions, st.deletions
+
             records.append({'commit_sha': commit.hex[:7],
                             'author_name': mapped_author_signature.name,
                             'author_tz_offset': commit.author.offset,
-                            'author_timestamp': commit.author.time})
+                            'author_timestamp': commit.author.time,
+                            'insertions': insertions,
+                            'deletions': deletions})
         return records
 
     @abc.abstractmethod
