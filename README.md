@@ -11,38 +11,43 @@ Git repository analysis report generator:
  - code cleaned up (e.g. [Jinja2](https://jinja.palletsprojects.com/en/2.10.x/)
   used for html generation)
  - git output text parsing replaced with pygit2 library calls
+ - statistics calculation is done via Pandas
 
 Enhanced fork of [gitstats](https://github.com/hoxu/gitstats) tool.
 
-## Ubuntu installation
-### Using pip (recommended)
+## Installation
+There are currently two versions maintained. Stable version is in
+branch `v1.3.x`, while development (future v2.x.x) version is on `master`.
+
+### Linux installation (Ubuntu 18.04 checked)
 ```bash
+sudo apt install gnuplot
 sudo pip3 install git+https://github.com/vifactor/repostat
 ```
-This installation procedure may require manual installation 
-of required dependencies, e.g. libgit2, gnuplot. But should also
-work in other non-Debian Linux distributions.
-
-### Using ppa (discontinued)
+This command installs *repostat* from HEAD of `master` branch. To install
+*repostat* at specific tag or branch, use the following syntax
 ```bash
-sudo add-apt-repository ppa:vifactor/ppa
-sudo apt update
-sudo apt install repostat
+sudo pip3 install git+https://github.com/vifactor/repostat@<branch|tag>
 ```
-**Currently only Ubuntu 18.04 is supported**
 
-## Windows installation
-Check issue #57
+### Mac OS (Catalina) installation
+```bash
+$ brew update
+$ brew install libgit2
+$ brew install gnuplot
 
+$ pip3 install git+https://github.com/vifactor/repostat
+```
+
+### Windows installation
+Check [issue #57](https://github.com/vifactor/repostat/issues/57)
 ___
-## Scripts
-### repostat
-**Usage**
+## Usage
 ```bash
 repostat [--help] [--version] [--config_file CONFIG_FILE]
-                 git_repository_path output_path
+                 git_repository_path report_output_path
 ```
-See "--help" for details.
+Run `repostat --help` for details.
 
 ## Additional features
 
@@ -80,3 +85,19 @@ the report will contain 8 most recent tags in "Tags" page. Setting the
 field `max_recent_tags` to zero will not render "Tags" page at all. If
 no such field provided in JSON settings, report will contain "Tags" page
 with all tags in the analysed repository.
+
+## How to contribute
+
+Bug reports and feature requests as well as pull requests are welcome.
+Please, check the "Issues" on github to find something you would like
+to work on.
+
+### Debian packaging
+There was some work done to prepare Debian package of *repostat*. The packaging
+code can still be found on `debian/master` branch in this repository. 
+Instructions (incomplete and outdated) on how to package using
+[gbp](http://honk.sigxcpu.org/projects/git-buildpackage/manual-html/gbp.html)
+are [in wiki](https://github.com/vifactor/repostat/wiki/Packaging-notes).
+
+### Snap package
+Incomplete and outdated `snapcraft.yaml` file is in `snapcraft` branch.
