@@ -1,0 +1,33 @@
+# This workflow will install Python dependencies, run tests and lint with a single version of Python
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
+
+name: Repostat for Mac OS
+
+on:
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+
+    runs-on: [macos-latest]
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+    - name: Set up Python 3.7
+      uses: actions/setup-python@v1
+      with:
+        python-version: 3.7
+    - name: Install dependencies
+      run: |
+        brew update
+        brew install libgit2
+        brew install gnuplot
+        python3 -m pip install --upgrade pip
+        pip3 install -r requirements.txt
+    - name: Install repostat
+      run: pip3 install .
+    - name: Run repostat
+      run: repostat . $TMPDIR --no-browser --contribution
