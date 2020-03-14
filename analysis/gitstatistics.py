@@ -109,8 +109,6 @@ class GitStatistics:
         self.total_files_count = sum(v['files'] for k, v in self.extensions.items())
         self.total_tree_size = sum(v['size'] for k, v in self.extensions.items())
 
-        self._append_authors_info()
-
     def _get_files_count_by_timestamp(self):
         files_by_stamp = {}
         for commit in self.repo.walk(self.repo.head.target, git.GIT_SORT_TIME):
@@ -157,9 +155,7 @@ class GitStatistics:
     def fetch_authors_info(self):
         """
         e.g.
-        {'Stefano Mosconi': {'lines_removed': 1, 'last_commit_stamp': 1302027851, 'active_days': set(['2011-04-05']),
-                             'lines_added': 1, 'commits': 1, 'first_commit_stamp': 1302027851,
-                             'last_active_day': '2011-04-05'}
+        {'Stefano Mosconi': {'lines_removed': 1, 'lines_added': 1, 'commits': 1}
         """
         result = {}
         for child_commit in self.repo.walk(self.repo.head.target, git.GIT_SORT_TIME | git.GIT_SORT_REVERSE):
@@ -382,14 +378,6 @@ class GitStatistics:
         self.author_changes_history[ts][author_name]['lines_added'] = authors_info[author_name][
             AuthorDictFactory.LINES_ADDED]
         self.author_changes_history[ts][author_name]['commits'] = authors_info[author_name][AuthorDictFactory.COMMITS]
-
-    def _append_authors_info(self):
-        for name in self.authors.keys():
-            a = self.authors[name]
-            if 'lines_added' not in a:
-                a['lines_added'] = 0
-            if 'lines_removed' not in a:
-                a['lines_removed'] = 0
 
     def _adjust_commits_timeline(self, datetime_obj):
         """

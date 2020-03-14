@@ -120,6 +120,6 @@ class GitRepository(object):
 
     def get_author(self, name: str):
         if not GitAuthor.author_groups:
-            df = self.whole_history_df[['author_name', 'author_timestamp']]
+            df = self.whole_history_df[['author_name', 'author_timestamp', 'insertions', 'deletions']]
             GitAuthor.author_groups = df.groupby(by='author_name')
         return GitAuthor(name)

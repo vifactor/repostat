@@ -274,7 +274,6 @@ class HTMLReportCreator(object):
         return template_rendered
 
     def render_authors_page(self):
-        # TODO: this conversion from old 'data' to new 'project data' should perhaps be removed in future
         project_data = {
             'top_authors': [],
             'non_top_authors': [],
@@ -315,13 +314,12 @@ class HTMLReportCreator(object):
             })
 
         for author in all_authors[:self.configuration['max_authors']]:
-            info = self.git_repo_statistics.authors[author]
             git_author = self.git_repository_statistics.get_author(author)
             author_dict = {
                 'name': author,
                 'commits_count': git_author.commits_count,
-                'lines_added_count': info['lines_added'],
-                'lines_removed_count': info['lines_removed'],
+                'lines_added_count': git_author.lines_added,
+                'lines_removed_count': git_author.lines_removed,
                 'first_commit_date': git_author.first_commit_date.strftime('%Y-%m-%d'),
                 'latest_commit_date': git_author.latest_commit_date.strftime('%Y-%m-%d'),
                 'contributed_days_count': git_author.contributed_days_count,

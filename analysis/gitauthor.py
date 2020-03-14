@@ -28,11 +28,11 @@ class GitAuthor(object):
 
     @property
     def lines_removed(self):
-        pass
+        return self.group['deletions'].sum()
 
     @property
     def lines_added(self):
-        pass
+        return self.group['insertions'].sum()
 
     @property
     def active_days_count(self):

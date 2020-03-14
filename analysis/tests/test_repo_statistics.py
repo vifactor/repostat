@@ -15,10 +15,14 @@ def to_unix_time(dt: datetime):
 
 class RepoStatisticsTest(unittest.TestCase):
     test_whole_history_records = [
-        {'commit_sha': '6c40597', 'author_name': 'Author1', 'author_tz_offset': 60, 'author_timestamp': 1580666336},
-        {'commit_sha': '6c50597', 'author_name': 'Author2', 'author_tz_offset': 60, 'author_timestamp': 1580666146},
-        {'commit_sha': '358604e', 'author_name': 'Author1', 'author_tz_offset': -120, 'author_timestamp': 1583449674},
-        {'commit_sha': 'fdc28ab', 'author_name': 'Author3', 'author_tz_offset': 0, 'author_timestamp': 1185807283}
+        {'commit_sha': '6c40597', 'author_name': 'Author1', 'author_tz_offset': 60, 'author_timestamp': 1580666336,
+         'insertions': 1, 'deletions': 0},
+        {'commit_sha': '6c50597', 'author_name': 'Author2', 'author_tz_offset': 60, 'author_timestamp': 1580666146,
+         'insertions': 1, 'deletions': 0},
+        {'commit_sha': '358604e', 'author_name': 'Author1', 'author_tz_offset': -120, 'author_timestamp': 1583449674,
+         'insertions': 1, 'deletions': 0},
+        {'commit_sha': 'fdc28ab', 'author_name': 'Author3', 'author_tz_offset': 0, 'author_timestamp': 1185807283,
+         'insertions': 1, 'deletions': 0}
     ]
 
     @classmethod
