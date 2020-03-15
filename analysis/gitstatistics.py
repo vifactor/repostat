@@ -346,27 +346,6 @@ class GitStatistics:
                 activity[hour] = activity.get(hour, 0) + commits_count
         return activity
 
-    # FIXME: although being 'pythonic', next four methods do not seem to be effective
-    def get_lines_insertions_by_year(self):
-        res = sum((Counter({datetime.fromtimestamp(ts).year: data['ins']})
-                   for ts, data in self.changes_history.items()), Counter())
-        return dict(res)
-
-    def get_lines_deletions_by_year(self):
-        res = sum((Counter({datetime.fromtimestamp(ts).year: data['del']})
-                   for ts, data in self.changes_history.items()), Counter())
-        return dict(res)
-
-    def get_lines_insertions_by_month(self):
-        res = sum((Counter({datetime.fromtimestamp(ts).strftime('%Y-%m'): data['ins']})
-                   for ts, data in self.changes_history.items()), Counter())
-        return dict(res)
-
-    def get_lines_deletions_by_month(self):
-        res = sum((Counter({datetime.fromtimestamp(ts).strftime('%Y-%m'): data['del']})
-                   for ts, data in self.changes_history.items()), Counter())
-        return dict(res)
-
     def _adjust_commits_timeline(self, datetime_obj):
         """
         increments commit count into the corresponding dicts gathering yearly/monthly commits' history
@@ -377,9 +356,6 @@ class GitStatistics:
 
         yy = datetime_obj.year
         self.yearly_commits_timeline[yy] = self.yearly_commits_timeline.get(yy, 0) + 1
-
-    def get_total_line_count(self):
-        return self.total_lines_count
 
     def get_stamp_created(self):
         return self.created_time_stamp
