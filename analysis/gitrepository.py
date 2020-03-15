@@ -1,8 +1,10 @@
 import pandas as pd
 import pygit2 as git
+import warnings
 from datetime import datetime
 import pytz
 
+from tools import split_email_address
 from .gitdata import WholeHistory as GitWholeHistory
 from .gitauthor import GitAuthor
 
@@ -45,6 +47,21 @@ class GitRepository(object):
 
         # re-create series with formatted index
         return pd.Series(ts.values, index=formatted_offsets_ts.values).to_dict()
+
+    @staticmethod
+    def _fetch_domain_from_email(email):
+        try:
+            _, domain = split_email_address(email)
+        except ValueError as ex:
+            warnings.warn(str(ex))
+            domain = "unknown"
+        return domain
+
+    @property
+    def domains_distribution(self):
+        domains_ts = self.whole_history_df['author_email'].apply(self._fetch_domain_from_email)
+
+        return domains_ts.groupby(by=domains_ts.values).count().to_dict()
 
     def get_recent_weekly_activity(self, recent_weeks_count: int):
         """

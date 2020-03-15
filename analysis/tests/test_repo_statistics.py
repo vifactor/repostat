@@ -15,13 +15,17 @@ def to_unix_time(dt: datetime):
 
 class RepoStatisticsTest(unittest.TestCase):
     test_whole_history_records = [
-        {'commit_sha': '6c40597', 'author_name': 'Author1', 'author_tz_offset': 60, 'author_timestamp': 1580666336,
+        {'commit_sha': '6c40597', 'author_name': 'Author1', 'author_email': 'author1@author1.com',
+         'author_tz_offset': 60, 'author_timestamp': 1580666336,
          'insertions': 1, 'deletions': 0},
-        {'commit_sha': '6c50597', 'author_name': 'Author2', 'author_tz_offset': 60, 'author_timestamp': 1580666146,
+        {'commit_sha': '6c50597', 'author_name': 'Author2', 'author_email': 'author2@author2.com',
+         'author_tz_offset': 60, 'author_timestamp': 1580666146,
          'insertions': 1, 'deletions': 0},
-        {'commit_sha': '358604e', 'author_name': 'Author1', 'author_tz_offset': -120, 'author_timestamp': 1583449674,
+        {'commit_sha': '358604e', 'author_name': 'Author1', 'author_email': 'author1@author1.com',
+         'author_tz_offset': -120, 'author_timestamp': 1583449674,
          'insertions': 1, 'deletions': 0},
-        {'commit_sha': 'fdc28ab', 'author_name': 'Author3', 'author_tz_offset': 0, 'author_timestamp': 1185807283,
+        {'commit_sha': 'fdc28ab', 'author_name': 'Author3', 'author_email': 'author3@author3.com',
+         'author_tz_offset': 0, 'author_timestamp': 1185807283,
          'insertions': 1, 'deletions': 0}
     ]
 
@@ -83,6 +87,14 @@ class RepoStatisticsTest(unittest.TestCase):
             stat = GitRepository(MagicMock())
             expected_timezones = self.get_expected_timezones_dict()
             self.assertDictEqual(expected_timezones, stat.timezones_distribution)
+
+    @patch.object(WholeHistory, 'fetch', return_value=test_whole_history_records)
+    def test_domains_distribution(self, mock_fetch):
+        with patch("pygit2.Repository"), patch("pygit2.Mailmap"):
+            stat = GitRepository(MagicMock())
+
+            expected_domains = {'author1.com': 2, 'author2.com': 1, 'author3.com': 1}
+            self.assertDictEqual(expected_domains, stat.domains_distribution)
 
     @patch.object(WholeHistory, 'fetch', return_value=[
         {'commit_sha': 'fdc28ab', 'author_name': '', 'author_tz_offset': 0,

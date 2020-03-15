@@ -1,7 +1,6 @@
 import os
 import datetime
 import calendar
-import itertools
 import time
 import collections
 import glob
@@ -158,11 +157,11 @@ class HTMLReportCreator(object):
                 fgc.write('\n')
 
         # Domains
-        domains_by_commits = sort_keys_by_value_of_key(self.git_repo_statistics.domains, 'commits', reverse=True)
+        domains_dist = sorted(self.git_repository_statistics.domains_distribution.items(), key=lambda kv: kv[1],
+                              reverse=True)
         with open(os.path.join(path, 'domains.dat'), 'w') as fp:
-            for i, domain in enumerate(domains_by_commits[:self.configuration['max_domains']]):
-                info = self.git_repo_statistics.domains[domain]
-                fp.write('%s %d %d\n' % (domain, i, info['commits']))
+            for i, (domain, commits_count) in enumerate(domains_dist[:self.configuration['max_domains']]):
+                fp.write('%s %d %d\n' % (domain, i, commits_count))
 
         ###
         # Files

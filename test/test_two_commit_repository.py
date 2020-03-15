@@ -36,9 +36,6 @@ class TestTwoCommitRepository(unittest.TestCase):
         # but he/she has 2 commits
         self.assertEqual(2, gs.authors[commit_author1.name]['commits'])
 
-        # single domain is in the list (corresponds to email of the 1st author)
-        self.assertEqual(1, len(gs.domains))
-
         # in history only 1st author is present
         authors_in_history = {author for val in gs.author_changes_history.values() for author in val.keys()}
         self.assertSetEqual({commit_author1.name}, authors_in_history)
