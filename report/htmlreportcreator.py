@@ -42,7 +42,7 @@ class HTMLReportCreator(object):
         self.j2_env.filters['to_weekday_name'] = lambda i: calendar.day_name[i]
         self.j2_env.filters['to_ratio'] = lambda val, max_val: (float(val) / max_val) if max_val != 0 else 0
         self.j2_env.filters['to_percentage'] = lambda val, max_val: (100 * float(val) / max_val) if max_val != 0 else 0
-        colors = colormaps.plasma
+        colors = colormaps.colormaps[self.configuration['colormap']]
         self.j2_env.filters['to_heatmap'] = lambda val, max_val: "%d, %d, %d" % colors[int(float(val) / max_val * (len(colors) - 1))]
 
     def _save_recent_activity_data(self):

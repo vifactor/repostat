@@ -12,7 +12,7 @@
 # You should have received a copy of the CC0 legalcode along with this
 # work.  If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 
-__all__ = ['plasma', 'viridis', 'classic', 'clrscc']
+__all__ = ['colormaps']
 
 _plasma_data = [[0.050383, 0.029803, 0.527975],
                 [0.063536, 0.028426, 0.533124],
@@ -544,3 +544,10 @@ classic = [ (i, 0, 0) for i in range(128, 255) ]
 clrscc = [(0x00, 0x74, 0xD9), (0x7F, 0xDB, 0xFF), (0x39, 0xCC, 0xCC),
     (0x3D, 0x99, 0x70), (0x2E, 0xCC, 0x40), (0x01, 0xFF, 0x70),
     (0xFF, 0xDC, 0x00), (0xFF, 0x85, 0x1B), (0xFF, 0x41, 0x36) ]
+
+colormaps = {
+    "classic": classic,
+    "plasma": plasma,
+    "viridis": viridis,
+    "clrscc": clrscc
+}
