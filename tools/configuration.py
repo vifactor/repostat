@@ -103,6 +103,7 @@ class Configuration(dict):
             "max_authors": 10,
             "max_authors_of_months": 6,
             "authors_top": 5,
+            "colormap": "classic"
         })
 
     def do_open_in_browser(self):

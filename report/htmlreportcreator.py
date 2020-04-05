@@ -13,6 +13,7 @@ from analysis.gitrepository import GitRepository
 from tools.shellhelper import get_pipe_output
 from tools.configuration import Configuration
 from tools import sort_keys_by_value_of_key
+from tools import colormaps
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
@@ -41,7 +42,8 @@ class HTMLReportCreator(object):
         self.j2_env.filters['to_weekday_name'] = lambda i: calendar.day_name[i]
         self.j2_env.filters['to_ratio'] = lambda val, max_val: (float(val) / max_val) if max_val != 0 else 0
         self.j2_env.filters['to_percentage'] = lambda val, max_val: (100 * float(val) / max_val) if max_val != 0 else 0
-        self.j2_env.filters['to_intensity'] = lambda val, max_val: 127 + int((float(val) / max_val) * 128)
+        colors = colormaps.colormaps[self.configuration['colormap']]
+        self.j2_env.filters['to_heatmap'] = lambda val, max_val: "%d, %d, %d" % colors[int(float(val) / max_val * (len(colors) - 1))]
 
     def _save_recent_activity_data(self):
         recent_weekly_commits = self.git_repository_statistics.\
