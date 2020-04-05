@@ -4,7 +4,7 @@ import calendar
 import time
 import collections
 import glob
-import csv
+import json
 from jinja2 import Environment, FileSystemLoader
 from distutils.dir_util import copy_tree
 
@@ -48,9 +48,28 @@ class HTMLReportCreator(object):
     def _save_recent_activity_data(self):
         recent_weekly_commits = self.git_repository_statistics.\
             get_recent_weekly_activity(self.recent_activity_period_weeks)
+
+        values = []
+
+        for i, commits in enumerate(recent_weekly_commits):
+            values.append({'x': int(self.recent_activity_period_weeks - i -1), 'y': int(commits)})
+
+        graph_data = {
+            "xAxis": {"axisLabel": "Commits"},
+            "yAxis": {"axisLabel": "Weeks ago"},
+            "config": {
+                "noData": "No recent activity.",
+                "padData": True,
+                "showXAxis": True,
+                "xDomain": [self.recent_activity_period_weeks - 1, 0]
+            },
+            "data": [
+                { 'key': "Commits", 'color': "#9400D3", 'values': values}
+            ]
+        }
+
         with open(os.path.join(self.path, 'recent_activity.dat'), 'w') as f:
-            for i, commits in enumerate(recent_weekly_commits):
-                f.write("%d %d\n" % (self.recent_activity_period_weeks - i - 1, commits))
+            json.dump(graph_data, f)
 
     def _bundle_assets(self):
         # copy assets to report output folder
@@ -106,12 +125,42 @@ class HTMLReportCreator(object):
         current_year_monthly_activity = self.git_repository_statistics.history('m')
         current_year_monthly_activity = current_year_monthly_activity\
             .loc[current_year_monthly_activity.index.year == current_year]
-        current_year_monthly_activity.to_csv(os.path.join(path, 'commits_by_year_month.dat'), header=False,
-                                             date_format="%Y-%m", sep='\t', quoting=csv.QUOTE_NONE)
 
+        values = [{'x': int(x.month) - 1, 'y': int(y)} for x,y in zip(current_year_monthly_activity.index, current_year_monthly_activity.values)]
+
+        graph_data = {
+            "yAxis": {"axisLabel": "Commits in %d" % current_year},
+            "xAxis": {"rotateLabels": -90, "ticks": len(values)},
+            "config": {
+                "padData": True,
+                "showXAxis": True
+            },
+            "data": [
+                { "key": "Commits", "color": "#9400D3", "values": values }
+            ]
+        }
+
+        with open(os.path.join(path, 'commits_by_year_month.dat'), 'w') as fg:
+            json.dump(graph_data, fg)
+
+        # Commits by year
         yearly_activity = self.git_repository_statistics.history('Y')
-        yearly_activity.to_csv(os.path.join(path, 'commits_by_year.dat'), header=False, date_format="%Y", sep='\t',
-                               quoting=csv.QUOTE_NONE)
+        values = [{'x': int(x.year), 'y': int(y)} for x,y in zip(yearly_activity.index, yearly_activity.values)]
+
+        graph_data = {
+            "xAxis": {"rotateLabels": -90, "ticks": len(values)},
+            "yAxis": {"axisLabel": "Commits"},
+            "config": {
+                "padData": True,
+                "showXAxis": True
+            },
+            "data": [
+                { "key": "Commits", "color": "#9400D3", "values": values }
+            ]
+        }
+
+        with open(os.path.join(path, 'commits_by_year.dat'), 'w') as fg:
+            json.dump(graph_data, fg)
 
         ###
         # Authors
@@ -124,15 +173,55 @@ class HTMLReportCreator(object):
 
         authors_commits_history = self._squash_authors_history(authors_activity_history.commits_count,
                                                                self.configuration['max_authors'])
-        authors_commits_history.add_prefix('"').add_suffix('"')\
-            .to_csv(os.path.join(path, 'commits_by_author.dat'), date_format="%Y-%m-%d", sep='\t',
-                    quoting=csv.QUOTE_NONE)
 
         authors_added_lines_history = self._squash_authors_history(authors_activity_history.insertions,
                                                                    self.configuration['max_authors'])
-        authors_added_lines_history.add_prefix('"').add_suffix('"')\
-            .to_csv(os.path.join(path, 'lines_of_code_by_author.dat'), date_format="%Y-%m-%d", sep='\t',
-                    quoting=csv.QUOTE_NONE)
+
+        # "Added lines" graph
+        data = []
+
+        for author in authors_added_lines_history:
+            authorstats = {}
+            authorstats['key'] = author
+            series = authors_added_lines_history[author]
+            authorstats['values'] = [{'x': x.timestamp() * 1000, 'y': y} for x,y in zip(series.index, series.values)]
+            data.append(authorstats)
+
+        graph_data = {
+            "xAxis": { "rotateLabels": -45 },
+            "yAxis": { "axisLabal": "Lines" },
+            "data" : data
+        }
+
+        with open(os.path.join(path, 'lines_of_code_by_author.dat'), 'w') as fgl:
+            json.dump(graph_data, fgl)
+
+        # "Commit count" and streamgraph
+        # TODO move the "added lines" into the same JSON to save space and download time
+        data = []
+
+        for author in authors_commits_history:
+            authorstats = {}
+            authorstats['key'] = author
+            series = authors_commits_history[author]
+            stream = series.diff().fillna(0)
+            authorstats['values'] = [[x.timestamp() * 1000, y, z] for x,y,z in zip(series.index, series.values, stream.values)]
+            data.append(authorstats)
+
+        graph_data = {
+            "xAxis": { "rotateLabels": -45 },
+            "yAxis": { "axisLabal": "Commits" },
+            "config": {
+                "useInteractiveGuideline": True, 
+                "style": "stream-center",
+                "showControls": False,
+                "showLegend": False,
+            },
+            "data": data
+        }
+
+        with open(os.path.join(path, 'commits_by_author.dat'), 'w') as fgc:
+            json.dump(graph_data, fgc)
 
         # Domains
         domains_dist = sorted(self.git_repository_statistics.domains_distribution.items(), key=lambda kv: kv[1],
@@ -215,8 +304,6 @@ class HTMLReportCreator(object):
                 sorted(self.git_repository_statistics.timezones_distribution.items(), key=lambda n: int(n[0]))),
             'month_in_year_activity': self.git_repository_statistics.month_of_year_distribution.to_dict()
         }
-
-        self._save_recent_activity_data()
 
         wd_h_distribution = self.git_repository_statistics.weekday_hour_distribution.astype('int32')
         project_data['weekday_hourly_activity'] = wd_h_distribution
