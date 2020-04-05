@@ -71,20 +71,51 @@ Starting from v.1.0.x, the *--copy-assets* command-line option forces
 program to copy assets to generated report and embed relative paths
 in html-files (see #74)
 
-### Tags rendering
-Some git repositories contain thousands of tags most of which are not 
-worth to check. Since v.1.3.0 there is a possibility to limit number 
-of tags displayed in "Tags" tab of the HTML report or even hide the tab.
-The feature is controlled by "max_recent_tags" field in JSON 
-file fed into script as follows:
+## Configuration file
+
+The report can be customized using a JSON settings file. The file is passed
+using the --config-file option as follows:
+
 ```
 repostat --config-file <path_to_config.json> <repo_path> <out_path>
 ```
+
+### Authors page configuration
+
+These values are usually adjusted to accomodate projects with various number
+of contributors and activity levels, to avoid showing too much or too little
+information.
+
+* max_domains: number of e-mail domains to show in author stats
+* max_ext_length
+* max_authors: number of authors in the "top authors" table (other authors are
+	listed without detailed stats)
+* max_authors_of_months: number of months for which "author of the month" should be displayed
+* authors_top: number of authors to show for each month in the author of month/year list
+
+### Colorsheme configuration
+
+The colors of the thread "heat maps" tables in the activity page can be customized
+using the "colormap" option. The allowed values are:
+
+* classic: uses shades of red only, like gitstats. This is the default if the option is not specified.
+* plasma: uses the "plasma" colormap as described [here](https://bids.github.io/colormap/)
+* viridis: uses the "viridis" colormap as described [here](https://bids.github.io/colormap/)
+* clrscc: uses a selection of colors from [https://clrs.cc/]
+
+### Tags rendering
+
+Some git repositories contain thousands of tags most of which are not 
+worth to check. Since v.1.3.0 there is a possibility to limit the number 
+of tags displayed in "Tags" tab of the HTML report or even hide the tab.
+
+The feature is controlled by "max_recent_tags" field
+
 If JSON file has following content `{ [...], "max_recent_tags": 8 }`,
-the report will contain 8 most recent tags in "Tags" page. Setting the
+the report will contain the 8 most recent tags in "Tags" page. Setting the
 field `max_recent_tags` to zero will not render "Tags" page at all. If
-no such field provided in JSON settings, report will contain "Tags" page
-with all tags in the analysed repository.
+no such field is provided in JSON settings, the report will contain a "Tags"
+page with all tags in the analysed repository.
 
 ## How to contribute
 
