@@ -29,6 +29,7 @@ This command installs *repostat* from HEAD of `master` branch. To install
 ```bash
 sudo pip3 install git+https://github.com/vifactor/repostat@<branch|tag>
 ```
+![Repostat for Ubuntu 18.04](https://github.com/vifactor/repostat/workflows/Repostat%20for%20Ubuntu%2018.04/badge.svg)
 
 ### Mac OS (Catalina) installation
 ```bash
@@ -38,6 +39,12 @@ $ brew install gnuplot
 
 $ pip3 install git+https://github.com/vifactor/repostat
 ```
+NOTE: Homebrew-way to install packages is slow and may break system dependencies.
+Please, check [pygit2 installation instructions](https://www.pygit2.org/install.html#id13)
+or current [CI setup](https://github.com/vifactor/repostat/blob/master/.github/workflows/repostat_macos.yml):
+
+![Repostat for Mac OS](https://github.com/vifactor/repostat/workflows/Repostat%20for%20Mac%20OS/badge.svg)
+
 
 ### Windows installation
 Check [issue #57](https://github.com/vifactor/repostat/issues/57)
