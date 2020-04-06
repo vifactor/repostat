@@ -10,23 +10,53 @@ on:
 jobs:
   osx_build:
 
+    env:
+      python_venv_path: venv/bin/activate
+      libgit2_install_path: ${HOME}/libgit2
+
     runs-on: [macos-latest]
 
     steps:
     - uses: actions/checkout@v2
       with:
         fetch-depth: 0
+
     - name: Set up Python 3.7
       uses: actions/setup-python@v1
       with:
         python-version: 3.7
-    - name: Install dependencies
+
+    - name: Install gnuplot
+      run: brew install gnuplot
+
+    - name: Download and build libgit2
       run: |
-        brew update
-        brew install libgit2
-        brew install gnuplot
+        wget https://github.com/libgit2/libgit2/archive/v${libgit2_version}.tar.gz
+        tar xzf v${libgit2_version}.tar.gz
+        export LIBGIT2=$HOME
+        cd libgit2-${libgit2_version}/
+        cmake . -DCMAKE_INSTALL_PREFIX=$LIBGIT2
+        make && make install
+      env:
+        libgit2_version: 0.28.5
+
+    - name: Upgrade pip and install virtualenv
+      run: |
         python3 -m pip install --upgrade pip
-    - name: Install repostat
-      run: pip3 install .
+        pip3 install virtualenv
+
+    - name: Install repostat into virtual environment
+      run: |
+        virtualenv -p python3 venv
+        source ${python_venv_path}
+        export LIBGIT2=$HOME
+        export LDFLAGS="-Wl,-rpath,'$LIBGIT2/lib' $LDFLAGS"
+        pip3 install .
+
     - name: Run repostat
-      run: repostat . $TMPDIR --no-browser --contribution
+      run: |
+        source ${python_venv_path}
+        repostat . ${repostat_output_path} --no-browser --contribution
+        ls -l ${repostat_output_path}
+      env:
+        repostat_output_path: ${TMPDIR}/repostat
