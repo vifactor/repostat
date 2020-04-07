@@ -1,8 +1,5 @@
 # [repostat](https://github.com/vifactor/repostat)
-<p align="left">
-    <a href="https://travis-ci.org/vifactor/repostat" alt="Build status">
-        <img src="https://travis-ci.com/vifactor/repostat.svg?branch=master" /></a>
-</p>
+[![Build Status](https://travis-ci.org/vifactor/repostat.svg?branch=master)](https://travis-ci.org/vifactor/repostat)
 
 Git repository analysis report generator:
  - Python3 - compatible
@@ -100,7 +97,7 @@ information.
 * max_authors_of_months: number of months for which "author of the month" should be displayed
 * authors_top: number of authors to show for each month in the author of month/year list
 
-### Colorsheme configuration
+### Colorscheme configuration
 
 The colors of the thread "heat maps" tables in the activity page can be customized
 using the "colormap" option. The allowed values are:

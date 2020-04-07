@@ -6,6 +6,9 @@ name: Repostat for Ubuntu 18.04
 on:
   pull_request:
     branches: [ master ]
+  schedule:
+    # run every 3 days at 00:27
+    - cron: '27 0 */3 * *'
 
 jobs:
   ubuntu_build:
@@ -31,8 +34,6 @@ jobs:
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-    - name: Test with pytest
-      run: echo "TODO"
     - name: Install repostat
       run: pip install .
     - name: Run repostat

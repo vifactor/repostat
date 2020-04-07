@@ -6,6 +6,9 @@ name: Repostat for Mac OS
 on:
   pull_request:
     branches: [ master ]
+  schedule:
+    # run every 3 days at 00:01
+    - cron: '1 0 */3 * *'
 
 jobs:
   osx_build:
