@@ -1,12 +1,10 @@
 import pygit2 as git
 from datetime import datetime
-from collections import Counter
 import warnings
 import os
 from distutils import version
 
 from tools.timeit import Timeit
-from tools import split_email_address
 
 
 class AuthorDictFactory:
@@ -80,7 +78,6 @@ class GitStatistics:
             self.tags = self.fetch_tags_info()
         else:
             self.tags = {}
-        self.domains = self.fetch_domains_info()
 
         # Weekday activity should be calculated in local timezones
         # https://stackoverflow.com/questions/36648995/how-to-add-timezone-offset-to-pandas-datetime
@@ -210,22 +207,6 @@ class GitStatistics:
                 commit_count = 0
                 authors = {}
 
-        return result
-
-    @Timeit("Fetching domains info")
-    def fetch_domains_info(self):
-        result = {}
-        for commit in self.repo.walk(self.repo.head.target):
-            author_signature = self.signature_mapper(commit.author)
-            try:
-                _, domain = split_email_address(author_signature.email)
-            except ValueError as ex:
-                warnings.warn(str(ex))
-                result["unknown"] = result.get("unknown", 0) + 1
-            else:
-                result[domain] = result.get(domain, 0) + 1
-        # TODO: this is done to save compatibility with gitstats' structures
-        result = {k: {'commits': v} for k, v in result.items()}
         return result
 
     @Timeit("Fetching weekly/hourly activity info")

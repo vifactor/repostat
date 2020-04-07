@@ -50,6 +50,7 @@ class History:
 
             records.append({'commit_sha': commit.hex[:7],
                             'author_name': mapped_author_signature.name,
+                            'author_email': mapped_author_signature.email,
                             'author_tz_offset': commit.author.offset,
                             'author_timestamp': commit.author.time,
                             'insertions': insertions,

@@ -73,6 +73,8 @@ class GitHistoryTest(unittest.TestCase):
 
         authors = wh_df['author_name'].values
         self.assertSetEqual({"John Doe"}, set(authors))
+        emails = wh_df['author_email'].values
+        self.assertSetEqual({"john@doe.com"}, set(emails))
 
     # TODO: add test for inserted/deleted lines count
 
