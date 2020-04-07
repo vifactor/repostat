@@ -1,6 +1,4 @@
-cffi==1.11.5
 Jinja2>=2.10.1
-MarkupSafe==1.0
 pygit2~=1.0.0
 pytz>=2018.5
 six==1.11.0
