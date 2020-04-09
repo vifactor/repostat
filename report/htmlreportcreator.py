@@ -231,7 +231,7 @@ class HTMLReportCreator(object):
                 "donut": True,
                 "padAngle": 0.01,
                 "cornerRadius": 5
-            }
+            },
             "data": []
         }
 
@@ -244,16 +244,30 @@ class HTMLReportCreator(object):
         ###
         # Files
         files_html = self.render_files_page()
+
         with open(os.path.join(path, "files.html"), 'w', encoding='utf-8') as f:
             f.write(files_html)
 
-        with open(os.path.join(path, 'files_by_date.dat'), 'w') as fg:
-            for timestamp in sorted(self.git_repo_statistics.files_by_stamp.keys()):
-                fg.write('%d %d\n' % (timestamp, self.git_repo_statistics.files_by_stamp[timestamp]))
+        filecount = []
+        linecount = []
 
-        with open(os.path.join(path, 'lines_of_code.dat'), 'w') as fg:
-            for stamp in sorted(self.git_repo_statistics.changes_history.keys()):
-                fg.write('%d %d\n' % (stamp, self.git_repo_statistics.changes_history[stamp]['lines']))
+        for timestamp in sorted(self.git_repo_statistics.files_by_stamp.keys()):
+            filecount.append({"x": timestamp * 1000, "y": self.git_repo_statistics.files_by_stamp[timestamp]})
+        for stamp in sorted(self.git_repo_statistics.changes_history.keys()):
+            linecount.append({"x": stamp * 1000, "y": self.git_repo_statistics.changes_history[stamp]['lines']})
+
+        graph_data = {
+            "xAxis": { "rotateLabels": -45 },
+            "yAxis1": { "axisLabal": "Files" },
+            "yAxis2": { "axisLabal": "Lines" },
+            "data" : [
+                {"key": "Files", "color": "#9400d3", "type": "line", "yAxis": 1, "values": filecount},
+                {"key": "Lines", "color": "#d30094", "type": "line", "yAxis": 2, "values": linecount},
+            ]
+        }
+
+        with open(os.path.join(path, 'files_by_date.dat'), 'w') as fg:
+            json.dump(graph_data, fg)
 
         ###
         # tags.html
@@ -268,11 +282,6 @@ class HTMLReportCreator(object):
         about_html = self.render_about_page()
         with open(os.path.join(path, "about.html"), 'w', encoding='utf-8') as f:
             f.write(about_html.decode('utf-8'))
-
-        print('Generating graphs...')
-        self.process_gnuplot_scripts(scripts_path=os.path.join(HERE, 'gnuplot'),
-                                     data_path=path,
-                                     output_images_path=path)
 
     def render_general_page(self):
         date_format_str = '%Y-%m-%d %H:%M'

@@ -8,8 +8,29 @@
 </dl>
 
 <h2 id="file_count_by_date"><a href="#file_count_by_date">Files number by date</a></h2>
-<img src="files_by_date.png" alt="Files by Date">
 
+<div id="chart_files" style="border: 1px solid #808080; width: 1014px"><svg style="height: 400px; width: 100%"></svg></div>
+	<script>
+		(async() => {
+			// Fetch the data and wait for it
+			const request = await fetch('files_by_date.dat', {mode: 'no-cors'});
+			const dataset = await request.json()
+
+			// Setup the chart
+			nv.addGraph(function() {
+				var chart = nv.models.multiChart()
+					.margin({left: 60, right: 60});
+				chart.yAxis1.options(dataset.yAxis1);
+				chart.yAxis2.options(dataset.yAxis2);
+				chart.xAxis
+					.tickFormat(function(d) { return d3.time.format('%Y-%m')(new Date(d)); })
+					.options(dataset.xAxis)
+
+				d3.select('#chart_files svg').datum(dataset.data).call(chart);
+				return chart;
+			});
+		})();
+	</script>
 <h2 id="extensions"><a href="#extensions">File types</a></h2>
 <table class="sortable" id="ext">
     <tr><th>Extension</th><th>Number (%)</th><th>Lines (%)</th><th>Lines per file</th></tr>
