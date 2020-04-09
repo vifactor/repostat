@@ -18,7 +18,6 @@ branch `v1.3.x`, while development (future v2.x.x) version is on `master`.
 
 ### Linux installation (Ubuntu 18.04 checked)
 ```bash
-sudo apt install gnuplot
 sudo pip3 install git+https://github.com/vifactor/repostat
 ```
 This command installs *repostat* from HEAD of `master` branch. To install
@@ -32,7 +31,6 @@ sudo pip3 install git+https://github.com/vifactor/repostat@<branch|tag>
 ```bash
 $ brew update
 $ brew install libgit2
-$ brew install gnuplot
 
 $ pip3 install git+https://github.com/vifactor/repostat
 ```

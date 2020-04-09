@@ -479,8 +479,7 @@ class HTMLReportCreator(object):
         page_data = {
             "version": f"{repostat_version} ({repostat_version_date})",
             "tools": [GitStatistics.get_fetching_tool_info(),
-                      self.configuration.get_jinja_version(),
-                      'gnuplot ' + self.configuration.get_gnuplot_version()],
+                      self.configuration.get_jinja_version()],
             "contributors": [author for author in self.configuration.get_release_data_info()['contributors']]
         }
 
@@ -490,13 +489,3 @@ class HTMLReportCreator(object):
             **self.common_rendering_data
         )
         return template_rendered.encode('utf-8')
-
-    def process_gnuplot_scripts(self, scripts_path, data_path, output_images_path):
-        scripts = glob.glob(os.path.join(scripts_path, '*.plot'))
-        os.chdir(output_images_path)
-        for script in scripts:
-            gnuplot_command = '%s -e "data_folder=\'%s\'" "%s"' % (
-                self.configuration.gnuplot_executable, data_path, script)
-            out = get_pipe_output([gnuplot_command])
-            if len(out) > 0:
-                print(out)
