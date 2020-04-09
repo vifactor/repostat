@@ -140,7 +140,26 @@
     {% endfor %}
 </table>
 
-{# TODO: Plot as pie-chart instead of bar-plot #}
 <h2 id="commits_by_domains"><a href="#commits_by_domains">Commits by Domains</a></h2>
-<img src="domains.png" alt="Commits by Domains">
+<div id="chart_domains" style="border: 1px solid #808080; width: 507px"><svg style="height: 480px; width: 100%"></svg></div>
+	<script>
+		(async() => {
+			// Fetch the data and wait for it
+			const request = await fetch('domains.dat', {mode: 'no-cors'});
+			const dataset = await request.json()
+
+			// Setup the chart
+			nv.addGraph(function() {
+				var chart = nv.models.pieChart()
+					.x(function(d) { return d.key })
+					.y(function(d) { return d.y })
+					.options(dataset.config);
+
+				chart.pie.donutLabelsOutside(true).donut(true);
+
+				d3.select('#chart_domains svg').datum(dataset.data).call(chart);
+				return chart;
+			});
+		})();
+	</script>
 {% endblock %}

@@ -226,9 +226,20 @@ class HTMLReportCreator(object):
         # Domains
         domains_dist = sorted(self.git_repository_statistics.domains_distribution.items(), key=lambda kv: kv[1],
                               reverse=True)
+        graph_data = {
+            "config": {
+                "donut": True,
+                "padAngle": 0.01,
+                "cornerRadius": 5
+            }
+            "data": []
+        }
+
+        for i, (domain, commits_count) in enumerate(domains_dist[:self.configuration['max_domains']]):
+            graph_data["data"].append({"key": domain, "y": commits_count})
+
         with open(os.path.join(path, 'domains.dat'), 'w') as fp:
-            for i, (domain, commits_count) in enumerate(domains_dist[:self.configuration['max_domains']]):
-                fp.write('%s %d %d\n' % (domain, i, commits_count))
+            json.dump(graph_data, fp)
 
         ###
         # Files
