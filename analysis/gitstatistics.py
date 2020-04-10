@@ -178,8 +178,6 @@ class GitStatistics:
                 self.author_changes_history[ts][author_name] = {}
             self.author_changes_history[ts][author_name]['lines_added'] = result[author_name][
                 AuthorDictFactory.LINES_ADDED]
-            self.author_changes_history[ts][author_name]['commits'] = result[author_name][
-                AuthorDictFactory.COMMITS]
 
         return result
 

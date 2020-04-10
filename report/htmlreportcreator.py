@@ -62,6 +62,54 @@ class HTMLReportCreator(object):
         # relative path to assets to embed into html pages
         self.assets_path = os.path.relpath(assets_local_abs_path, self.path)
 
+    def authors_commits_history(self):
+        import pandas as pd
+        wh = self.git_repository_statistics.whole_history_df
+        wh['author_datetime'] = pd.to_datetime(wh['author_timestamp'], unit='s', utc=True)
+        wh = wh.set_index(wh['author_datetime'])
+
+        modifications_over_time = wh[['author_name']].groupby(
+            [wh['author_name'], pd.Grouper(freq='W')]).count() \
+            .rename(columns={'author_name': 'commits_count'}).reset_index()
+
+        modifications_per_authors_over_time = modifications_over_time.reset_index().pivot_table(
+            index=modifications_over_time['author_datetime'],
+            columns=modifications_over_time['author_name'],
+            values='commits_count')
+        modifications_per_authors_over_time = modifications_per_authors_over_time.fillna(0)
+        authors = self._get_authors()
+        most_productive_authors = authors[:self.configuration['max_authors']]
+        rest_authors = authors[self.configuration['max_authors']:]
+        most_productive_authors_history = modifications_per_authors_over_time[most_productive_authors].cumsum()
+        rest_authors_history = modifications_per_authors_over_time[rest_authors].sum(axis=1).cumsum()
+
+        most_productive_authors_history['Others'] = rest_authors_history.values
+        return most_productive_authors_history
+
+    def authors_lines_modification_history(self):
+        import pandas as pd
+        wh = self.git_repository_statistics.whole_history_df
+        wh['author_datetime'] = pd.to_datetime(wh['author_timestamp'], unit='s', utc=True)
+        wh = wh.set_index(wh['author_datetime'])
+
+        modifications_over_time = wh[['author_name', 'insertions', 'deletions']].groupby(
+            [wh['author_name'], pd.Grouper(freq='W')]).sum().reset_index()
+
+        insertions_per_authors_over_time = modifications_over_time.reset_index().pivot_table(
+            index=modifications_over_time['author_datetime'],
+            columns=modifications_over_time['author_name'],
+            values='insertions')
+        insertions_per_authors_over_time = insertions_per_authors_over_time.fillna(0)
+        authors = self._get_authors()
+        most_productive_authors = authors[:self.configuration['max_authors']]
+        most_productive_authors_history = insertions_per_authors_over_time[most_productive_authors].cumsum()
+
+        rest_authors = authors[self.configuration['max_authors']:]
+        rest_authors_history = insertions_per_authors_over_time[rest_authors].sum(axis=1).cumsum()
+
+        most_productive_authors_history['Others'] = rest_authors_history.values
+        return most_productive_authors_history
+
     def create(self, path):
         self.path = path
 
@@ -111,50 +159,14 @@ class HTMLReportCreator(object):
         with open(os.path.join(path, "authors.html"), 'w', encoding='utf-8') as f:
             f.write(authors_html.decode('utf-8'))
 
-        # cumulated added lines by
-        # author. to save memory,
-        # changes_by_date_by_author[stamp][author] is defined
-        # only at points where author commits.
-        # lines_by_authors allows us to generate all the
-        # points in the .dat file.
-        lines_by_authors = {}
-        lines_by_other_authors = {}
+        import csv
+        authors_commits_history = self.authors_commits_history()
+        authors_commits_history.add_prefix('"').add_suffix('"')\
+            .to_csv(os.path.join(path, 'commits_by_author.dat'), date_format="%Y-%m-%d", sep='\t', quoting=csv.QUOTE_NONE)
 
-        # Don't rely on getAuthors to give the same order each
-        # time. Be robust and keep the list in a variable.
-        commits_by_authors = {}
-        commits_by_other_authors = {}
-
-        authors_to_plot = self._get_authors(self.configuration['max_authors'])
-        with open(os.path.join(path, 'lines_of_code_by_author.dat'), 'w') as fgl, \
-                open(os.path.join(path, 'commits_by_author.dat'), 'w') as fgc:
-            header_row = '"timestamp" ' + ' '.join('"{0}"'.format(w) for w in authors_to_plot) + ' ' \
-                         + '"others"' + '\n'
-            fgl.write(header_row)
-            fgc.write(header_row)
-            for stamp in sorted(self.git_repo_statistics.author_changes_history.keys()):
-                fgl.write('%d' % stamp)
-                fgc.write('%d' % stamp)
-                for author in authors_to_plot:
-                    if author in self.git_repo_statistics.author_changes_history[stamp].keys():
-                        lines_by_authors[author] = self.git_repo_statistics.author_changes_history[stamp][author][
-                            'lines_added']
-                        commits_by_authors[author] = self.git_repo_statistics.author_changes_history[stamp][author][
-                            'commits']
-                    fgl.write(' %d' % lines_by_authors.get(author, 0))
-                    fgc.write(' %d' % commits_by_authors.get(author, 0))
-
-                if len(authors_to_plot) > self.configuration['max_authors']:
-                    for author in self.git_repo_statistics.author_changes_history[stamp].keys():
-                        if author not in authors_to_plot:
-                            lines_by_other_authors[author] = \
-                                self.git_repo_statistics.author_changes_history[stamp][author]['lines_added']
-                            commits_by_other_authors[author] = \
-                                self.git_repo_statistics.author_changes_history[stamp][author]['commits']
-                    fgl.write(' %d' % sum(lines for lines in lines_by_other_authors.values()))
-                    fgc.write(' %d' % sum(commits for commits in commits_by_other_authors.values()))
-                fgl.write('\n')
-                fgc.write('\n')
+        authors_added_lines_history = self.authors_lines_modification_history()
+        authors_added_lines_history.add_prefix('"').add_suffix('"')\
+            .to_csv(os.path.join(path, 'lines_of_code_by_author.dat'), date_format="%Y-%m-%d", sep='\t', quoting=csv.QUOTE_NONE)
 
         # Domains
         domains_dist = sorted(self.git_repository_statistics.domains_distribution.items(), key=lambda kv: kv[1],
