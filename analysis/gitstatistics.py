@@ -7,24 +7,6 @@ from distutils import version
 from tools.timeit import Timeit
 
 
-class AuthorDictFactory:
-    AUTHOR_NAME = "author_name"
-    COMMITS = 'commits'
-    FIELD_LIST = [AUTHOR_NAME, COMMITS]
-
-    @classmethod
-    def create_author(cls, author_name: str, commits: int):
-        result = {
-            cls.AUTHOR_NAME: author_name,
-            cls.COMMITS: commits,
-        }
-        return result
-
-    @classmethod
-    def add_commit(cls, author, commit_count=1):
-        author[cls.COMMITS] += commit_count
-
-
 class GitStatistics:
     is_mailmap_supported = True if version.LooseVersion(git.LIBGIT2_VERSION) >= '0.28.0' else False
 
@@ -62,7 +44,6 @@ class GitStatistics:
         self.yearly_commits_timeline = {}
         self.monthly_commits_timeline = {}
 
-        self.authors = self.fetch_authors_info()
         if fetch_contribution:
             # this is slow
             self.contribution = self.fetch_contributors()
@@ -135,24 +116,6 @@ class GitStatistics:
     def get_fetching_tool_info(cls):
         # could be bare git-subprocess invokation, PythonGit package, etc.
         return '{} v.{}'.format(git.__name__, git.LIBGIT2_VERSION)
-
-    @Timeit("Fetching authors info")
-    def fetch_authors_info(self):
-        """
-        e.g.
-        {'Stefano Mosconi': {'commits': 1}
-        """
-        result = {}
-        for child_commit in self.repo.walk(self.repo.head.target, git.GIT_SORT_TIME | git.GIT_SORT_REVERSE):
-            author_name = self.signature_mapper(child_commit.author).name
-
-            if author_name not in result:
-                result[author_name] = AuthorDictFactory.create_author(
-                    author_name, 1)
-            else:
-                AuthorDictFactory.add_commit(result[author_name], 1)
-
-        return result
 
     @Timeit("Fetching tags info")
     def fetch_tags_info(self):

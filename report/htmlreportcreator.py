@@ -51,16 +51,24 @@ class HTMLReportCreator(object):
             for i, commits in enumerate(recent_weekly_commits):
                 f.write("%d %d\n" % (self.recent_activity_period_weeks - i - 1, commits))
 
-    def _get_authors(self, limit=None):
-        res = sort_keys_by_value_of_key(self.git_repo_statistics.authors, 'commits', reverse=True)
-        return res[:limit]
-
     def _bundle_assets(self):
         # copy assets to report output folder
         assets_local_abs_path = os.path.join(self.path, self.assets_subdir)
         copy_tree(src=self.assets_path, dst=assets_local_abs_path)
         # relative path to assets to embed into html pages
         self.assets_path = os.path.relpath(assets_local_abs_path, self.path)
+
+    def authors(self, sorted_by='commits_count'):
+        wh = self.git_repository_statistics.whole_history_df
+        authors_groupped = wh[['author_name', 'insertions', 'deletions']].groupby(
+            [wh['author_name']])
+
+        authors_summary = authors_groupped.sum()
+        authors_summary['commits_count'] = authors_groupped['author_name'].count()
+
+        return authors_summary.reset_index() \
+            .sort_values(by=sorted_by, ascending=False) \
+            .reset_index(drop=True)['author_name'].values
 
     def authors_commits_history(self):
         import pandas as pd
@@ -77,7 +85,7 @@ class HTMLReportCreator(object):
             columns=modifications_over_time['author_name'],
             values='commits_count')
         modifications_per_authors_over_time = modifications_per_authors_over_time.fillna(0)
-        authors = self._get_authors()
+        authors = self.authors()
         most_productive_authors = authors[:self.configuration['max_authors']]
         rest_authors = authors[self.configuration['max_authors']:]
         most_productive_authors_history = modifications_per_authors_over_time[most_productive_authors].cumsum()
@@ -100,7 +108,7 @@ class HTMLReportCreator(object):
             columns=modifications_over_time['author_name'],
             values='insertions')
         insertions_per_authors_over_time = insertions_per_authors_over_time.fillna(0)
-        authors = self._get_authors()
+        authors = self.authors()
         most_productive_authors = authors[:self.configuration['max_authors']]
         most_productive_authors_history = insertions_per_authors_over_time[most_productive_authors].cumsum()
 
@@ -219,7 +227,7 @@ class HTMLReportCreator(object):
             "age": (last_commit_datetime - first_commit_datetime).days,
             "active_days_count": self.git_repository_statistics.active_days_count,
             "commits_count": self.git_repo_statistics.total_commits,
-            "authors_count": len(self.git_repo_statistics.authors),
+            "authors_count": len(self.authors()),
             "files_count": self.git_repo_statistics.total_files_count,
             "total_lines_count": self.git_repo_statistics.total_lines_count,
             "added_lines_count": self.git_repo_statistics.total_lines_added,
@@ -295,7 +303,7 @@ class HTMLReportCreator(object):
             'total_lines_count': self.git_repo_statistics.total_lines_count
         }
 
-        all_authors = self._get_authors()
+        all_authors = self.authors()
         if len(all_authors) > self.configuration['max_authors']:
             project_data['non_top_authors'] = all_authors[self.configuration['max_authors']:]
 
