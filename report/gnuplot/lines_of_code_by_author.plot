@@ -9,7 +9,7 @@ set output 'lines_of_code_by_author.png'
 set key left top
 set yrange [0:]
 set xdata time
-set timefmt "%s"
+set timefmt "%Y-%m-%d"
 set format x "%Y-%m"
 set grid y
 set ylabel "Lines"

@@ -7,30 +7,6 @@ from distutils import version
 from tools.timeit import Timeit
 
 
-class AuthorDictFactory:
-    AUTHOR_NAME = "author_name"
-    LINES_ADDED = "lines_added"
-    COMMITS = 'commits'
-    FIELD_LIST = [AUTHOR_NAME, LINES_ADDED, COMMITS]
-
-    @classmethod
-    def create_author(cls, author_name: str, lines_added: int, commits: int):
-        result = {
-            cls.AUTHOR_NAME: author_name,
-            cls.LINES_ADDED: lines_added,
-            cls.COMMITS: commits,
-        }
-        return result
-
-    @classmethod
-    def add_lines_added(cls, author, lines_added):
-        author[cls.LINES_ADDED] += lines_added
-
-    @classmethod
-    def add_commit(cls, author, commit_count=1):
-        author[cls.COMMITS] += commit_count
-
-
 class GitStatistics:
     is_mailmap_supported = True if version.LooseVersion(git.LIBGIT2_VERSION) >= '0.28.0' else False
 
@@ -67,8 +43,7 @@ class GitStatistics:
         self.analysed_branch = self.repo.head.shorthand
         self.yearly_commits_timeline = {}
         self.monthly_commits_timeline = {}
-        self.author_changes_history = {}
-        self.authors = self.fetch_authors_info()
+
         if fetch_contribution:
             # this is slow
             self.contribution = self.fetch_contributors()
@@ -141,47 +116,6 @@ class GitStatistics:
     def get_fetching_tool_info(cls):
         # could be bare git-subprocess invokation, PythonGit package, etc.
         return '{} v.{}'.format(git.__name__, git.LIBGIT2_VERSION)
-
-    @Timeit("Fetching authors info")
-    def fetch_authors_info(self):
-        """
-        e.g.
-        {'Stefano Mosconi': {'lines_removed': 1, 'lines_added': 1, 'commits': 1}
-        """
-        result = {}
-        for child_commit in self.repo.walk(self.repo.head.target, git.GIT_SORT_TIME | git.GIT_SORT_REVERSE):
-            is_merge_commit = False
-            st = None
-            if len(child_commit.parents) == 0:
-                # initial commit
-                st = child_commit.tree.diff_to_tree(swap=True).stats
-            elif len(child_commit.parents) == 1:
-                parent_commit = child_commit.parents[0]
-                st = self.repo.diff(parent_commit, child_commit).stats
-            else:  # if len(child_commit.parents) == 2 (merge commit)
-                is_merge_commit = True
-
-            author_name = self.signature_mapper(child_commit.author).name
-            lines_added = st.insertions if not is_merge_commit else 0
-
-            if author_name not in result:
-                result[author_name] = AuthorDictFactory.create_author(
-                    author_name, lines_added, 1)
-            else:
-                AuthorDictFactory.add_lines_added(result[author_name], st.insertions if not is_merge_commit else 0)
-                AuthorDictFactory.add_commit(result[author_name], 1)
-
-            ts = child_commit.author.time
-            if ts not in self.author_changes_history:
-                self.author_changes_history[ts] = {}
-            if author_name not in self.author_changes_history[ts]:
-                self.author_changes_history[ts][author_name] = {}
-            self.author_changes_history[ts][author_name]['lines_added'] = result[author_name][
-                AuthorDictFactory.LINES_ADDED]
-            self.author_changes_history[ts][author_name]['commits'] = result[author_name][
-                AuthorDictFactory.COMMITS]
-
-        return result
 
     @Timeit("Fetching tags info")
     def fetch_tags_info(self):

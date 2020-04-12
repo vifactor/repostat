@@ -51,16 +51,24 @@ class HTMLReportCreator(object):
             for i, commits in enumerate(recent_weekly_commits):
                 f.write("%d %d\n" % (self.recent_activity_period_weeks - i - 1, commits))
 
-    def _get_authors(self, limit=None):
-        res = sort_keys_by_value_of_key(self.git_repo_statistics.authors, 'commits', reverse=True)
-        return res[:limit]
-
     def _bundle_assets(self):
         # copy assets to report output folder
         assets_local_abs_path = os.path.join(self.path, self.assets_subdir)
         copy_tree(src=self.assets_path, dst=assets_local_abs_path)
         # relative path to assets to embed into html pages
         self.assets_path = os.path.relpath(assets_local_abs_path, self.path)
+
+    def _squash_authors_history(self, authors_history, max_authors_count):
+        authors = self.git_repository_statistics.authors.sort(by='commits_count').names()
+
+        most_productive_authors = authors[:max_authors_count]
+        rest_authors = authors[max_authors_count:]
+
+        most_productive_authors_history = authors_history[most_productive_authors].cumsum()
+        rest_authors_history = authors_history[rest_authors].sum(axis=1).cumsum()
+
+        most_productive_authors_history['Others'] = rest_authors_history.values
+        return most_productive_authors_history
 
     def create(self, path):
         self.path = path
@@ -111,50 +119,21 @@ class HTMLReportCreator(object):
         with open(os.path.join(path, "authors.html"), 'w', encoding='utf-8') as f:
             f.write(authors_html.decode('utf-8'))
 
-        # cumulated added lines by
-        # author. to save memory,
-        # changes_by_date_by_author[stamp][author] is defined
-        # only at points where author commits.
-        # lines_by_authors allows us to generate all the
-        # points in the .dat file.
-        lines_by_authors = {}
-        lines_by_other_authors = {}
+        # TODO: adjust sampling depending on repo age
+        authors_activity_history = self.git_repository_statistics.authors.history('W')
 
-        # Don't rely on getAuthors to give the same order each
-        # time. Be robust and keep the list in a variable.
-        commits_by_authors = {}
-        commits_by_other_authors = {}
+        import csv
+        authors_commits_history = self._squash_authors_history(authors_activity_history.commits_count,
+                                                               self.configuration['max_authors'])
+        authors_commits_history.add_prefix('"').add_suffix('"')\
+            .to_csv(os.path.join(path, 'commits_by_author.dat'), date_format="%Y-%m-%d", sep='\t',
+                    quoting=csv.QUOTE_NONE)
 
-        authors_to_plot = self._get_authors(self.configuration['max_authors'])
-        with open(os.path.join(path, 'lines_of_code_by_author.dat'), 'w') as fgl, \
-                open(os.path.join(path, 'commits_by_author.dat'), 'w') as fgc:
-            header_row = '"timestamp" ' + ' '.join('"{0}"'.format(w) for w in authors_to_plot) + ' ' \
-                         + '"others"' + '\n'
-            fgl.write(header_row)
-            fgc.write(header_row)
-            for stamp in sorted(self.git_repo_statistics.author_changes_history.keys()):
-                fgl.write('%d' % stamp)
-                fgc.write('%d' % stamp)
-                for author in authors_to_plot:
-                    if author in self.git_repo_statistics.author_changes_history[stamp].keys():
-                        lines_by_authors[author] = self.git_repo_statistics.author_changes_history[stamp][author][
-                            'lines_added']
-                        commits_by_authors[author] = self.git_repo_statistics.author_changes_history[stamp][author][
-                            'commits']
-                    fgl.write(' %d' % lines_by_authors.get(author, 0))
-                    fgc.write(' %d' % commits_by_authors.get(author, 0))
-
-                if len(authors_to_plot) > self.configuration['max_authors']:
-                    for author in self.git_repo_statistics.author_changes_history[stamp].keys():
-                        if author not in authors_to_plot:
-                            lines_by_other_authors[author] = \
-                                self.git_repo_statistics.author_changes_history[stamp][author]['lines_added']
-                            commits_by_other_authors[author] = \
-                                self.git_repo_statistics.author_changes_history[stamp][author]['commits']
-                    fgl.write(' %d' % sum(lines for lines in lines_by_other_authors.values()))
-                    fgc.write(' %d' % sum(commits for commits in commits_by_other_authors.values()))
-                fgl.write('\n')
-                fgc.write('\n')
+        authors_added_lines_history = self._squash_authors_history(authors_activity_history.insertions,
+                                                                   self.configuration['max_authors'])
+        authors_added_lines_history.add_prefix('"').add_suffix('"')\
+            .to_csv(os.path.join(path, 'lines_of_code_by_author.dat'), date_format="%Y-%m-%d", sep='\t',
+                    quoting=csv.QUOTE_NONE)
 
         # Domains
         domains_dist = sorted(self.git_repository_statistics.domains_distribution.items(), key=lambda kv: kv[1],
@@ -207,7 +186,7 @@ class HTMLReportCreator(object):
             "age": (last_commit_datetime - first_commit_datetime).days,
             "active_days_count": self.git_repository_statistics.active_days_count,
             "commits_count": self.git_repo_statistics.total_commits,
-            "authors_count": len(self.git_repo_statistics.authors),
+            "authors_count": self.git_repository_statistics.authors.count(),
             "files_count": self.git_repo_statistics.total_files_count,
             "total_lines_count": self.git_repo_statistics.total_lines_count,
             "added_lines_count": self.git_repo_statistics.total_lines_added,
@@ -283,7 +262,7 @@ class HTMLReportCreator(object):
             'total_lines_count': self.git_repo_statistics.total_lines_count
         }
 
-        all_authors = self._get_authors()
+        all_authors = self.git_repository_statistics.authors.sort().names()
         if len(all_authors) > self.configuration['max_authors']:
             project_data['non_top_authors'] = all_authors[self.configuration['max_authors']:]
 
