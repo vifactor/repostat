@@ -77,7 +77,3 @@ class GitHistoryTest(unittest.TestCase):
         self.assertSetEqual({"john@doe.com"}, set(emails))
 
     # TODO: add test for inserted/deleted lines count
-
-
-if __name__ == '__main__':
-    unittest.main()

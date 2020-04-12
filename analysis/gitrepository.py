@@ -7,6 +7,7 @@ import pytz
 from tools import split_email_address
 from .gitdata import WholeHistory as GitWholeHistory
 from .gitauthor import GitAuthor
+from .gitauthors import GitAuthors
 
 
 class GitRepository(object):
@@ -140,3 +141,9 @@ class GitRepository(object):
             df = self.whole_history_df[['author_name', 'author_timestamp', 'insertions', 'deletions']]
             GitAuthor.author_groups = df.groupby(by='author_name')
         return GitAuthor(name)
+
+    @property
+    def authors(self) -> GitAuthors:
+        if not hasattr(self, '_authors'):
+            setattr(self, '_authors', GitAuthors(self.whole_history_df))
+        return getattr(self, '_authors')
