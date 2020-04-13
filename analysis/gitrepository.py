@@ -152,3 +152,12 @@ class GitRepository(object):
     def month_of_year_distribution(self):
         ts = pd.to_datetime(self.whole_history_df['author_timestamp'], unit='s', utc=True)
         return ts.groupby(ts.dt.month).count()
+
+    def history(self, sampling):
+        df = self.whole_history_df[['author_timestamp']].copy()
+        df['datetime'] = pd.to_datetime(self.whole_history_df['author_timestamp'], unit='s', utc=True)
+        df = df.set_index(df['datetime'])\
+            .rename(columns={'datetime': 'commits_count'})['commits_count']\
+            .groupby(pd.Grouper(freq=sampling)) \
+            .count()
+        return df

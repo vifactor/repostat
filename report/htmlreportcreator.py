@@ -4,6 +4,7 @@ import calendar
 import time
 import collections
 import glob
+import csv
 from jinja2 import Environment, FileSystemLoader
 from distutils.dir_util import copy_tree
 
@@ -101,17 +102,16 @@ class HTMLReportCreator(object):
             f.write(activity_html)
 
         # Commits by current year's months
-        today_date = datetime.date.today()
-        current_year = today_date.year
-        with open(os.path.join(path, 'commits_by_year_month.dat'), 'w') as fg:
-            for month in range(1, 13):
-                yymm = datetime.date(current_year, month, 1).strftime("%Y-%m")
-                fg.write('%s %s\n' % (yymm, self.git_repo_statistics.monthly_commits_timeline.get(yymm, 0)))
+        current_year = datetime.date.today().year
+        current_year_monthly_activity = self.git_repository_statistics.history('m')
+        current_year_monthly_activity = current_year_monthly_activity\
+            .loc[current_year_monthly_activity.index.year == current_year]
+        current_year_monthly_activity.to_csv(os.path.join(path, 'commits_by_year_month.dat'), header=False,
+                                             date_format="%Y-%m", sep='\t', quoting=csv.QUOTE_NONE)
 
-        # Commits by year
-        with open(os.path.join(path, 'commits_by_year.dat'), 'w') as fg:
-            for yy in sorted(self.git_repo_statistics.yearly_commits_timeline.keys()):
-                fg.write('%d %d\n' % (yy, self.git_repo_statistics.yearly_commits_timeline[yy]))
+        yearly_activity = self.git_repository_statistics.history('Y')
+        yearly_activity.to_csv(os.path.join(path, 'commits_by_year.dat'), header=False, date_format="%Y", sep='\t',
+                               quoting=csv.QUOTE_NONE)
 
         ###
         # Authors
@@ -122,7 +122,6 @@ class HTMLReportCreator(object):
         # TODO: adjust sampling depending on repo age
         authors_activity_history = self.git_repository_statistics.authors.history('W')
 
-        import csv
         authors_commits_history = self._squash_authors_history(authors_activity_history.commits_count,
                                                                self.configuration['max_authors'])
         authors_commits_history.add_prefix('"').add_suffix('"')\
