@@ -211,38 +211,18 @@ class HTMLReportCreator(object):
     def render_activity_page(self):
         # TODO: this conversion from old 'data' to new 'project data' should perhaps be removed in future
         project_data = {
-            'hourly_activity': [],
-            'weekday_hourly_activity': {},
-            'weekday_activity': {},
             'timezones_activity': collections.OrderedDict(
                 sorted(self.git_repository_statistics.timezones_distribution.items(), key=lambda n: int(n[0]))),
-            'month_in_year_activity': self.git_repository_statistics.month_of_year_distribution.to_dict(),
-            'weekday_hour_max_commits_count': self.git_repo_statistics.max_weekly_hourly_activity
+            'month_in_year_activity': self.git_repository_statistics.month_of_year_distribution.to_dict()
         }
 
         self._save_recent_activity_data()
 
-        hour_of_day = self.git_repo_statistics.get_hourly_activity()
-        for i in range(0, 24):
-            if i in hour_of_day:
-                project_data['hourly_activity'].append(hour_of_day[i])
-            else:
-                project_data['hourly_activity'].append(0)
-
-        for weekday in range(len(calendar.day_name)):
-            project_data['weekday_hourly_activity'][weekday] = []
-            weekday_commits = 0
-            for hour in range(0, 24):
-                try:
-                    commits = self.git_repo_statistics.activity_weekly_hourly[weekday][hour]
-                    weekday_commits += commits
-                except KeyError:
-                    commits = 0
-                if commits != 0:
-                    project_data['weekday_hourly_activity'][weekday].append(commits)
-                else:
-                    project_data['weekday_hourly_activity'][weekday].append(commits)
-            project_data['weekday_activity'][weekday] = weekday_commits
+        wd_h_distribution = self.git_repository_statistics.weekday_hour_distribution.astype('int32')
+        project_data['weekday_hourly_activity'] = wd_h_distribution
+        project_data['weekday_hour_max_commits_count'] = wd_h_distribution.max().max()
+        project_data['weekday_activity'] = wd_h_distribution.sum(axis=1)
+        project_data['hourly_activity'] = wd_h_distribution.sum(axis=0)
 
         # load and render template
         template_rendered = self.j2_env.get_template('activity.html').render(

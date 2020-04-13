@@ -52,13 +52,6 @@ class GitStatistics:
         else:
             self.tags = {}
 
-        # Weekday activity should be calculated in local timezones
-        # https://stackoverflow.com/questions/36648995/how-to-add-timezone-offset-to-pandas-datetime
-        self.activity_weekly_hourly = self.fetch_weekly_hourly_activity()
-        self.max_weekly_hourly_activity = max(
-            commits_count for _, hourly_activity in self.activity_weekly_hourly.items()
-            for _, commits_count in hourly_activity.items())
-
         self.changes_history, self.total_lines_added, self.total_lines_removed, self.total_lines_count \
             = self.fetch_total_history()
 
@@ -139,18 +132,6 @@ class GitStatistics:
 
         return result
 
-    @Timeit("Fetching weekly/hourly activity info")
-    def fetch_weekly_hourly_activity(self):
-        activity = {}
-        for commit in self.repo.walk(self.repo.head.target):
-            date = datetime.fromtimestamp(commit.author.time)
-            hour = date.hour
-            weekday = date.weekday()
-            if weekday not in activity:
-                activity[weekday] = {}
-            activity[weekday][hour] = activity[weekday].get(hour, 0) + 1
-        return activity
-
     @Timeit("Fetching current tree contributors")
     def fetch_contributors(self):
         head_commit = self.repo.head.peel()
@@ -220,17 +201,6 @@ class GitStatistics:
             lines_count += history[t]['ins'] - history[t]['del']
             history[t]['lines'] = lines_count
         return history, lines_added, lines_removed, lines_count
-
-    def get_weekly_activity(self):
-        return {weekday: sum(commits_count for commits_count in hourly_activity.values())
-                for weekday, hourly_activity in self.activity_weekly_hourly.items()}
-
-    def get_hourly_activity(self):
-        activity = {}
-        for hourly_activity in self.activity_weekly_hourly.values():
-            for hour, commits_count in hourly_activity.items():
-                activity[hour] = activity.get(hour, 0) + commits_count
-        return activity
 
     def get_stamp_created(self):
         return self.created_time_stamp

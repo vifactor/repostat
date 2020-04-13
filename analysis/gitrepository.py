@@ -153,6 +153,23 @@ class GitRepository(object):
         ts = pd.to_datetime(self.whole_history_df['author_timestamp'], unit='s', utc=True)
         return ts.groupby(ts.dt.month).count()
 
+    @property
+    def weekday_hour_distribution(self):
+        df = self.whole_history_df[['author_timestamp']].copy()
+        # Weekday activity should be calculated in local timezones
+        # https://stackoverflow.com/questions/36648995/how-to-add-timezone-offset-to-pandas-datetime
+        df['datetime'] = pd.to_datetime(self.whole_history_df['author_timestamp'], unit='s', utc=True)
+        df['weekday'] = df.datetime.dt.weekday
+        df['hour'] = df.datetime.dt.hour
+
+        df = df.pivot_table(
+            index=df['weekday'],
+            columns=df['hour'],
+            values='datetime',
+            aggfunc='count'
+        )
+        return df.fillna(0)
+
     def history(self, sampling):
         df = self.whole_history_df[['author_timestamp']].copy()
         df['datetime'] = pd.to_datetime(self.whole_history_df['author_timestamp'], unit='s', utc=True)
