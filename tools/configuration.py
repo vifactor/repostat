@@ -100,7 +100,7 @@ class Configuration(dict):
         self.update({
             "max_domains": 10,
             "max_ext_length": 10,
-            "max_authors": 10,
+            "max_authors": 7,
             "max_authors_of_months": 6,
             "authors_top": 5,
         })

@@ -129,7 +129,8 @@ class HTMLReportCreator(object):
         commits_by_authors = {}
         commits_by_other_authors = {}
 
-        authors_to_plot = self._get_authors(self.configuration['max_authors'])
+        all_authors = self._get_authors()
+        authors_to_plot = all_authors[:self.configuration['max_authors']]
         with open(os.path.join(path, 'lines_of_code_by_author.dat'), 'w') as fgl, \
                 open(os.path.join(path, 'commits_by_author.dat'), 'w') as fgc:
             header_row = '"timestamp" ' + ' '.join('"{0}"'.format(w) for w in authors_to_plot) + ' ' \
@@ -148,7 +149,7 @@ class HTMLReportCreator(object):
                     fgl.write(' %d' % lines_by_authors.get(author, 0))
                     fgc.write(' %d' % commits_by_authors.get(author, 0))
 
-                if len(authors_to_plot) > self.configuration['max_authors']:
+                if len(all_authors) > self.configuration['max_authors']:
                     for author in self.git_repo_statistics.author_changes_history[stamp].keys():
                         if author not in authors_to_plot:
                             lines_by_other_authors[author] = \
