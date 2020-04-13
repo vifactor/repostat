@@ -158,7 +158,8 @@ class GitRepository(object):
         df = self.whole_history_df[['author_timestamp']].copy()
         # Weekday activity should be calculated in local timezones
         # https://stackoverflow.com/questions/36648995/how-to-add-timezone-offset-to-pandas-datetime
-        df['datetime'] = pd.to_datetime(self.whole_history_df['author_timestamp'], unit='s', utc=True)
+        df['datetime'] = pd.to_datetime(self.whole_history_df['author_timestamp'], unit='s', utc=True) + \
+                         pd.TimedeltaIndex(self.whole_history_df['author_tz_offset'], unit='m')
         df['weekday'] = df.datetime.dt.weekday
         df['hour'] = df.datetime.dt.hour
 
@@ -167,8 +168,8 @@ class GitRepository(object):
             columns=df['hour'],
             values='datetime',
             aggfunc='count'
-        )
-        return df.fillna(0)
+        ).fillna(0)
+        return df
 
     def history(self, sampling):
         df = self.whole_history_df[['author_timestamp']].copy()
