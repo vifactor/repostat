@@ -147,3 +147,8 @@ class GitRepository(object):
         if not hasattr(self, '_authors'):
             setattr(self, '_authors', GitAuthors(self.whole_history_df))
         return getattr(self, '_authors')
+
+    @property
+    def month_of_year_distribution(self):
+        ts = pd.to_datetime(self.whole_history_df['author_timestamp'], unit='s', utc=True)
+        return ts.groupby(ts.dt.month).count()

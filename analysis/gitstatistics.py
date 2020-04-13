@@ -60,8 +60,8 @@ class GitStatistics:
         self.max_weekly_hourly_activity = max(
             commits_count for _, hourly_activity in self.activity_weekly_hourly.items()
             for _, commits_count in hourly_activity.items())
-        self.activity_monthly, self.authors_monthly, self.activity_year_monthly, self.author_yewhar_monthly \
-            = self.fetch_monthly_activity()
+
+        self.fetch_monthly_activity()
 
         self.changes_history, self.total_lines_added, self.total_lines_removed, self.total_lines_count \
             = self.fetch_total_history()
@@ -155,30 +155,16 @@ class GitStatistics:
             activity[weekday][hour] = activity[weekday].get(hour, 0) + 1
         return activity
 
-    @Timeit("Fetching monthly activity info")
+    @Timeit("Fetching monthly/yearly timelines")
     def fetch_monthly_activity(self):
-        activity = {}
-        authors = {}
-        activity_year_month = {}
-        authors_year_month = {}
         for commit in self.repo.walk(self.repo.head.target):
             date = datetime.fromtimestamp(commit.author.time)
-            month = date.month
-            year_month = date.strftime('%Y-%m')
-            activity[month] = activity.get(month, 0) + 1
-            activity_year_month[year_month] = activity_year_month.get(year_month, 0) + 1
-            commit_author = self.signature_mapper(commit.author)
-            try:
-                authors[month].add(commit_author.name)
-            except KeyError:
-                authors[month] = {commit_author.name}
-            try:
-                authors_year_month[year_month].add(commit_author.name)
-            except KeyError:
-                authors_year_month[year_month] = {commit_author.name}
 
-            self._adjust_commits_timeline(date)
-        return activity, authors, activity_year_month, authors_year_month
+            yymm = date.strftime('%Y-%m')
+            self.monthly_commits_timeline[yymm] = self.monthly_commits_timeline.get(yymm, 0) + 1
+
+            yy = date.year
+            self.yearly_commits_timeline[yy] = self.yearly_commits_timeline.get(yy, 0) + 1
 
     @Timeit("Fetching current tree contributors")
     def fetch_contributors(self):
@@ -260,17 +246,6 @@ class GitStatistics:
             for hour, commits_count in hourly_activity.items():
                 activity[hour] = activity.get(hour, 0) + commits_count
         return activity
-
-    def _adjust_commits_timeline(self, datetime_obj):
-        """
-        increments commit count into the corresponding dicts gathering yearly/monthly commits' history
-        :param datetime_obj: a datetime object of a commit
-        """
-        yymm = datetime_obj.strftime('%Y-%m')
-        self.monthly_commits_timeline[yymm] = self.monthly_commits_timeline.get(yymm, 0) + 1
-
-        yy = datetime_obj.year
-        self.yearly_commits_timeline[yy] = self.yearly_commits_timeline.get(yy, 0) + 1
 
     def get_stamp_created(self):
         return self.created_time_stamp
