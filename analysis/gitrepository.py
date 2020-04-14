@@ -6,6 +6,7 @@ import pytz
 
 from tools import split_email_address
 from .gitdata import WholeHistory as GitWholeHistory
+from .gitdata import LinearHistory as GitLinearHistory
 from .gitauthor import GitAuthor
 from .gitauthors import GitAuthors
 
@@ -17,6 +18,8 @@ class GitRepository(object):
         """
         self.repo = git.Repository(path)
         self.whole_history_df = GitWholeHistory(self.repo).as_dataframe()
+        self.linear_history_df = GitLinearHistory(self.repo).as_dataframe()
+        print(self.linear_history_df)
 
     @property
     def first_commit_timestamp(self):

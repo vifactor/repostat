@@ -3,7 +3,7 @@ import pandas as pd
 import pygit2 as git
 
 
-class History:
+class History(abc.ABC):
 
     def __init__(self, repository: git.Repository, branch: str = "master"):
         self.repo = repository
@@ -31,8 +31,14 @@ class History:
         data = self.fetch()
         return pd.DataFrame(data)
 
+    @abc.abstractmethod
     def fetch(self):
-        repo_walker = self._get_repo_walker()
+        pass
+
+
+class WholeHistory(History):
+    def fetch(self):
+        repo_walker = self.repo.walk(self.repo.head.target, git.GIT_SORT_TOPOLOGICAL)
         records = []
         for commit in repo_walker:
             mapped_author_signature = self.map_signature(commit.author)
@@ -57,18 +63,26 @@ class History:
                             'deletions': deletions})
         return records
 
-    @abc.abstractmethod
-    def _get_repo_walker(self):
-        pass
-
-
-class WholeHistory(History):
-    def _get_repo_walker(self):
-        return self.repo.walk(self.repo.head.target, git.GIT_SORT_TOPOLOGICAL)
-
 
 class LinearHistory(History):
-    def _get_repo_walker(self):
-        linear_walker = self.repo.walk(self.repo.head.target, git.GIT_SORT_TOPOLOGICAL)
-        linear_walker.simplify_first_parent()
-        return linear_walker
+    def fetch(self):
+        repo_walker = self.repo.walk(self.repo.head.target, git.GIT_SORT_TOPOLOGICAL)
+        repo_walker.simplify_first_parent()
+        records = []
+        for commit in repo_walker:
+
+            insertions, deletions = 0, 0
+            if len(commit.parents) == 0:  # initial commit
+                st = commit.tree.diff_to_tree(swap=True).stats
+                insertions, deletions = st.insertions, st.deletions
+            elif len(commit.parents) >= 1:
+                parent_commit = commit.parents[0]
+                st = self.repo.diff(parent_commit, commit).stats
+                insertions, deletions = st.insertions, st.deletions
+
+            records.append({'commit_sha': commit.hex[:7],
+                            'committer_timestamp': commit.committer.time,
+                            'files_count': len(commit.tree.diff_to_tree()),
+                            'insertions': insertions,
+                            'deletions': deletions})
+        return records
