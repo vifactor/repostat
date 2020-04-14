@@ -45,7 +45,7 @@ class HTMLReportCreator(object):
         colors = colormaps.colormaps[self.configuration['colormap']]
         self.j2_env.filters['to_heatmap'] = lambda val, max_val: "%d, %d, %d" % colors[int(float(val) / max_val * (len(colors) - 1))]
 
-    def _save_recent_activity_data(self):
+    def _get_recent_activity_data(self):
         recent_weekly_commits = self.git_repository_statistics.\
             get_recent_weekly_activity(self.recent_activity_period_weeks)
 
@@ -68,8 +68,8 @@ class HTMLReportCreator(object):
             ]
         }
 
-        with open(os.path.join(self.path, 'recent_activity.dat'), 'w') as f:
-            json.dump(graph_data, f)
+        return graph_data
+
 
     def _bundle_assets(self):
         # copy assets to report output folder
@@ -120,6 +120,8 @@ class HTMLReportCreator(object):
         with open(os.path.join(path, "activity.html"), 'w', encoding='utf-8') as f:
             f.write(activity_html)
 
+        recent_activity = self._get_recent_activity_data()
+
         # Commits by current year's months
         current_year = datetime.date.today().year
         current_year_monthly_activity = self.git_repository_statistics.history('m')
@@ -128,7 +130,7 @@ class HTMLReportCreator(object):
 
         values = [{'x': int(x.month) - 1, 'y': int(y)} for x,y in zip(current_year_monthly_activity.index, current_year_monthly_activity.values)]
 
-        graph_data = {
+        by_month = {
             "yAxis": {"axisLabel": "Commits in %d" % current_year},
             "xAxis": {"rotateLabels": -90, "ticks": len(values)},
             "config": {
@@ -140,14 +142,11 @@ class HTMLReportCreator(object):
             ]
         }
 
-        with open(os.path.join(path, 'commits_by_year_month.dat'), 'w') as fg:
-            json.dump(graph_data, fg)
-
         # Commits by year
         yearly_activity = self.git_repository_statistics.history('Y')
         values = [{'x': int(x.year), 'y': int(y)} for x,y in zip(yearly_activity.index, yearly_activity.values)]
 
-        graph_data = {
+        by_year = {
             "xAxis": {"rotateLabels": -90, "ticks": len(values)},
             "yAxis": {"axisLabel": "Commits"},
             "config": {
@@ -159,8 +158,12 @@ class HTMLReportCreator(object):
             ]
         }
 
-        with open(os.path.join(path, 'commits_by_year.dat'), 'w') as fg:
-            json.dump(graph_data, fg)
+        activity_js = self.j2_env.get_template('activity.js').render(
+            commits_by_month = json.dumps(by_month),
+            commits_by_year = json.dumps(by_year),
+            recent_activity = json.dumps(recent_activity))
+        with open(os.path.join(path, 'activity.js'), 'w') as fg:
+            fg.write(activity_js)
 
         ###
         # Authors
@@ -187,14 +190,11 @@ class HTMLReportCreator(object):
             authorstats['values'] = [{'x': x.timestamp() * 1000, 'y': y} for x,y in zip(series.index, series.values)]
             data.append(authorstats)
 
-        graph_data = {
+        lines_by_authors = {
             "xAxis": { "rotateLabels": -45 },
             "yAxis": { "axisLabal": "Lines" },
             "data" : data
         }
-
-        with open(os.path.join(path, 'lines_of_code_by_author.dat'), 'w') as fgl:
-            json.dump(graph_data, fgl)
 
         # "Commit count" and streamgraph
         # TODO move the "added lines" into the same JSON to save space and download time
@@ -208,7 +208,7 @@ class HTMLReportCreator(object):
             authorstats['values'] = [[x.timestamp() * 1000, y, z] for x,y,z in zip(series.index, series.values, stream.values)]
             data.append(authorstats)
 
-        graph_data = {
+        commits_by_authors = {
             "xAxis": { "rotateLabels": -45 },
             "yAxis": { "axisLabal": "Commits" },
             "config": {
@@ -220,13 +220,10 @@ class HTMLReportCreator(object):
             "data": data
         }
 
-        with open(os.path.join(path, 'commits_by_author.dat'), 'w') as fgc:
-            json.dump(graph_data, fgc)
-
         # Domains
         domains_dist = sorted(self.git_repository_statistics.domains_distribution.items(), key=lambda kv: kv[1],
                               reverse=True)
-        graph_data = {
+        domains = {
             "config": {
                 "donut": True,
                 "padAngle": 0.01,
@@ -236,10 +233,15 @@ class HTMLReportCreator(object):
         }
 
         for i, (domain, commits_count) in enumerate(domains_dist[:self.configuration['max_domains']]):
-            graph_data["data"].append({"key": domain, "y": commits_count})
+            domains["data"].append({"key": domain, "y": commits_count})
 
-        with open(os.path.join(path, 'domains.dat'), 'w') as fp:
-            json.dump(graph_data, fp)
+        authors_js = self.j2_env.get_template('authors.js').render(
+            lines_by_authors = json.dumps(lines_by_authors),
+            commits_by_authors = json.dumps(commits_by_authors),
+            domains = json.dumps(domains)
+        )
+        with open(os.path.join(path, 'authors.js'), 'w') as fg:
+            fg.write(authors_js)
 
         ###
         # Files
@@ -266,8 +268,9 @@ class HTMLReportCreator(object):
             ]
         }
 
-        with open(os.path.join(path, 'files_by_date.dat'), 'w') as fg:
-            json.dump(graph_data, fg)
+        files_js = self.j2_env.get_template('files.js').render(json_data = json.dumps(graph_data))
+        with open(os.path.join(path, 'files.js'), 'w') as fg:
+            fg.write(files_js)
 
         ###
         # tags.html

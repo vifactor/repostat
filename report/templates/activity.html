@@ -4,22 +4,6 @@
 <h2 id="recent_activity"><a href="#recent_activity">Recent activity</a></h2>
 
 <div id="chart_activity" style="border: 1px solid #808080; width: 1014px"><svg style="height: 200px; width: 100%"></svg></div>
-	<script>
-		(async() => {
-			// Fetch the data and wait for it
-			const request = await fetch('recent_activity.dat', {mode: 'no-cors'});
-			const dataset = await request.json();
-
-			// Setup the chart
-			nv.addGraph(function() {
-				var chart = nv.models.historicalBarChart().options(dataset.config);
-				chart.yAxis.options(dataset.yAxis);
-				chart.xAxis.options(dataset.xAxis);
-				d3.select('#chart_activity svg').datum(dataset.data).call(chart);
-				return chart;
-			});
-		})();
-	</script>
 
 <h2 id="total_activity"><a href="#total_activity">Total Activity</a></h2>
 
@@ -27,44 +11,7 @@
 <div id="chart_commits_month"><svg style="height: 150px; width: 50%"></svg></div>
 <div id="chart_commits_year"><svg style="height: 300px; width: 100%"></svg></div>
 </div>
-	<script>
-		(async() => {
-			// Fetch the data and wait for it
-			const request = await fetch('commits_by_year.dat', {mode: 'no-cors'});
-			const dataset = await request.json()
-
-			// Setup the chart
-			nv.addGraph(function() {
-				var chart = nv.models.historicalBarChart().options(dataset.config);
-				chart.xAxis.options(dataset.xAxis);
-				chart.yAxis.options(dataset.yAxis);
-				d3.select('#chart_commits_year svg').datum(dataset.data).call(chart);
-				return chart;
-			});
-		})();
-
-		(async() => {
-			// Fetch the data and wait for it
-			const request = await fetch('commits_by_year_month.dat', {mode: 'no-cors'});
-			const dataset = await request.json()
-
-			// Setup the chart
-			nv.addGraph(function() {
-				var chart = nv.models.historicalBarChart().options(dataset.config);
-
-				chart.yAxis.options(dataset.yAxis);
-				chart.xAxis.options(dataset.xAxis);
-				chart.xAxis
-					.tickFormat(function(x) {
-						const month = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-						return month[x];
-					});
-
-				d3.select('#chart_commits_month svg').datum(dataset.data).call(chart);
-				return chart;
-			});
-		})();
-	</script>
+<script src="activity.js"></script>
 
 
  <div class="row">
