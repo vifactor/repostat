@@ -250,25 +250,25 @@ class HTMLReportCreator(object):
         with open(os.path.join(path, "files.html"), 'w', encoding='utf-8') as f:
             f.write(files_html)
 
-        filecount = []
-        linecount = []
+        import pandas as pd
+        hst = self.git_repository_statistics.linear_history('W').copy()
+        hst["epoch"] = (hst.index - pd.Timestamp("1970-01-01 00:00:00+00:00")) // pd.Timedelta('1s') * 1000
 
-        for timestamp in sorted(self.git_repo_statistics.files_by_stamp.keys()):
-            filecount.append({"x": timestamp * 1000, "y": self.git_repo_statistics.files_by_stamp[timestamp]})
-        for stamp in sorted(self.git_repo_statistics.changes_history.keys()):
-            linecount.append({"x": stamp * 1000, "y": self.git_repo_statistics.changes_history[stamp]['lines']})
-
+        files_count_ts = hst[["epoch", 'files_count']].rename(columns={"epoch": "x", 'files_count': "y"})\
+            .to_dict('records')
+        lines_count_ts = hst[["epoch", 'lines_count']].rename(columns={"epoch": "x", 'lines_count': "y"})\
+            .to_dict('records')
         graph_data = {
-            "xAxis": { "rotateLabels": -45 },
-            "yAxis1": { "axisLabel": "Files" },
-            "yAxis2": { "axisLabel": "Lines" },
-            "data" : [
-                {"key": "Files", "color": "#9400d3", "type": "line", "yAxis": 1, "values": filecount},
-                {"key": "Lines", "color": "#d30094", "type": "line", "yAxis": 2, "values": linecount},
+            "xAxis": {"rotateLabels": -45},
+            "yAxis1": {"axisLabel": "Files"},
+            "yAxis2": {"axisLabel": "Lines"},
+            "data": [
+                {"key": "Files", "color": "#9400d3", "type": "line", "yAxis": 1, "values": files_count_ts},
+                {"key": "Lines", "color": "#d30094", "type": "line", "yAxis": 2, "values": lines_count_ts},
             ]
         }
 
-        files_js = self.j2_env.get_template('files.js').render(json_data = json.dumps(graph_data))
+        files_js = self.j2_env.get_template('files.js').render(json_data=json.dumps(graph_data))
         with open(os.path.join(path, 'files.js'), 'w') as fg:
             fg.write(files_js)
 

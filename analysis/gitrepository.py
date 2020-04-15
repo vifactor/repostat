@@ -19,7 +19,6 @@ class GitRepository(object):
         self.repo = git.Repository(path)
         self.whole_history_df = GitWholeHistory(self.repo).as_dataframe()
         self.linear_history_df = GitLinearHistory(self.repo).as_dataframe()
-        print(self.linear_history_df)
 
     @property
     def first_commit_timestamp(self):
@@ -175,6 +174,7 @@ class GitRepository(object):
         return df
 
     def history(self, sampling):
+        # this is "commits history" with timeline defined by "author_timestamp", i.e. by time when a commit was created
         df = self.whole_history_df[['author_timestamp']].copy()
         df['datetime'] = pd.to_datetime(self.whole_history_df['author_timestamp'], unit='s', utc=True)
         df = df.set_index(df['datetime'])\
@@ -182,3 +182,16 @@ class GitRepository(object):
             .groupby(pd.Grouper(freq=sampling)) \
             .count()
         return df
+
+    def linear_history(self, sampling):
+        # this is "modifications history" with timeline defined by "committer_timestamp", i.e. by time when a
+        # commit was incorporated (via create/amend/rebase) into branch
+        df = self.linear_history_df[['committer_timestamp', 'files_count', 'insertions', 'deletions']].copy()
+        df['datetime'] = pd.to_datetime(self.linear_history_df['committer_timestamp'], unit='s', utc=True)
+        df = df.set_index(df['datetime'])
+
+        wh_grouped = df[['files_count', 'insertions', 'deletions']].groupby(pd.Grouper(freq=sampling))
+        result = wh_grouped[['insertions', 'deletions']].sum().cumsum()
+        result['files_count'] = wh_grouped['files_count'].mean().fillna(method='ffill')
+        result['lines_count'] = result['insertions'] - result['deletions']
+        return result
