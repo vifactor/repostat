@@ -84,8 +84,8 @@ class HTMLReportCreator(object):
         most_productive_authors = authors[:max_authors_count]
         rest_authors = authors[max_authors_count:]
 
-        most_productive_authors_history = authors_history[most_productive_authors].cumsum()
-        rest_authors_history = authors_history[rest_authors].sum(axis=1).cumsum()
+        most_productive_authors_history = authors_history[most_productive_authors].asfreq(freq='W', fill_value=0).cumsum()
+        rest_authors_history = authors_history[rest_authors].sum(axis=1).asfreq(freq='W', fill_value=0).cumsum()
 
         most_productive_authors_history['Others'] = rest_authors_history.values
         return most_productive_authors_history
@@ -189,7 +189,7 @@ class HTMLReportCreator(object):
             series = authors_commits_history[author]
             stream = series.diff().fillna(0)
             lines = authors_added_lines_history[author]
-            authorstats['values'] = [[x.timestamp() * 1000, y, z, w] for x,y,z in zip(series.index, series.values, stream.values, lines.values)]
+            authorstats['values'] = [[int(x.timestamp() * 1000), int(y), int(z), int(w)] for x,y,z,w in zip(series.index, series.values, stream.values, lines.values)]
             data.append(authorstats)
 
         commits_by_authors = {
