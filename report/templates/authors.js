@@ -1,20 +1,19 @@
-const commit_stats = {{commits_by_authors}}
+const lines_stats = {{lines_by_authors}}
 
 // Setup the chart
 nv.addGraph(function() {
 	var chart = nv.models.lineChart()
-		.x(function(d) { return d[0] })
-		.y(function(d) { return d[3] })
 		.useInteractiveGuideline(true);
-	chart.yAxis.axisLabel("Lines added");
+	chart.yAxis.options(lines_stats.yAxis);
 	chart.xAxis
 		.tickFormat(function(d) { return d3.time.format('%Y-%m')(new Date(d)); })
-		.options(commit_stats.xAxis)
+		.options(lines_stats.xAxis)
 
-	d3.select('#chart_loc svg').datum(commit_stats.data).call(chart);
+	d3.select('#chart_loc svg').datum(lines_stats.data).call(chart);
 	return chart;
 });
 
+const commit_stats = {{commits_by_authors}}
 
 // Setup the commits-by-author chart
 nv.addGraph(function() {

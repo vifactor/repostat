@@ -180,7 +180,24 @@ class HTMLReportCreator(object):
         authors_added_lines_history = self._squash_authors_history(authors_activity_history.insertions,
                                                                    self.configuration['max_authors'])
 
-        # "Commit count", "added lines" and streamgraph
+        # "Added lines" graph
+        data = []
+
+        for author in authors_added_lines_history:
+            authorstats = {}
+            authorstats['key'] = author
+            series = authors_added_lines_history[author]
+            authorstats['values'] = [{'x': int(x.timestamp()) * 1000, 'y': int(y)} for x,y in zip(series.index, series.values)]
+            data.append(authorstats)
+
+        lines_by_authors = {
+            "xAxis": { "rotateLabels": -45 },
+            "yAxis": { "axisLabel": "Lines" },
+            "data" : data
+        }
+
+        # "Commit count" and streamgraph
+        # TODO move the "added lines" into the same JSON to save space and download time
         data = []
 
         for author in authors_commits_history:
@@ -188,8 +205,7 @@ class HTMLReportCreator(object):
             authorstats['key'] = author
             series = authors_commits_history[author]
             stream = series.diff().fillna(0)
-            lines = authors_added_lines_history[author]
-            authorstats['values'] = [[int(x.timestamp() * 1000), int(y), int(z), int(w)] for x,y,z,w in zip(series.index, series.values, stream.values, lines.values)]
+            authorstats['values'] = [[int(x.timestamp() * 1000), int(y), int(z)] for x,y,z in zip(series.index, series.values, stream.values)]
             data.append(authorstats)
 
         commits_by_authors = {
@@ -220,6 +236,7 @@ class HTMLReportCreator(object):
             domains["data"].append({"key": domain, "y": commits_count})
 
         authors_js = self.j2_env.get_template('authors.js').render(
+            lines_by_authors = json.dumps(lines_by_authors),
             commits_by_authors = json.dumps(commits_by_authors),
             domains = json.dumps(domains)
         )
