@@ -55,8 +55,8 @@ class HTMLReportCreator(object):
             values.append({'x': int(self.recent_activity_period_weeks - i -1), 'y': int(commits)})
 
         graph_data = {
-            "xAxis": {"axisLabel": "Commits"},
-            "yAxis": {"axisLabel": "Weeks ago"},
+            "xAxis": {"axisLabel": "Weeks ago"},
+            "yAxis": {"axisLabel": "Commits"},
             "config": {
                 "noData": "No recent activity.",
                 "padData": True,
@@ -180,24 +180,7 @@ class HTMLReportCreator(object):
         authors_added_lines_history = self._squash_authors_history(authors_activity_history.insertions,
                                                                    self.configuration['max_authors'])
 
-        # "Added lines" graph
-        data = []
-
-        for author in authors_added_lines_history:
-            authorstats = {}
-            authorstats['key'] = author
-            series = authors_added_lines_history[author]
-            authorstats['values'] = [{'x': x.timestamp() * 1000, 'y': y} for x,y in zip(series.index, series.values)]
-            data.append(authorstats)
-
-        lines_by_authors = {
-            "xAxis": { "rotateLabels": -45 },
-            "yAxis": { "axisLabal": "Lines" },
-            "data" : data
-        }
-
-        # "Commit count" and streamgraph
-        # TODO move the "added lines" into the same JSON to save space and download time
+        # "Commit count", "added lines" and streamgraph
         data = []
 
         for author in authors_commits_history:
@@ -205,12 +188,13 @@ class HTMLReportCreator(object):
             authorstats['key'] = author
             series = authors_commits_history[author]
             stream = series.diff().fillna(0)
-            authorstats['values'] = [[x.timestamp() * 1000, y, z] for x,y,z in zip(series.index, series.values, stream.values)]
+            lines = authors_added_lines_history[author]
+            authorstats['values'] = [[x.timestamp() * 1000, y, z, w] for x,y,z in zip(series.index, series.values, stream.values, lines.values)]
             data.append(authorstats)
 
         commits_by_authors = {
             "xAxis": { "rotateLabels": -45 },
-            "yAxis": { "axisLabal": "Commits" },
+            "yAxis": { "axisLabel": "Commits" },
             "config": {
                 "useInteractiveGuideline": True, 
                 "style": "stream-center",
@@ -236,7 +220,6 @@ class HTMLReportCreator(object):
             domains["data"].append({"key": domain, "y": commits_count})
 
         authors_js = self.j2_env.get_template('authors.js').render(
-            lines_by_authors = json.dumps(lines_by_authors),
             commits_by_authors = json.dumps(commits_by_authors),
             domains = json.dumps(domains)
         )
@@ -260,8 +243,8 @@ class HTMLReportCreator(object):
 
         graph_data = {
             "xAxis": { "rotateLabels": -45 },
-            "yAxis1": { "axisLabal": "Files" },
-            "yAxis2": { "axisLabal": "Lines" },
+            "yAxis1": { "axisLabel": "Files" },
+            "yAxis2": { "axisLabel": "Lines" },
             "data" : [
                 {"key": "Files", "color": "#9400d3", "type": "line", "yAxis": 1, "values": filecount},
                 {"key": "Lines", "color": "#d30094", "type": "line", "yAxis": 2, "values": linecount},
