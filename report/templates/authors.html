@@ -30,10 +30,19 @@
 <p class="moreauthors">These didn't make it to the top: {{project.non_top_authors|join(', ')}}</p>
 
 <h2 id="cumulated_added_lines_of_code_per_author"><a href="#cumulated_added_lines_of_code_per_author">Cumulated Added Lines of Code per Author</a></h2>
-<img src="lines_of_code_by_author.png" alt="Lines of code per Author"><p class="moreauthors">Only top {{project.top_authors|length}} authors shown</p>
+
+<div id="chart_loc" style="border: 1px solid #808080; width: 1014px"><svg style="height: 480px; width: 100%"></svg></div>
+
+<p class="moreauthors">Only top {{project.top_authors|length}} authors shown</p>
 
 <h2 id="commits_per_author"><a href="#commits_per_author">Commits per Author</a></h2>
-<img src="commits_by_author.png" alt="Commits per Author"><p class="moreauthors">Only top {{project.top_authors|length}} authors shown</p>
+
+<div style="border: 1px solid #808080; width: 1014px">
+<div id="chart_commits"><svg style="height: 480px; width: 100%"></svg></div>
+<div id="chart_steam"><svg style="height: 480px; width: 100%"></svg></div>
+</div>
+
+<p class="moreauthors">Only top {{project.top_authors|length}} authors shown</p>
 
 <h2 id="author_of_month"><a href="#author_of_month">Author of the Month</a></h2>
 <table class="sortable" id="aom">
@@ -73,7 +82,7 @@
     {% endfor %}
 </table>
 
-{# TODO: Plot as pie-chart instead of bar-plot #}
 <h2 id="commits_by_domains"><a href="#commits_by_domains">Commits by Domains</a></h2>
-<img src="domains.png" alt="Commits by Domains">
+<div id="chart_domains" style="border: 1px solid #808080; width: 507px"><svg style="height: 480px; width: 100%"></svg></div>
+<script src="authors.js"></script>
 {% endblock %}

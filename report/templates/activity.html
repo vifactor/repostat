@@ -2,11 +2,17 @@
 
 {% block content %}
 <h2 id="recent_activity"><a href="#recent_activity">Recent activity</a></h2>
-{# TODO: Print message instead of empty graph if no recent activity in repo #}
-<img src="recent_activity.png" alt="Recent activity graph">
+
+<div id="chart_activity" style="border: 1px solid #808080; width: 1014px"><svg style="height: 200px; width: 100%"></svg></div>
 
 <h2 id="total_activity"><a href="#total_activity">Total Activity</a></h2>
-<img src="total_activity.png" alt="total_activity">
+
+<div style="border: 1px solid #808080; width: 1014px">
+<div id="chart_commits_month"><svg style="height: 150px; width: 50%"></svg></div>
+<div id="chart_commits_year"><svg style="height: 300px; width: 100%"></svg></div>
+</div>
+<script src="activity.js"></script>
+
 
  <div class="row">
   <div class="column">

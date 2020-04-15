@@ -57,10 +57,6 @@ class ReadableFile(argparse.Action):
 
 
 class Configuration(dict):
-    gnuplot_version_string = None
-    # By default, gnuplot is searched from path, but can be overridden with the
-    # environment variable "GNUPLOT"
-    gnuplot_executable = os.environ.get('GNUPLOT', 'gnuplot')
     release_data_dict = None
 
     @classmethod
@@ -138,15 +134,6 @@ class Configuration(dict):
         parser.add_argument('output_path', type=str, action=WritableDir, help="Path to an output directory")
 
         return parser.parse_args(argv)
-
-    def get_gnuplot_version(self):
-        if self.gnuplot_version_string is None:
-            reg = re.compile(r"(\d+)\.(\d+)\.?(\d+)?")
-            version_str = get_pipe_output(['%s --version' % self.gnuplot_executable]).split('\n')[0]
-            match = reg.search(version_str)
-            if match:
-                self.gnuplot_version_string = version_str[match.span()[0]:match.span()[1]]
-        return self.gnuplot_version_string
 
     @staticmethod
     def get_jinja_version():

@@ -29,9 +29,6 @@ jobs:
       with:
         python-version: 3.7
 
-    - name: Install gnuplot
-      run: brew install gnuplot
-
     - name: Download and build libgit2
       run: |
         wget https://github.com/libgit2/libgit2/archive/v${libgit2_version}.tar.gz
