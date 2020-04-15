@@ -4,6 +4,7 @@ import calendar
 import time
 import collections
 import glob
+import csv
 from jinja2 import Environment, FileSystemLoader
 from distutils.dir_util import copy_tree
 
@@ -101,17 +102,16 @@ class HTMLReportCreator(object):
             f.write(activity_html)
 
         # Commits by current year's months
-        today_date = datetime.date.today()
-        current_year = today_date.year
-        with open(os.path.join(path, 'commits_by_year_month.dat'), 'w') as fg:
-            for month in range(1, 13):
-                yymm = datetime.date(current_year, month, 1).strftime("%Y-%m")
-                fg.write('%s %s\n' % (yymm, self.git_repo_statistics.monthly_commits_timeline.get(yymm, 0)))
+        current_year = datetime.date.today().year
+        current_year_monthly_activity = self.git_repository_statistics.history('m')
+        current_year_monthly_activity = current_year_monthly_activity\
+            .loc[current_year_monthly_activity.index.year == current_year]
+        current_year_monthly_activity.to_csv(os.path.join(path, 'commits_by_year_month.dat'), header=False,
+                                             date_format="%Y-%m", sep='\t', quoting=csv.QUOTE_NONE)
 
-        # Commits by year
-        with open(os.path.join(path, 'commits_by_year.dat'), 'w') as fg:
-            for yy in sorted(self.git_repo_statistics.yearly_commits_timeline.keys()):
-                fg.write('%d %d\n' % (yy, self.git_repo_statistics.yearly_commits_timeline[yy]))
+        yearly_activity = self.git_repository_statistics.history('Y')
+        yearly_activity.to_csv(os.path.join(path, 'commits_by_year.dat'), header=False, date_format="%Y", sep='\t',
+                               quoting=csv.QUOTE_NONE)
 
         ###
         # Authors
@@ -122,7 +122,6 @@ class HTMLReportCreator(object):
         # TODO: adjust sampling depending on repo age
         authors_activity_history = self.git_repository_statistics.authors.history('W')
 
-        import csv
         authors_commits_history = self._squash_authors_history(authors_activity_history.commits_count,
                                                                self.configuration['max_authors'])
         authors_commits_history.add_prefix('"').add_suffix('"')\
@@ -212,38 +211,18 @@ class HTMLReportCreator(object):
     def render_activity_page(self):
         # TODO: this conversion from old 'data' to new 'project data' should perhaps be removed in future
         project_data = {
-            'hourly_activity': [],
-            'weekday_hourly_activity': {},
-            'weekday_activity': {},
             'timezones_activity': collections.OrderedDict(
                 sorted(self.git_repository_statistics.timezones_distribution.items(), key=lambda n: int(n[0]))),
-            'month_in_year_activity': self.git_repo_statistics.activity_monthly,
-            'weekday_hour_max_commits_count': self.git_repo_statistics.max_weekly_hourly_activity
+            'month_in_year_activity': self.git_repository_statistics.month_of_year_distribution.to_dict()
         }
 
         self._save_recent_activity_data()
 
-        hour_of_day = self.git_repo_statistics.get_hourly_activity()
-        for i in range(0, 24):
-            if i in hour_of_day:
-                project_data['hourly_activity'].append(hour_of_day[i])
-            else:
-                project_data['hourly_activity'].append(0)
-
-        for weekday in range(len(calendar.day_name)):
-            project_data['weekday_hourly_activity'][weekday] = []
-            weekday_commits = 0
-            for hour in range(0, 24):
-                try:
-                    commits = self.git_repo_statistics.activity_weekly_hourly[weekday][hour]
-                    weekday_commits += commits
-                except KeyError:
-                    commits = 0
-                if commits != 0:
-                    project_data['weekday_hourly_activity'][weekday].append(commits)
-                else:
-                    project_data['weekday_hourly_activity'][weekday].append(commits)
-            project_data['weekday_activity'][weekday] = weekday_commits
+        wd_h_distribution = self.git_repository_statistics.weekday_hour_distribution.astype('int32')
+        project_data['weekday_hourly_activity'] = wd_h_distribution
+        project_data['weekday_hour_max_commits_count'] = wd_h_distribution.max().max()
+        project_data['weekday_activity'] = wd_h_distribution.sum(axis=1)
+        project_data['hourly_activity'] = wd_h_distribution.sum(axis=0)
 
         # load and render template
         template_rendered = self.j2_env.get_template('activity.html').render(

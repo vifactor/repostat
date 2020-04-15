@@ -22,20 +22,22 @@
         </tr>
         <tr>
             <th>Commits</th>
-            {% set max_commits_count = project.hourly_activity | max %}
-            {% for activity in project.hourly_activity %}
-                <td style="background-color: rgb({{activity|to_heatmap(max_commits_count)}})">
-                    {{activity}}</td>
+            {% set max_commits_count = project.hourly_activity.values | max %}
+            {% for hour in range(24) %}
+                {% set commits_count = project.hourly_activity.get(hour, 0) %}
+                <td style="background-color: rgb({{ commits_count|to_heatmap(max_commits_count) }})">
+                    {{commits_count}}</td>
             {% endfor %}
             <th></th>
             <th></th>
         </tr>
         <tr>
             <th>%</th>
-            {% set total_commits_count = project.hourly_activity | sum %}
-            {% for activity in project.hourly_activity %}
-                <td style="background-color: rgb({{activity|to_heatmap(max_commits_count)}})">
-                    {{'%0.2f'| format(activity|to_percentage(total_commits_count))}}
+            {% set total_commits_count = project.hourly_activity.values | sum %}
+            {% for hour in range(24) %}
+                {% set commits_count = project.hourly_activity.get(hour, 0) %}
+                <td style="background-color: rgb({{ commits_count|to_heatmap(max_commits_count) }})">
+                    {{ '%0.2f'| format(commits_count|to_percentage(total_commits_count)) }}
                 </td>
             {% endfor %}
             <th></th>
@@ -50,16 +52,17 @@
             <th></th>
             <th style="word-wrap: break-word">by weekday</th>
         </tr>
-        {% set weekday_max_commits_count = project.weekday_activity.values() | max %}
+        {% set weekday_max_commits_count = project.weekday_activity.values | max %}
         {% for weekday in range(0, 7) %}
         <tr>
             <th>{{weekday|to_weekday_name}}</th>
-            {% for commits_count in project.weekday_hourly_activity[weekday] %}
+            {% for hour in range(24) %}
+                {% set commits_count = project.weekday_hourly_activity.get(hour, {}).get(weekday, 0) %}
                 <td style="background-color: rgb({{commits_count|to_heatmap(project.weekday_hour_max_commits_count)}})">
-                    {{commits_count}}</td>
+                    {{ commits_count }}</td>
             {% endfor %}
             <td></td>
-            {% set commits_count = project.weekday_activity[weekday] %}
+            {% set commits_count = project.weekday_activity.get(weekday, 0) %}
             <td style="background-color: rgb({{commits_count|to_heatmap(weekday_max_commits_count)}})">
                 {{commits_count}}</td>
         </tr>
