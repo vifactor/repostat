@@ -3,14 +3,12 @@ import datetime
 import calendar
 import time
 import collections
-import glob
 import json
 from jinja2 import Environment, FileSystemLoader
 from distutils.dir_util import copy_tree
 
 from analysis.gitstatistics import GitStatistics
 from analysis.gitrepository import GitRepository
-from tools.shellhelper import get_pipe_output
 from tools.configuration import Configuration
 from tools import sort_keys_by_value_of_key
 from tools import colormaps

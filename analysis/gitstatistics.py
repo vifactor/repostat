@@ -52,27 +52,10 @@ class GitStatistics:
         else:
             self.tags = {}
 
-        self.changes_history, _, _, _ \
-            = self.fetch_total_history()
-
-        # timestamp -> files count
-        self.files_by_stamp = self._get_files_count_by_timestamp()
-
         # extension -> files, lines, size
         self.extensions = self.get_current_files_info()
         self.total_files_count = sum(v['files'] for k, v in self.extensions.items())
         self.total_tree_size = sum(v['size'] for k, v in self.extensions.items())
-
-    def _get_files_count_by_timestamp(self):
-        files_by_stamp = {}
-        for commit in self.repo.walk(self.repo.head.target, git.GIT_SORT_TIME):
-            diff = commit.tree.diff_to_tree()
-            files_count = len(diff)
-            # committer timestamp is chosen as we want to know when number of files changed on current branch
-            # author.time gives time stamp of the commit creation
-            timestamp = commit.committer.time
-            files_by_stamp[timestamp] = files_count
-        return files_by_stamp
 
     @staticmethod
     def _get_file_extension(git_file_path, max_ext_length=5):
@@ -157,49 +140,6 @@ class GitStatistics:
             print(f"Working... ({i} / {diff_len})", end="\r", flush=True)
 
         return contribution
-
-    def build_history_item(self, child_commit, stat) -> dict:
-        author = self.signature_mapper(child_commit.author)
-        return {
-            'files': stat.files_changed,
-            'ins': stat.insertions,
-            'del': stat.deletions,
-            'author': author.name,
-            'author_mail': author.email,
-            'is_merge': len(child_commit.parents) > 1,
-            'commit_time': child_commit.commit_time,
-            'oid': child_commit.oid,
-            'parent_ids': child_commit.parent_ids
-        }
-
-    @Timeit("Fetching total history")
-    def fetch_total_history(self):
-        history = {}
-        child_commit = self.repo.head.peel()
-        timestamps = []
-        while len(child_commit.parents) != 0:
-            # taking [0]-parent is equivalent of '--first-parent -m' options
-            parent_commit = child_commit.parents[0]
-            st = self.repo.diff(parent_commit, child_commit).stats
-            history[child_commit.author.time] = self.build_history_item(child_commit, st)
-            timestamps.append(child_commit.author.time)
-            child_commit = parent_commit
-        # initial commit does not have parent, so we take diff to empty tree
-        st = child_commit.tree.diff_to_tree(swap=True).stats
-        history[child_commit.author.time] = self.build_history_item(child_commit, st)
-
-        timestamps.append(child_commit.author.time)
-
-        lines_count = 0
-        lines_added = 0
-        lines_removed = 0
-        timestamps.reverse()
-        for t in timestamps:
-            lines_added += history[t]['ins']
-            lines_removed += history[t]['del']
-            lines_count += history[t]['ins'] - history[t]['del']
-            history[t]['lines'] = lines_count
-        return history, lines_added, lines_removed, lines_count
 
     def get_stamp_created(self):
         return self.created_time_stamp
