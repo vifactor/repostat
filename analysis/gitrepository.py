@@ -21,6 +21,10 @@ class GitRepository(object):
         self.linear_history_df = GitLinearHistory(self.repo).as_dataframe()
 
     @property
+    def total_commits_count(self):
+        return self.whole_history_df.shape[0]
+
+    @property
     def first_commit_timestamp(self):
         return self.whole_history_df["author_timestamp"].min()
 

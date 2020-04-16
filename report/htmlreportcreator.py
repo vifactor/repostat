@@ -290,13 +290,13 @@ class HTMLReportCreator(object):
         date_format_str = '%Y-%m-%d %H:%M'
         first_commit_datetime = datetime.datetime.fromtimestamp(self.git_repository_statistics.first_commit_timestamp)
         last_commit_datetime = datetime.datetime.fromtimestamp(self.git_repository_statistics.last_commit_timestamp)
-        # TODO: this conversion from old 'data' to new 'project data' should perhaps be removed in future
+
         project_data = {
             "name": self.git_repo_statistics.repo_name,
             "branch": self.git_repo_statistics.analysed_branch,
             "age": (last_commit_datetime - first_commit_datetime).days,
             "active_days_count": self.git_repository_statistics.active_days_count,
-            "commits_count": self.git_repo_statistics.total_commits,
+            "commits_count": self.git_repository_statistics.total_commits_count,
             "authors_count": self.git_repository_statistics.authors.count(),
             "files_count": self.git_repo_statistics.total_files_count,
             "total_lines_count": self.git_repo_statistics.total_lines_count,
@@ -347,7 +347,7 @@ class HTMLReportCreator(object):
             'top_authors': [],
             'non_top_authors': [],
             'authors_top': self.configuration['authors_top'],
-            'total_commits_count': self.git_repo_statistics.total_commits,
+            'total_commits_count': self.git_repository_statistics.total_commits_count,
             'total_lines_count': self.git_repo_statistics.total_lines_count
         }
 

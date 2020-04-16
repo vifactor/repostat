@@ -44,8 +44,6 @@ class WholeHistory(History):
             mapped_author_signature = self.map_signature(commit.author)
 
             insertions, deletions = 0, 0
-            # merge commits are ignored: changes in merge commits are normally because of integration issues
-            # TODO: this should not be ignored for linear history fetch
             if len(commit.parents) == 0:  # initial commit
                 st = commit.tree.diff_to_tree(swap=True).stats
                 insertions, deletions = st.insertions, st.deletions
@@ -53,6 +51,8 @@ class WholeHistory(History):
                 parent_commit = commit.parents[0]
                 st = self.repo.diff(parent_commit, commit).stats
                 insertions, deletions = st.insertions, st.deletions
+            # case len(commit.parents) > 1 corresponds to a merge commit
+            # merge commits are ignored: changes in merge commits are normally because of integration issues
 
             records.append({'commit_sha': commit.hex[:7],
                             'author_name': mapped_author_signature.name,
