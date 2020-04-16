@@ -1,7 +1,5 @@
 import unittest
 
-import datetime
-
 from analysis import GitStatistics
 import test
 
@@ -19,9 +17,6 @@ class TestSingleCommitRepository(unittest.TestCase):
 
         cls.commit_author, = cls.git_repository.commit_builder.author_signatures
         cls.gs = GitStatistics(cls.git_repository.location)
-
-    def test_total_commits_number(self):
-        self.assertEqual(self.gs.total_commits, 1)
 
     def test_missing_authors_email(self):
         import tempfile
@@ -44,7 +39,3 @@ class TestSingleCommitRepository(unittest.TestCase):
             except Exception as e:
                 self.fail(str(e))
             os.chdir(cwd)
-
-
-if __name__ == '__main__':
-    unittest.main()

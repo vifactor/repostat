@@ -1,10 +1,7 @@
 import os
 import argparse
 import json
-import re
 import warnings
-
-from tools.shellhelper import get_pipe_output
 
 here = os.path.dirname(os.path.abspath(__file__))
 

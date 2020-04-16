@@ -1,9 +1,6 @@
 import unittest
 
-import os
-
 from analysis import GitStatistics
-from analysis.gitrepository import GitRepository
 import test
 
 
