@@ -25,6 +25,18 @@ class GitRepository(object):
         return self.whole_history_df.shape[0]
 
     @property
+    def total_lines_added(self):
+        return self.linear_history_df['insertions'].sum()
+
+    @property
+    def total_lines_removed(self):
+        return self.linear_history_df['deletions'].sum()
+
+    @property
+    def total_lines_count(self):
+        return self.total_lines_added - self.total_lines_removed
+
+    @property
     def first_commit_timestamp(self):
         return self.whole_history_df["author_timestamp"].min()
 

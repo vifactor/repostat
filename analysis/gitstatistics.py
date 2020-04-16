@@ -52,7 +52,7 @@ class GitStatistics:
         else:
             self.tags = {}
 
-        self.changes_history, self.total_lines_added, self.total_lines_removed, self.total_lines_count \
+        self.changes_history, _, _, _ \
             = self.fetch_total_history()
 
         # timestamp -> files count

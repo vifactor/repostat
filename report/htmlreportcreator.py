@@ -299,9 +299,9 @@ class HTMLReportCreator(object):
             "commits_count": self.git_repository_statistics.total_commits_count,
             "authors_count": self.git_repository_statistics.authors.count(),
             "files_count": self.git_repo_statistics.total_files_count,
-            "total_lines_count": self.git_repo_statistics.total_lines_count,
-            "added_lines_count": self.git_repo_statistics.total_lines_added,
-            "removed_lines_count": self.git_repo_statistics.total_lines_removed,
+            "total_lines_count": self.git_repository_statistics.total_lines_count,
+            "added_lines_count": self.git_repository_statistics.total_lines_added,
+            "removed_lines_count": self.git_repository_statistics.total_lines_removed,
             "first_commit_date": first_commit_datetime.strftime(date_format_str),
             "last_commit_date": last_commit_datetime.strftime(date_format_str)
         }
@@ -348,7 +348,7 @@ class HTMLReportCreator(object):
             'non_top_authors': [],
             'authors_top': self.configuration['authors_top'],
             'total_commits_count': self.git_repository_statistics.total_commits_count,
-            'total_lines_count': self.git_repo_statistics.total_lines_count
+            'total_lines_count': self.git_repository_statistics.total_lines_count
         }
 
         all_authors = self.git_repository_statistics.authors.sort().names()
@@ -411,7 +411,7 @@ class HTMLReportCreator(object):
         # TODO: this conversion from old 'data' to new 'project data' should perhaps be removed in future
         project_data = {
             'files_count': self.git_repo_statistics.total_files_count,
-            'lines_count': self.git_repo_statistics.total_lines_count,
+            'lines_count': self.git_repository_statistics.total_lines_count,
             'size': self.git_repo_statistics.total_tree_size,
             'files': []
         }
