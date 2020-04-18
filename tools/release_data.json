@@ -1,6 +1,6 @@
 {
-    "develop_version": "v1.3.1",
-    "user_version": "2020-01-31",
+    "develop_version": "v1.3.2",
+    "user_version": "2020-04-18",
     "contributors": [
         "Viktor Kopp",
         "Heikki Hokkanen",
@@ -13,5 +13,5 @@
         "Jani Hur",
         "Matthew Jones"
     ],
-    "git_sha1": "64af308"
+    "git_sha1": "354ab38"
 }
