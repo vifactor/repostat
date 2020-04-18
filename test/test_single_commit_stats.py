@@ -21,7 +21,7 @@ class TestSingleCommitRepository(unittest.TestCase):
         cls.gs = GitStatistics(cls.git_repository.location)
 
     def test_total_commits_number(self):
-        self.assertEqual(self.gs.total_commits, 1)
+        self.assertEqual(self.gs.get_total_commits(), 1)
 
     def test_authors_statistics(self):
         self.assertIn(self.commit_author.name, self.gs.authors)

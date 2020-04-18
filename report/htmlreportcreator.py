@@ -211,7 +211,7 @@ class HTMLReportCreator(object):
             "branch": self.git_repo_statistics.analysed_branch,
             "age": (last_commit_datetime - first_commit_datetime).days,
             "active_days_count": len(self.git_repo_statistics.active_days),
-            "commits_count": self.git_repo_statistics.total_commits,
+            "commits_count": self.git_repo_statistics.get_total_commits(),
             "authors_count": len(self.git_repo_statistics.authors),
             "files_count": self.git_repo_statistics.total_files_count,
             "total_lines_count": self.git_repo_statistics.total_lines_count,
@@ -285,7 +285,7 @@ class HTMLReportCreator(object):
             'top_authors': [],
             'non_top_authors': [],
             'authors_top': self.configuration['authors_top'],
-            'total_commits_count': self.git_repo_statistics.total_commits,
+            'total_commits_count': self.git_repo_statistics.get_total_commits(),
             'total_lines_count': self.git_repo_statistics.total_lines_count
         }
 
