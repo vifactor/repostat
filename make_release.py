@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import sys
 import os
+import re
 import json
 from datetime import datetime
 import pygit2 as git
@@ -11,6 +12,7 @@ import subprocess as cmd
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPOSTAT_REPO_PATH = HERE
 REPOSTAT_REPO = git.Repository(REPOSTAT_REPO_PATH)
+REPOSTAT_MAILMAP = git.Mailmap.from_repository(REPOSTAT_REPO)
 RELEASE_DATA_FILE = os.path.join(REPOSTAT_REPO_PATH, "tools", 'release_data.json')
 CHANGELOG_FILE_NAME = "CHANGELOG.rst"
 
@@ -23,6 +25,21 @@ def rl_input(prompt, prefill=''):
         readline.set_startup_hook()
 
 
+def map_signature(sig: git.Signature):
+    try:
+        mapped_signature = REPOSTAT_MAILMAP.resolve_signature(sig)
+    except ValueError as e:
+        name = sig.name
+        email = sig.email
+        if not name:
+            name = "Empty Empty"
+        if not email:
+            email = "empty@empty.empty"
+        return git.Signature(name, email, sig.time, sig.offset, 'utf-8')
+    else:
+        return mapped_signature
+
+
 def fetch_contributors(repo):
     contribution = {}
 
@@ -32,8 +49,8 @@ def fetch_contributors(repo):
         if file_to_blame not in submodules_paths:
             blob_blame = repo.blame(file_to_blame)
             for blame_hunk in blob_blame:
-                contribution[blame_hunk.final_committer.name] = contribution.get(blame_hunk.final_committer.name, 0) \
-                                                                + blame_hunk.lines_in_hunk
+                contributor = map_signature(blame_hunk.final_committer)
+                contribution[contributor.name] = contribution.get(contributor.name, 0) + blame_hunk.lines_in_hunk
 
     # this gives only the contributors to the current code tree, not all the commiters to the project
     contribution = sorted(contribution.items(), key=lambda kv: kv[1], reverse=True)
@@ -52,8 +69,11 @@ def prepare_changelog(new_version):
 
 # retrieve name of current branch
 git_branch_string = REPOSTAT_REPO.head.shorthand
-if git_branch_string != 'master':
-    print("Not the 'master' branch: {}. Do not perform any actions.".format(git_branch_string))
+
+is_master_branch = (git_branch_string == 'master')
+is_release_branch = re.search(r'v(\d+.\d+).x', git_branch_string) is not None
+if not (is_master_branch or is_release_branch):
+    print("Not the 'master' or a release branch: {}. Do not perform any actions.".format(git_branch_string))
     sys.exit(0)
 
 current_version_str = '0.0.0'
@@ -117,23 +137,10 @@ with open(RELEASE_DATA_FILE, 'w') as release_json_file:
 user_name = REPOSTAT_REPO.config["user.name"]
 user_email = REPOSTAT_REPO.config["user.email"]
 author = git.Signature(user_name, user_email)
-committer = author
 
-REPOSTAT_REPO.index.add_all()
+REPOSTAT_REPO.index.add(os.path.join("tools", 'release_data.json'))
+REPOSTAT_REPO.index.add(CHANGELOG_FILE_NAME)
 REPOSTAT_REPO.index.write()
-tree = REPOSTAT_REPO.index.write_tree()
 
-release_commit_message = f"Release {new_version_tag}"
-release_commit_oid = REPOSTAT_REPO.create_commit('refs/heads/master', author, committer,
-                                                 release_commit_message, tree, [head_commit.hex])
-
-# create annotated tag on release commit
-# there is no way to do it with py git, so raw shell call to git is used
-"""
-tagger = author
-release_tag_oid = REPOSTAT_REPO.create_tag(new_version_tag, release_commit_oid, git.GIT_OBJ_COMMIT, tagger,
-                                           release_commit_message)
-"""
-out = cmd.run(f"git tag -s -a {new_version_tag} -m '{release_commit_message}'", check=True, shell=True)
-print(out)
-print("Commit ", release_commit_oid, " tagged with ", new_version_tag)
+print("Now release commit can be created and tagged via:\n")
+print(f"git tag -s -a {new_version_tag} -m 'Release {new_version_tag}'")
