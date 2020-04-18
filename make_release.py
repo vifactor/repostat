@@ -54,8 +54,9 @@ def prepare_changelog(new_version):
 # retrieve name of current branch
 git_branch_string = REPOSTAT_REPO.head.shorthand
 
+is_master_branch = (git_branch_string == 'master')
 is_release_branch = re.search(r'v(\d+.\d+).x', git_branch_string) is not None
-if git_branch_string != 'master' or is_release_branch:
+if not (is_master_branch or is_release_branch):
     print("Not the 'master' or a release branch: {}. Do not perform any actions.".format(git_branch_string))
     sys.exit(0)
 
@@ -127,16 +128,5 @@ REPOSTAT_REPO.index.write()
 tree = REPOSTAT_REPO.index.write_tree()
 
 release_commit_message = f"Release {new_version_tag}"
-release_commit_oid = REPOSTAT_REPO.create_commit('refs/heads/master', author, committer,
-                                                 release_commit_message, tree, [head_commit.hex])
-
-# create annotated tag on release commit
-# there is no way to do it with py git, so raw shell call to git is used
-"""
-tagger = author
-release_tag_oid = REPOSTAT_REPO.create_tag(new_version_tag, release_commit_oid, git.GIT_OBJ_COMMIT, tagger,
-                                           release_commit_message)
-"""
-out = cmd.run(f"git tag -s -a {new_version_tag} -m '{release_commit_message}'", check=True, shell=True)
-print(out)
-print("Commit ", release_commit_oid, " tagged with ", new_version_tag)
+print("Now release commit can be created and tagged via:")
+print(f"git tag -s -a {new_version_tag} -m '{release_commit_message}'")
