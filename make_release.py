@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import sys
 import os
+import re
 import json
 from datetime import datetime
 import pygit2 as git
@@ -52,8 +53,10 @@ def prepare_changelog(new_version):
 
 # retrieve name of current branch
 git_branch_string = REPOSTAT_REPO.head.shorthand
-if git_branch_string != 'master':
-    print("Not the 'master' branch: {}. Do not perform any actions.".format(git_branch_string))
+
+is_release_branch = re.search(r'v(\d+.\d+).x', git_branch_string) is not None
+if git_branch_string != 'master' or is_release_branch:
+    print("Not the 'master' or a release branch: {}. Do not perform any actions.".format(git_branch_string))
     sys.exit(0)
 
 current_version_str = '0.0.0'
