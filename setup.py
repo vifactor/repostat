@@ -27,7 +27,6 @@ setup(name='repo_stat',
                                'release_data.json'],
                     'tools': ['release_data.json']},
       install_requires=[
-          'cffi==1.11.5',
           'Jinja2>=2.10.1',
           'MarkupSafe==1.0',
           'pygit2>=0.24.2',
