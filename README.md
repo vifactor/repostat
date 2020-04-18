@@ -1,16 +1,9 @@
 # [repostat](https://github.com/vifactor/repostat)
 [![Build Status](https://travis-ci.org/vifactor/repostat.svg?branch=master)](https://travis-ci.org/vifactor/repostat)
 
-Git repository analysis report generator:
- - Python3 - compatible
- - removed redundancy in plots and tables
- - a couple of visualizations added and some improved
- - code cleaned up (e.g. [Jinja2](https://jinja.palletsprojects.com/en/2.10.x/)
-  used for html generation)
- - git output text parsing replaced with pygit2 library calls
- - statistics calculation is done via Pandas
-
-Enhanced fork of [gitstats](https://github.com/hoxu/gitstats) tool.
+Python3-compatible Git repository analysis html report generator 
+with [nvd3](http://nvd3.org/) -driven interactive visualisations of metrics.
+Initially, a fork of [gitstats](https://github.com/hoxu/gitstats) tool.
 
 ## Installation
 There are currently two versions maintained. Stable version is in
@@ -40,13 +33,12 @@ or current [CI setup](https://github.com/vifactor/repostat/blob/master/.github/w
 
 ![Repostat for Mac OS](https://github.com/vifactor/repostat/workflows/Repostat%20for%20Mac%20OS/badge.svg)
 
-
 ### Windows installation
 Check [issue #57](https://github.com/vifactor/repostat/issues/57)
 ___
 ## Usage
 ```bash
-repostat [--help] [--version] [--config_file CONFIG_FILE]
+repostat [--help] [--version] [--config_file CONFIG_FILE_PATH]
                  git_repository_path report_output_path
 ```
 Run `repostat --help` for details.
@@ -76,24 +68,40 @@ in html-files (see #74)
 ## Configuration file
 
 The report can be customized using a JSON settings file. The file is passed
-using the --config-file option as follows:
+using the `--config-file` option as follows:
 
 ```
 repostat --config-file <path_to_config.json> <repo_path> <out_path>
 ```
+Configuration file might contain following fields (all are optional):
+```json
+{
+    "max_domains": 10,
+    "max_ext_length": 10,
+    "max_authors": 7,
+    "max_authors_of_months": 6,
+    "authors_top": 5,
+    "colormap": "classic",
+    "max_recent_tags": -1
+}
+```
+Detailed information about role of some fields is below: 
 
 ### Authors page configuration
 
-These values are usually adjusted to accomodate projects with various number
+These values are usually adjusted to accommodate projects with various number
 of contributors and activity levels, to avoid showing too much or too little
 information.
 
 * max_domains: number of e-mail domains to show in author stats
-* max_ext_length
-* max_authors: number of authors in the "top authors" table (other authors are
-	listed without detailed stats)
-* max_authors_of_months: number of months for which "author of the month" should be displayed
-* authors_top: number of authors to show for each month in the author of month/year list
+* max_ext_length: max symbols count after `.` in a filename to 
+consider substring as a file extension
+* max_authors: number of authors in the "top authors" table 
+(other authors are listed without detailed stats)
+* max_authors_of_months: number of months for which "author of 
+the month" should be displayed
+* authors_top: number of authors to show for each month in the
+author of month/year list
 
 ### Colorscheme configuration
 
