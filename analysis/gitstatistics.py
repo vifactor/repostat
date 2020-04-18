@@ -189,7 +189,6 @@ class GitStatistics:
 
         # timestamp -> files count
         self.files_by_stamp = self._get_files_count_by_timestamp()
-        self.total_commits = len(self.files_by_stamp)
 
         # extension -> files, lines, size
         self.extensions = self.get_current_files_info()
@@ -565,7 +564,7 @@ class GitStatistics:
         return self.authors.__len__()
 
     def get_total_commits(self):
-        return self.commits.__len__()
+        return len(self.commits)
 
     def get_stamp_created(self):
         return self.created_time_stamp
