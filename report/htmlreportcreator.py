@@ -5,7 +5,6 @@ import time
 import collections
 import json
 from jinja2 import Environment, FileSystemLoader
-from distutils.dir_util import copy_tree
 
 from analysis.gitstatistics import GitStatistics
 from analysis.gitrepository import GitRepository
@@ -68,8 +67,8 @@ class HTMLReportCreator(object):
 
         return graph_data
 
-
     def _bundle_assets(self):
+        from distutils.dir_util import copy_tree
         # copy assets to report output folder
         assets_local_abs_path = os.path.join(self.path, self.assets_subdir)
         copy_tree(src=self.assets_path, dst=assets_local_abs_path)
