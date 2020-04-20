@@ -93,10 +93,11 @@ class Configuration(dict):
         self.update({
             "max_domains": 10,
             "max_ext_length": 10,
-            "max_authors": 7,
+            "max_authors": 12,
             "max_authors_of_months": 6,
             "authors_top": 5,
-            "colormap": "classic"
+            "colormap": "classic",
+            "time_sampling": "W"
         })
 
     def do_open_in_browser(self):
@@ -110,6 +111,9 @@ class Configuration(dict):
 
     def do_process_tags(self):
         return self["max_recent_tags"] > 0 if "max_recent_tags" in self else True
+
+    def get_time_sampling(self):
+        return self["time_sampling"] if "time_sampling" in self else "W"
 
     @classmethod
     def _parse_sys_argv(cls, argv):
