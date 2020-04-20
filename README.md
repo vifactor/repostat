@@ -82,7 +82,8 @@ Configuration file might contain following fields (all are optional):
     "max_authors_of_months": 6,
     "authors_top": 5,
     "colormap": "classic",
-    "max_recent_tags": -1
+    "max_recent_tags": -1,
+    "time_sampling": "W"
 }
 ```
 Detailed information about role of some fields is below: 
@@ -112,6 +113,14 @@ using the "colormap" option. The allowed values are:
 * plasma: uses the "plasma" colormap as described [here](https://bids.github.io/colormap/)
 * viridis: uses the "viridis" colormap as described [here](https://bids.github.io/colormap/)
 * clrscc: uses a selection of colors from [https://clrs.cc/]
+
+### History plots sampling
+is controlled by `"time_sampling"` field in configuration file and
+defines how timeseries , e.g. number of files over a
+repository history, are sampled. By default, weekly-sampling is used.
+For old repositories one might want to increase that value to
+month or even quarter.
+Accepted values for `"time_sampling"` are the [Pandas' Offset aliases](https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases)
 
 ### Tags rendering
 

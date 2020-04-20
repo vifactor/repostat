@@ -1,7 +1,6 @@
 import os
 import datetime
 import calendar
-import time
 import collections
 import json
 from jinja2 import Environment, FileSystemLoader
@@ -27,6 +26,7 @@ class HTMLReportCreator(object):
         self.git_repo_statistics = repo_stat
         self.git_repository_statistics = repository
         self.has_tags_page = config.do_process_tags()
+        self._time_sampling_interval = "W"
 
         self.common_rendering_data = {
             "assets_path": self.assets_path,
@@ -41,6 +41,14 @@ class HTMLReportCreator(object):
         self.j2_env.filters['to_percentage'] = lambda val, max_val: (100 * float(val) / max_val) if max_val != 0 else 0
         colors = colormaps.colormaps[self.configuration['colormap']]
         self.j2_env.filters['to_heatmap'] = lambda val, max_val: "%d, %d, %d" % colors[int(float(val) / max_val * (len(colors) - 1))]
+
+    def set_time_sampling(self, offset: str):
+        """
+        :param offset: any valid string composed of Pandas' offset aliases
+            https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases
+        """
+        self._time_sampling_interval = offset
+        return self
 
     def _get_recent_activity_data(self):
         recent_weekly_commits = self.git_repository_statistics.\
@@ -81,8 +89,12 @@ class HTMLReportCreator(object):
         most_productive_authors = authors[:max_authors_count]
         rest_authors = authors[max_authors_count:]
 
-        most_productive_authors_history = authors_history[most_productive_authors].asfreq(freq='W', fill_value=0).cumsum()
-        rest_authors_history = authors_history[rest_authors].sum(axis=1).asfreq(freq='W', fill_value=0).cumsum()
+        most_productive_authors_history = authors_history[most_productive_authors] \
+            .asfreq(freq=self._time_sampling_interval, fill_value=0) \
+            .cumsum()
+        rest_authors_history = authors_history[rest_authors].sum(axis=1)\
+            .asfreq(freq=self._time_sampling_interval, fill_value=0)\
+            .cumsum()
 
         most_productive_authors_history['Others'] = rest_authors_history.values
         return most_productive_authors_history
@@ -168,8 +180,7 @@ class HTMLReportCreator(object):
         with open(os.path.join(path, "authors.html"), 'w', encoding='utf-8') as f:
             f.write(authors_html.decode('utf-8'))
 
-        # TODO: adjust sampling depending on repo age
-        authors_activity_history = self.git_repository_statistics.authors.history('W')
+        authors_activity_history = self.git_repository_statistics.authors.history(self._time_sampling_interval)
 
         authors_commits_history = self._squash_authors_history(authors_activity_history.commits_count,
                                                                self.configuration['max_authors'])
@@ -248,7 +259,7 @@ class HTMLReportCreator(object):
             f.write(files_html)
 
         import pandas as pd
-        hst = self.git_repository_statistics.linear_history('W').copy()
+        hst = self.git_repository_statistics.linear_history(self._time_sampling_interval).copy()
         hst["epoch"] = (hst.index - pd.Timestamp("1970-01-01 00:00:00+00:00")) // pd.Timedelta('1s') * 1000
 
         files_count_ts = hst[["epoch", 'files_count']].rename(columns={"epoch": "x", 'files_count': "y"})\

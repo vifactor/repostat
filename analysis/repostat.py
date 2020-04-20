@@ -43,7 +43,9 @@ def main():
     os.makedirs(output_path, exist_ok=True)
 
     print('Generating HTML report...')
-    HTMLReportCreator(config, repo_statistics, repository_statistics).create(output_path)
+    HTMLReportCreator(config, repo_statistics, repository_statistics)\
+        .set_time_sampling(config.get_time_sampling())\
+        .create(output_path)
     exec_time_seconds = get_execution_time()
     print('Report generated in %.2f secs.' % exec_time_seconds)
 
