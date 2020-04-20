@@ -2,41 +2,17 @@ import pygit2 as git
 from datetime import datetime
 import warnings
 import os
-from distutils import version
 
 from tools.timeit import Timeit
 
 
 class GitStatistics:
-    is_mailmap_supported = True if version.LooseVersion(git.LIBGIT2_VERSION) >= '0.28.0' else False
-
     def __init__(self, path, fetch_contribution=False, fetch_tags=True):
         """
         :param path: path to a repository
         """
         self.repo = git.Repository(path)
-        if GitStatistics.is_mailmap_supported:
-            self.mailmap = git.Mailmap.from_repository(self.repo)
-
-            def mapsig(sig: git.Signature):
-                try:
-                    mapped_signature = self.mailmap.resolve_signature(sig)
-                except ValueError as e:
-                    name = sig.name
-                    email = sig.email
-                    if not name:
-                        name = "Empty Empty"
-                        warnings.warn(f"{str(e)}. Name will be replaced with '{name}'")
-                    if not email:
-                        email = "empty@empty.empty"
-                        warnings.warn(f"{str(e)}. Email will be replaced with '{email}'")
-                    return git.Signature(name, email, sig.time, sig.offset, 'utf-8')
-                else:
-                    return mapped_signature
-
-            self.signature_mapper = mapsig
-        else:
-            self.signature_mapper = lambda signature: signature
+        self.mailmap = git.Mailmap.from_repository(self.repo)
 
         self.created_time_stamp = datetime.now().timestamp()
         self.repo_name = os.path.basename(os.path.abspath(path))
@@ -56,6 +32,27 @@ class GitStatistics:
         self.extensions = self.get_current_files_info()
         self.total_files_count = sum(v['files'] for k, v in self.extensions.items())
         self.total_tree_size = sum(v['size'] for k, v in self.extensions.items())
+
+    def map_signature(self, sig: git.Signature) -> git.Signature:
+        """
+        Maps of a contributor signature as read from a repository using a provided .mailmap file
+        :param sig: Signature to map
+        :return: mapped signature
+        """
+        try:
+            mapped_signature = self.mailmap.resolve_signature(sig)
+        except ValueError as e:
+            name = sig.name
+            email = sig.email
+            if not name:
+                name = "Empty Empty"
+                warnings.warn(f"{str(e)}. Name will be replaced with '{name}'")
+            if not email:
+                email = "empty@empty.empty"
+                warnings.warn(f"{str(e)}. Email will be replaced with '{email}'")
+            return git.Signature(name, email, sig.time, sig.offset, 'utf-8')
+        else:
+            return mapped_signature
 
     @staticmethod
     def _get_file_extension(git_file_path, max_ext_length=5):
@@ -102,7 +99,7 @@ class GitStatistics:
         commit_count = 0
         for commit in self.repo.walk(self.repo.head.target, git.GIT_SORT_TOPOLOGICAL | git.GIT_SORT_REVERSE):
             commit_count += 1
-            commit_author = self.signature_mapper(commit.author)
+            commit_author = self.map_signature(commit.author)
             authors[commit_author.name] = authors.get(commit_author.name, 0) + 1
             if commit.oid in commit_tag.keys():
                 tagname = commit_tag[commit.oid]
@@ -134,7 +131,7 @@ class GitStatistics:
                         # blame hunk corresponding to that commit will produce a None signature
                         # the following substitutes hunk's final committer with an author of the commit
                         hunk_committer = self.repo[blame_hunk.orig_commit_id].author
-                    committer = self.signature_mapper(hunk_committer)
+                    committer = self.map_signature(hunk_committer)
                     contribution[committer.name] = contribution.get(committer.name, 0) + blame_hunk.lines_in_hunk
             i += 1
             print(f"Working... ({i} / {diff_len})", end="\r", flush=True)

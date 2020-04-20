@@ -18,6 +18,7 @@ setup(name='repo_stat',
           "Topic :: Software Development :: Version Control",
           "Topic :: Utilities"
       ],
+      python_requires='>=3.5',
       packages=['analysis', 'tools', 'report'],
       package_data={'report': ['templates/*.html',
                                'templates/*.js',
