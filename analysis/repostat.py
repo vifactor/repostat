@@ -11,7 +11,6 @@ import webbrowser
 from report.htmlreportcreator import HTMLReportCreator
 from analysis import GitStatistics
 from analysis.gitrepository import GitRepository
-from tools.shellhelper import get_external_execution_time
 from tools.configuration import Configuration
 
 os.environ['LC_ALL'] = 'C'
@@ -19,12 +18,10 @@ os.environ['LC_ALL'] = 'C'
 time_start = time.time()
 
 
-def print_exec_times():
+def get_execution_time():
     time_end = time.time()
-    exectime_internal = time_end - time_start
-    exectime_external = get_external_execution_time()
-    print('Execution time %.5f secs, %.5f secs (%.2f %%) in external commands)'
-          % (exectime_internal, exectime_external, (100.0 * exectime_external) / exectime_internal))
+    execution_time = time_end - time_start
+    return execution_time
 
 
 def main():
@@ -35,10 +32,10 @@ def main():
         sys.exit(1)
 
     print('Git path: %s' % config.git_repository_path)
-    print('Collecting data...', config.do_calculate_contribution())
+    print('Collecting data...')
     repo_statistics = GitStatistics(config.git_repository_path,
-                                          config.do_calculate_contribution(),
-                                          config.do_process_tags())
+                                    config.do_calculate_contribution(),
+                                    config.do_process_tags())
     repository_statistics = GitRepository(config.git_repository_path)
 
     output_path = config.statistics_output_path
@@ -47,7 +44,8 @@ def main():
 
     print('Generating HTML report...')
     HTMLReportCreator(config, repo_statistics, repository_statistics).create(output_path)
-    print_exec_times()
+    exec_time_seconds = get_execution_time()
+    print('Report generated in %.2f secs.' % exec_time_seconds)
 
     url = os.path.join(output_path, 'general.html').replace("'", "'\\''")
     if config.do_open_in_browser():

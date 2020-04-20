@@ -304,8 +304,7 @@ class HTMLReportCreator(object):
         }
 
         generation_data = {
-            "datetime": datetime.datetime.today().strftime(date_format_str),
-            "duration": "{0:.3f}".format(time.time() - self.git_repo_statistics.get_stamp_created())
+            "datetime": datetime.datetime.today().strftime(date_format_str)
         }
 
         # load and render template

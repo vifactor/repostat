@@ -14,7 +14,6 @@ class GitStatistics:
         self.repo = git.Repository(path)
         self.mailmap = git.Mailmap.from_repository(self.repo)
 
-        self.created_time_stamp = datetime.now().timestamp()
         self.repo_name = os.path.basename(os.path.abspath(path))
         self.analysed_branch = self.repo.head.shorthand
 
@@ -137,6 +136,3 @@ class GitStatistics:
             print(f"Working... ({i} / {diff_len})", end="\r", flush=True)
 
         return contribution
-
-    def get_stamp_created(self):
-        return self.created_time_stamp
