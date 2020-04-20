@@ -21,7 +21,7 @@ class TestSingleCommitRepository(unittest.TestCase):
     def test_missing_authors_email(self):
         import tempfile
         import os
-        from tools import shellhelper
+        from test import shellhelper
 
         cwd = os.getcwd()
         with tempfile.TemporaryDirectory() as tmpdir:
