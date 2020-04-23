@@ -137,8 +137,15 @@ class HTMLReportCreator(object):
         current_year_monthly_activity = current_year_monthly_activity\
             .loc[current_year_monthly_activity.index.year == current_year]
 
-        values = [{'x': int(x.month) - 1, 'y': int(y)} for x,y in zip(current_year_monthly_activity.index, current_year_monthly_activity.values)]
-
+        import pandas as pd
+        current_year_monthly_activity = pd.Series(current_year_monthly_activity.values,
+                                                  index=current_year_monthly_activity.index.month).to_dict()
+        values = [
+            {
+                'x': imonth,
+                'y': current_year_monthly_activity.get((imonth + 1), 0)
+            } for imonth in range(0, 12)
+        ]
         by_month = {
             "yAxis": {"axisLabel": "Commits in %d" % current_year},
             "xAxis": {"rotateLabels": -90, "ticks": len(values)},
