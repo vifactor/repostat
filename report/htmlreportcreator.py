@@ -236,20 +236,25 @@ class HTMLReportCreator(object):
             "data": data
         }
 
+        email_domains_distribution = self.git_repository_statistics.domains_distribution\
+            .sort_values(ascending=False)
+        if self.configuration['max_domains'] < email_domains_distribution.shape[0]:
+            top_domains = email_domains_distribution[:self.configuration['max_domains']]
+            other_domains = email_domains_distribution[self.configuration['max_domains']:].sum()
+            email_domains_distribution = top_domains.append(pd.Series(other_domains, index=["Others"]))
+
+        from collections import OrderedDict
+        email_domains_distribution = email_domains_distribution.to_dict(OrderedDict)
+
         # Domains
-        domains_dist = sorted(self.git_repository_statistics.domains_distribution.items(), key=lambda kv: kv[1],
-                              reverse=True)
         domains = {
             "config": {
                 "donut": True,
                 "padAngle": 0.01,
                 "cornerRadius": 5
             },
-            "data": []
+            "data": [{"key": domain, "y": commits_count} for domain, commits_count in email_domains_distribution.items()]
         }
-
-        for i, (domain, commits_count) in enumerate(domains_dist[:self.configuration['max_domains']]):
-            domains["data"].append({"key": domain, "y": commits_count})
 
         authors_js = self.j2_env.get_template('authors.js').render(
             lines_by_authors=json.dumps(lines_by_authors),

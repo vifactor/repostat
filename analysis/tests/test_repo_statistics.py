@@ -94,7 +94,7 @@ class RepoStatisticsTest(unittest.TestCase):
             stat = GitRepository(MagicMock())
 
             expected_domains = {'author1.com': 2, 'author2.com': 1, 'author3.com': 1}
-            self.assertDictEqual(expected_domains, stat.domains_distribution)
+            self.assertDictEqual(expected_domains, stat.domains_distribution.to_dict())
 
     @patch.object(WholeHistory, 'fetch', return_value=[
         {'commit_sha': 'fdc28ab', 'author_name': '', 'author_tz_offset': 0,
