@@ -54,11 +54,12 @@ class HTMLReportCreator(object):
         recent_weekly_commits = self.git_repository_statistics.\
             get_recent_weekly_activity(self.recent_activity_period_weeks)
 
-        values = []
-
-        for i, commits in enumerate(recent_weekly_commits):
-            values.append({'x': int(self.recent_activity_period_weeks - i -1), 'y': int(commits)})
-
+        values = [
+            {
+                'x': int(self.recent_activity_period_weeks - i - 1),
+                'y': int(commits)
+            } for i, commits in enumerate(recent_weekly_commits)
+        ]
         graph_data = {
             "xAxis": {"axisLabel": "Weeks ago"},
             "yAxis": {"axisLabel": "Commits"},
@@ -160,7 +161,7 @@ class HTMLReportCreator(object):
 
         # Commits by year
         yearly_activity = self.git_repository_statistics.history('Y')
-        values = [{'x': int(x.year), 'y': int(y)} for x,y in zip(yearly_activity.index, yearly_activity.values)]
+        values = [{'x': int(x.year), 'y': int(y)} for x, y in zip(yearly_activity.index, yearly_activity.values)]
 
         by_year = {
             "xAxis": {"rotateLabels": -90, "ticks": len(values)},
@@ -175,9 +176,9 @@ class HTMLReportCreator(object):
         }
 
         activity_js = self.j2_env.get_template('activity.js').render(
-            commits_by_month = json.dumps(by_month),
-            commits_by_year = json.dumps(by_year),
-            recent_activity = json.dumps(recent_activity))
+            commits_by_month=json.dumps(by_month),
+            commits_by_year=json.dumps(by_year),
+            recent_activity=json.dumps(recent_activity))
         with open(os.path.join(path, 'activity.js'), 'w') as fg:
             fg.write(activity_js)
 
@@ -202,7 +203,7 @@ class HTMLReportCreator(object):
             authorstats = {}
             authorstats['key'] = author
             series = authors_added_lines_history[author]
-            authorstats['values'] = [{'x': int(x.timestamp()) * 1000, 'y': int(y)} for x,y in zip(series.index, series.values)]
+            authorstats['values'] = [{'x': int(x.timestamp()) * 1000, 'y': int(y)} for x, y in zip(series.index, series.values)]
             data.append(authorstats)
 
         lines_by_authors = {
@@ -220,7 +221,7 @@ class HTMLReportCreator(object):
             authorstats['key'] = author
             series = authors_commits_history[author]
             stream = series.diff().fillna(0)
-            authorstats['values'] = [[int(x.timestamp() * 1000), int(y), int(z)] for x,y,z in zip(series.index, series.values, stream.values)]
+            authorstats['values'] = [[int(x.timestamp() * 1000), int(y), int(z)] for x, y, z in zip(series.index, series.values, stream.values)]
             data.append(authorstats)
 
         commits_by_authors = {
@@ -251,9 +252,9 @@ class HTMLReportCreator(object):
             domains["data"].append({"key": domain, "y": commits_count})
 
         authors_js = self.j2_env.get_template('authors.js').render(
-            lines_by_authors = json.dumps(lines_by_authors),
-            commits_by_authors = json.dumps(commits_by_authors),
-            domains = json.dumps(domains)
+            lines_by_authors=json.dumps(lines_by_authors),
+            commits_by_authors=json.dumps(commits_by_authors),
+            domains=json.dumps(domains)
         )
         with open(os.path.join(path, 'authors.js'), 'w') as fg:
             fg.write(authors_js)
