@@ -79,8 +79,7 @@ class GitRepository(object):
     @property
     def domains_distribution(self):
         domains_ts = self.whole_history_df['author_email'].apply(self._fetch_domain_from_email)
-
-        return domains_ts.groupby(by=domains_ts.values).count().to_dict()
+        return domains_ts.groupby(by=domains_ts.values).count()
 
     def get_recent_weekly_activity(self, recent_weeks_count: int):
         """
