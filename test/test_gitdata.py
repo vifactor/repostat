@@ -71,9 +71,10 @@ class GitHistoryTest(unittest.TestCase):
         # Mailmap might be tested either on Whole or Linear history
         wh_df = WholeHistory(self.test_repo).as_dataframe()
 
-        authors = wh_df['author_name'].values
-        self.assertSetEqual({"John Doe"}, set(authors))
+        authors = wh_df['author_name'].unique()
+        self.assertCountEqual(["John Doe"], authors)
         emails = wh_df['author_email'].values
-        self.assertSetEqual({"john@doe.com"}, set(emails))
+        # both emails are preserved for statistics
+        self.assertCountEqual(["john@doe.com", "author@author.net"], emails)
 
     # TODO: add test for inserted/deleted lines count
