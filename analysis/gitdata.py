@@ -12,20 +12,20 @@ class History(abc.ABC):
         self.mailmap = git.Mailmap.from_repository(self.repo)
 
     def map_signature(self, signature: git.Signature):
+        # the unmapped email is used on purpose
+        email = signature.email
         try:
             mapped_signature = self.mailmap.resolve_signature(signature)
-        except ValueError as e:
+            name = mapped_signature.name
+        except ValueError:
             name = signature.name
-            email = signature.email
             if not name:
                 name = "Empty Empty"
                 # warnings.warn(f"{str(e)}. Name will be replaced with '{name}'")
             if not email:
                 email = "empty@empty.empty"
                 # warnings.warn(f"{str(e)}. Email will be replaced with '{email}'")
-            return git.Signature(name, email, signature.time, signature.offset, 'utf-8')
-        else:
-            return mapped_signature
+        return name, email
 
     def as_dataframe(self):
         data = self.fetch()
@@ -41,7 +41,7 @@ class WholeHistory(History):
         repo_walker = self.repo.walk(self.repo.head.target, git.GIT_SORT_TOPOLOGICAL)
         records = []
         for commit in repo_walker:
-            mapped_author_signature = self.map_signature(commit.author)
+            author_name, author_email = self.map_signature(commit.author)
 
             insertions, deletions = 0, 0
             if len(commit.parents) == 0:  # initial commit
@@ -55,8 +55,8 @@ class WholeHistory(History):
             # merge commits are ignored: changes in merge commits are normally because of integration issues
 
             records.append({'commit_sha': commit.hex[:7],
-                            'author_name': mapped_author_signature.name,
-                            'author_email': mapped_author_signature.email,
+                            'author_name': author_name,
+                            'author_email': author_email,
                             'author_tz_offset': commit.author.offset,
                             'author_timestamp': commit.author.time,
                             'insertions': insertions,
