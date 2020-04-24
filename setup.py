@@ -1,15 +1,20 @@
 from setuptools import setup
 from tools.configuration import Configuration
 
-# name with underscore is used here because 'repostat' is already occupied by https://pypi.org/project/repostat/
-setup(name='repo_stat',
+with open("README.md", "r") as fh:
+    long_description = fh.read()
+
+# such name for package is used here because 'repostat' is already occupied by https://pypi.org/project/repostat/
+setup(name='repostat-app',
       version=Configuration.get_release_data_info()['develop_version'],
       description='Desktop git repository analyser and report creator.',
       keywords='git analysis statistics vcs python',
       url='https://github.com/vifactor/repostat',
       author='Viktor Kopp',
       author_email='vifactor@gmail.com',
-      license='GPLv2',
+      license='GPLv3',
+      long_description=long_description,
+      long_description_content_type="text/markdown",
       classifiers=[
           "Development Status :: 4 - Beta",
           "Environment :: Console",
