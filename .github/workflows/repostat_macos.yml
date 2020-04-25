@@ -7,8 +7,8 @@ on:
   pull_request:
     branches: [ master ]
   schedule:
-    # run every 3 days at 00:01
-    - cron: '1 0 */3 * *'
+    # run every 5 days at 00:01
+    - cron: '1 0 */5 * *'
 
 jobs:
   osx_build:
