@@ -31,9 +31,8 @@ setup(name='repo_stat',
                     'tools': ['release_data.json']},
       install_requires=[
           'Jinja2>=2.10.1',
-          'pygit2~=1.0.0',
+          'pygit2>=1.0.3',
           'pytz>=2018.5',
-          'six>=1.11.0',
           'pandas~=0.25.3'
       ],
       entry_points={"console_scripts": ["repostat = analysis.repostat:main"]},
