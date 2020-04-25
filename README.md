@@ -10,6 +10,8 @@ There are currently two versions maintained. Stable version is in
 branch `v1.3.x`, while development (future v2.x.x) version is on `master`.
 
 ### Linux installation (Ubuntu 18.04 checked)
+![Repostat for Ubuntu 18.04](https://github.com/vifactor/repostat/workflows/Repostat%20for%20Ubuntu%2018.04/badge.svg)
+
 ```bash
 sudo pip3 install git+https://github.com/vifactor/repostat
 ```
@@ -18,23 +20,33 @@ This command installs *repostat* from HEAD of `master` branch. To install
 ```bash
 sudo pip3 install git+https://github.com/vifactor/repostat@<branch|tag>
 ```
-![Repostat for Ubuntu 18.04](https://github.com/vifactor/repostat/workflows/Repostat%20for%20Ubuntu%2018.04/badge.svg)
 
 ### Mac OS (Catalina) installation
+![Repostat for Mac OS](https://github.com/vifactor/repostat/workflows/Repostat%20for%20Mac%20OS/badge.svg)
+
+Prior to installing repostat one needs to make sure to have
+*right version* of libgit2 in the system:
+
+- following [pygit2 installation](https://www.pygit2.org/install.html#id13) instructions
+- (not recommended) installing it via Homebrew
 ```bash
 $ brew update
 $ brew install libgit2
+```
 
+NOTE:
+1) Homebrew-way to install packages is slow and may break system dependencies.
+2) repostat's [CI for OSX setup](https://github.com/vifactor/repostat/blob/master/.github/workflows/repostat_macos.yml):
+builds libgit2 from source.
+
+repostat is then installed as follows
+```
 $ pip3 install git+https://github.com/vifactor/repostat
 ```
-NOTE: Homebrew-way to install packages is slow and may break system dependencies.
-Please, check [pygit2 installation instructions](https://www.pygit2.org/install.html#id13)
-or current [CI setup](https://github.com/vifactor/repostat/blob/master/.github/workflows/repostat_macos.yml):
-
-![Repostat for Mac OS](https://github.com/vifactor/repostat/workflows/Repostat%20for%20Mac%20OS/badge.svg)
 
 ### Windows installation
-Check [issue #57](https://github.com/vifactor/repostat/issues/57)
+- Check [issue #57](https://github.com/vifactor/repostat/issues/57)
+- Check this [stackoverflow post](https://stackoverflow.com/a/59029604)
 ___
 ## Usage
 ```bash

@@ -51,6 +51,8 @@ jobs:
         source ${python_venv_path}
         export LIBGIT2=$HOME
         export LDFLAGS="-Wl,-rpath,'$LIBGIT2/lib' $LDFLAGS"
+        # the pygit2 version is fixed to comply with libgit2 version build from source
+        pip3 install pygit2==1.0.3
         pip3 install .
 
     - name: Run repostat
