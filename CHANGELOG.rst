@@ -1,3 +1,9 @@
+2.0.1 (2020-04-25)
+-------------------------
+- Provide configuration option to adjust time-sampling
+- Use unmapped author's email in domains distribution
+- Improve current year activity inset plot
+
 2.0.0 (2020-04-18)
 -------------------------
 - replace gnuplot graphs with interactive nvd3-plots
