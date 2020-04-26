@@ -37,3 +37,56 @@ nv.addGraph(function() {
 	d3.select('#chart_commits_month svg').datum(commits_by_month.data).call(chart);
 	return chart;
 });
+
+nv.addGraph(function() {
+  var chart = nv.models.discreteBarChart()
+      .x(function(d) { return d.label })    //Specify the data accessors.
+      .y(function(d) { return d.value })
+      .color(["#9400D3"])
+      .staggerLabels(true)    //Too many bars and not enough room? Try staggering labels.
+//      .tooltips(false)        //Don't show tooltips
+      .showValues(true)       //...instead, show the bar value right on top of each bar.
+//      .transitionDuration(350)
+      ;
+
+  d3.select('#review_time_chart svg')
+      .datum(exampleData())
+      .call(chart);
+
+  nv.utils.windowResize(chart.update);
+
+  return chart;
+});
+
+//Each bar represents a single discrete quantity.
+function exampleData() {
+ return [
+    {
+      key: "Cumulative Return",
+      color: "#9400D3",
+      values: [
+        {
+          "label" : 1,
+          "value" : -29.765957771107
+        } ,
+        {
+          "label" : 2,
+          "value" : 0
+        } ,
+        {
+          "label" : 3,
+          "value" : 32.807804682612
+        } ,
+        {
+          "label" : 4,
+          "value" : 196.45946739256
+        } ,
+        {
+          "label" : 5,
+          "value" : 0.19434030906893
+        }
+      ]
+    }
+  ]
+}
+
