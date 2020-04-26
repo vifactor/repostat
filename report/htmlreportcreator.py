@@ -175,6 +175,8 @@ class HTMLReportCreator(object):
             ]
         }
 
+        print(self.git_repository_statistics.review_time_distribution)
+
         activity_js = self.j2_env.get_template('activity.js').render(
             commits_by_month=json.dumps(by_month),
             commits_by_year=json.dumps(by_year),

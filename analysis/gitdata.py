@@ -59,6 +59,7 @@ class WholeHistory(History):
                             'author_email': author_email,
                             'author_tz_offset': commit.author.offset,
                             'author_timestamp': commit.author.time,
+                            'review_time': commit.committer.time - commit.author.time,
                             'insertions': insertions,
                             'deletions': deletions})
         return records

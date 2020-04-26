@@ -52,6 +52,38 @@ class GitRepository(object):
         return count
 
     @property
+    def review_time_distribution(self):
+        #print(pd.qcut(self.whole_history_df['review_time'][self.whole_history_df['review_time'] != 0],
+        #              q=100, duplicates='drop').value_counts().sort_index())
+        review_duration = pd.to_timedelta(self.whole_history_df['review_time'], unit='s')
+        bins = [pd.Timedelta('0s').total_seconds(),
+                pd.Timedelta('1s').total_seconds(),
+                pd.Timedelta('1 hour').total_seconds(),
+                pd.Timedelta('1 day').total_seconds(),
+                pd.Timedelta('2 days').total_seconds(),
+                pd.Timedelta('1W').total_seconds(),
+                pd.Timedelta('2W').total_seconds(),
+                pd.Timedelta(30, unit='D').total_seconds(),
+                pd.Timedelta(183, unit='D').total_seconds(),
+                pd.Timedelta(3, unit='Y').total_seconds()]
+
+        print(pd.Timedelta(3, unit='Y'))
+        review_time_binned = pd.cut(review_duration.dt.total_seconds(), bins=bins, include_lowest=True,
+                                    labels=['= 0s',
+                                            '< 1hour',
+                                            '< 1day',
+                                            '< 2days',
+                                            '< 1week',
+                                            '< 2weeks',
+                                            '< 1month',
+                                            '< 0.5 year',
+                                            '< 3 years'
+                                            ])
+        print(review_time_binned.value_counts().sort_index())
+        return -1
+
+
+    @property
     def timezones_distribution(self):
         # first group commits by timezones' offset given in minutes
         ts = self.whole_history_df['author_tz_offset'].groupby(self.whole_history_df['author_tz_offset']).count()
