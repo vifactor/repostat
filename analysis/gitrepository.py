@@ -62,9 +62,9 @@ class GitRepository(object):
                          pd.Timedelta('2W').total_seconds(),
                          pd.Timedelta(30, unit='D').total_seconds(),
                          pd.Timedelta(183, unit='D').total_seconds(),
-                         pd.Timedelta(3, unit='Y').total_seconds()]
+                         pd.Timedelta(3 * 365, unit='D').total_seconds()]
 
-        review_duration_ts = self.whole_history_df['review_time']
+        review_duration_ts = self.whole_history_df['review_duration']
         review_time_binned = pd.cut(review_duration_ts, bins=duration_bins, include_lowest=True,
                                     labels=['= 0s',
                                             '< 1hour',

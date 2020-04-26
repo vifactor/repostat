@@ -115,8 +115,10 @@
   </div>
 </div>
 
-<h2 id="review_time"><a href="#review_time">"Review duration" distribution</a></h2>
+<h2 id="review_time"><a href="#review_time">"Review duration"<sup>*</sup></a></h2>
 <div id="review_time_chart" style="border: 1px solid #808080; width: 1014px"><svg style="height: 200px; width: 100%"></svg></div>
+<p><sup>*</sup><small>Time difference between commit creation and merging
+    occurring because of amends, rebases and cherry-picks.</small></p>
 
 <script src="activity.js"></script>
 {% endblock %}
