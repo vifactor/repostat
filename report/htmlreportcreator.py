@@ -175,12 +175,20 @@ class HTMLReportCreator(object):
             ]
         }
 
-        print(self.git_repository_statistics.review_time_distribution)
+        review_duration = [
+            {
+                "label": label,
+                "value": count
+            }
+            for label, count in self.git_repository_statistics.review_duration_distribution.items()
+        ]
 
         activity_js = self.j2_env.get_template('activity.js').render(
             commits_by_month=json.dumps(by_month),
             commits_by_year=json.dumps(by_year),
-            recent_activity=json.dumps(recent_activity))
+            recent_activity=json.dumps(recent_activity),
+            review_duration=json.dumps(review_duration)
+        )
         with open(os.path.join(path, 'activity.js'), 'w') as fg:
             fg.write(activity_js)
 

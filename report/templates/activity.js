@@ -64,28 +64,7 @@ function exampleData() {
     {
       key: "Cumulative Return",
       color: "#9400D3",
-      values: [
-        {
-          "label" : 1,
-          "value" : -29.765957771107
-        } ,
-        {
-          "label" : 2,
-          "value" : 0
-        } ,
-        {
-          "label" : 3,
-          "value" : 32.807804682612
-        } ,
-        {
-          "label" : 4,
-          "value" : 196.45946739256
-        } ,
-        {
-          "label" : 5,
-          "value" : 0.19434030906893
-        }
-      ]
+      values: {{ review_duration }}
     }
   ]
 }
