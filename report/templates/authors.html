@@ -9,7 +9,6 @@
         <th>+ lines</th><th>- lines</th>
         <th>First commit</th><th>Latest commit</th>
         <th>Contributed (days)</th><th>Actively contributed (days)</th>
-        <th>Current contribution (%)</th>
     </tr>
     {% for author in project.top_authors %}
     <tr>
@@ -18,19 +17,19 @@
         <td>{{author.lines_added_count}}</td><td>{{author.lines_removed_count}}</td>
         <td>{{author.first_commit_date}}</td><td>{{author.latest_commit_date}}</td>
         <td>{{author.contributed_days_count}}</td><td>{{author.active_days_count}}</td>
-        {% if author.contribution is not none %}
-            <td>{{'%0.2f'| format(author.contribution|to_percentage(project.total_lines_count))}}%</td>
-        {% else %}
-            <td>N/A</td>
-        {% endif %}
     </tr>
     {% endfor %}
 </table>
 {# TODO: Add condition for the case list of top authors is empty #}
 <p class="moreauthors">These didn't make it to the top: {{project.non_top_authors|join(', ')}}</p>
 
-<h2 id="cumulated_added_lines_of_code_per_author"><a href="#cumulated_added_lines_of_code_per_author">Cumulated Added Lines of Code per Author</a></h2>
+{% if project.do_plot_contribution %}
+<h2 id="contribution"><a href="#contribution">Contribution<sup>*</sup></a></h2>
+<div id="chart_contribution" style="border: 1px solid #808080; width: 507px"><svg style="height: 480px; width: 100%"></svg></div>
+<p><sup>*</sup><small> Lines from an author left in the HEAD commit</small></p>
+{% endif %}
 
+<h2 id="cumulated_added_lines_of_code_per_author"><a href="#cumulated_added_lines_of_code_per_author">Cumulated Added Lines of Code per Author</a></h2>
 <div id="chart_loc" style="border: 1px solid #808080; width: 1014px"><svg style="height: 480px; width: 100%"></svg></div>
 
 <p class="moreauthors">Only top {{project.top_authors|length}} authors shown</p>
