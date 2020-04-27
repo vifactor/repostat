@@ -1,3 +1,17 @@
+// Setup the chart
+const contribution = {{contribution}}
+nv.addGraph(function() {
+	var chart = nv.models.pieChart()
+		.x(function(d) { return d.key })
+		.y(function(d) { return d.y })
+		.options(contribution.config);
+
+	chart.pie.donutLabelsOutside(true).donut(true);
+
+	d3.select('#chart_contribution svg').datum(contribution.data).call(chart);
+	return chart;
+});
+
 const lines_stats = {{lines_by_authors}}
 
 // Setup the chart

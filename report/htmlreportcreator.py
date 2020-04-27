@@ -271,10 +271,34 @@ class HTMLReportCreator(object):
             "data": [{"key": domain, "y": commits_count} for domain, commits_count in email_domains_distribution.items()]
         }
 
+        if self.git_repo_statistics.contribution:
+            authors_names = self.git_repository_statistics.authors.sort().names()
+            valuable_contribution = [(name, self.git_repo_statistics.contribution.get(name)) for name in authors_names
+                                     if self.git_repo_statistics.contribution.get(name) is not None]
+
+            # sort and limit to only top authors
+            valuable_contribution.sort(key=lambda tup: tup[1], reverse=True)
+            if len(valuable_contribution) > self.configuration['max_authors'] + 1:
+                rest_contributions = sum(tup[1] for tup in valuable_contribution[self.configuration['max_authors']:])
+                valuable_contribution = valuable_contribution[:self.configuration['max_authors']] + [
+                    ("others", rest_contributions)]
+            # Contribution
+            contribution = {
+                "config": {
+                    "donut": True,
+                    "padAngle": 0.01,
+                    "cornerRadius": 5
+                },
+                "data": [{"key": name, "y": lines_count} for name, lines_count in valuable_contribution]
+            }
+        else:
+            contribution = {}
+
         authors_js = self.j2_env.get_template('authors.js').render(
             lines_by_authors=json.dumps(lines_by_authors),
             commits_by_authors=json.dumps(commits_by_authors),
-            domains=json.dumps(domains)
+            domains=json.dumps(domains),
+            contribution=json.dumps(contribution)
         )
         with open(os.path.join(path, 'authors.js'), 'w') as fg:
             fg.write(authors_js)
@@ -383,7 +407,8 @@ class HTMLReportCreator(object):
             'non_top_authors': [],
             'authors_top': self.configuration['authors_top'],
             'total_commits_count': self.git_repository_statistics.total_commits_count,
-            'total_lines_count': self.git_repository_statistics.total_lines_count
+            'total_lines_count': self.git_repository_statistics.total_lines_count,
+            'do_plot_contribution': True if self.git_repo_statistics.contribution else False
         }
 
         all_authors = self.git_repository_statistics.authors.sort().names()
@@ -427,9 +452,7 @@ class HTMLReportCreator(object):
                 'first_commit_date': git_author.first_commit_date.strftime('%Y-%m-%d'),
                 'latest_commit_date': git_author.latest_commit_date.strftime('%Y-%m-%d'),
                 'contributed_days_count': git_author.contributed_days_count,
-                'active_days_count': git_author.active_days_count,
-                'contribution': self.git_repo_statistics.contribution.get(author,
-                                                                          0) if self.git_repo_statistics.contribution else None,
+                'active_days_count': git_author.active_days_count
             }
 
             project_data['top_authors'].append(author_dict)
