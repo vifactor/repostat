@@ -37,3 +37,28 @@ nv.addGraph(function() {
 	d3.select('#chart_commits_month svg').datum(commits_by_month.data).call(chart);
 	return chart;
 });
+
+nv.addGraph(function() {
+  var chart = nv.models.discreteBarChart()
+      .x(function(d) { return d.label })    //Specify the data accessors.
+      .y(function(d) { return d.value })
+      .color(["#9400D3"])
+      .staggerLabels(true)    //Too many bars and not enough room? Try staggering labels.
+      .showValues(true)       //...instead, show the bar value right on top of each bar.
+      ;
+  chart.yAxis.options({"axisLabel": "Commits count"})
+
+  d3.select('#review_time_chart svg')
+      .datum([{
+        key: "Cumulative Return",
+        color: "#9400D3",
+        values: {{ review_duration }}
+       }
+  ]).call(chart);
+
+  nv.utils.windowResize(chart.update);
+
+  return chart;
+});
+
+
