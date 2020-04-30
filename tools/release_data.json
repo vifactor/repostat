@@ -1,6 +1,6 @@
 {
-    "develop_version": "v2.0.1",
-    "user_version": "2020-04-25",
+    "develop_version": "v2.0.2",
+    "user_version": "2020-04-30",
     "contributors": [
         "Viktor Kopp",
         "Adrien Destugues",
@@ -10,5 +10,5 @@
         "Jan Beran",
         "Sylvain Joubert"
     ],
-    "git_sha1": "afbc436"
+    "git_sha1": "5cae458"
 }
