@@ -25,6 +25,10 @@ class GitRepository(object):
         return self.whole_history_df.shape[0]
 
     @property
+    def merge_commits_count(self):
+        return self.whole_history_df['is_merge_commit'].sum()
+
+    @property
     def total_lines_added(self):
         return self.linear_history_df['insertions'].sum()
 

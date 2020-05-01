@@ -357,13 +357,14 @@ class HTMLReportCreator(object):
             "age": (last_commit_datetime - first_commit_datetime).days,
             "active_days_count": self.git_repository_statistics.active_days_count,
             "commits_count": self.git_repository_statistics.total_commits_count,
+            "merge_commits_count": self.git_repository_statistics.merge_commits_count,
             "authors_count": self.git_repository_statistics.authors.count(),
             "files_count": self.git_repo_statistics.total_files_count,
             "total_lines_count": self.git_repository_statistics.total_lines_count,
             "added_lines_count": self.git_repository_statistics.total_lines_added,
             "removed_lines_count": self.git_repository_statistics.total_lines_removed,
             "first_commit_date": first_commit_datetime.strftime(date_format_str),
-            "last_commit_date": last_commit_datetime.strftime(date_format_str)
+            "last_commit_date": last_commit_datetime.strftime(date_format_str),
         }
 
         generation_data = {
