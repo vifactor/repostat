@@ -10,15 +10,17 @@ from analysis.gitrepository import GitRepository
 class GitAuthorsTest(unittest.TestCase):
     test_whole_history_records = [
         {'commit_sha': '6c40597', 'author_name': 'Author1', 'author_tz_offset': 60, 'author_timestamp': 1580666336,
-         'insertions': 4, 'deletions': 1
+         'insertions': 4, 'deletions': 1, 'is_merge_commit': True,
          },
         {'commit_sha': '6c50597', 'author_name': 'Author2', 'author_tz_offset': 60, 'author_timestamp': 1580666146,
-         'insertions': 3, 'deletions': 2
+         'insertions': 3, 'deletions': 2, 'is_merge_commit': False,
          },
         {'commit_sha': '358604e', 'author_name': 'Author1', 'author_tz_offset': -120, 'author_timestamp': 1583449674,
-         'insertions': 2, 'deletions': 3},
+         'insertions': 2, 'deletions': 3, 'is_merge_commit': False,
+         },
         {'commit_sha': 'fdc28ab', 'author_name': 'Author3', 'author_tz_offset': 0, 'author_timestamp': 1185807283,
-         'insertions': 1, 'deletions': 4}
+         'insertions': 1, 'deletions': 4, 'is_merge_commit': False
+         }
     ]
 
     @classmethod
@@ -49,14 +51,22 @@ class GitAuthorsTest(unittest.TestCase):
         expected_author1_summary = DataFrame([{'author_name': 'Author1',
                                                'insertions': 6,
                                                'deletions': 4,
-                                               'commits_count': 2}])
+                                               'merge_commits_count': 1,
+                                               'commits_count': 2,
+                                               }])
+        expected_author1_summary['merge_commits_count'] = expected_author1_summary['merge_commits_count']\
+            .astype('int32')
         self.assertTrue(author1_summary.equals(expected_author1_summary))
 
         author3_summary = summary.loc[summary['author_name'] == 'Author3'].reset_index(drop=True)
         expected_author3_summary = DataFrame([{'author_name': 'Author3',
                                                'insertions': 1,
                                                'deletions': 4,
-                                               'commits_count': 1}])
+                                               'merge_commits_count': 0,
+                                               'commits_count': 1,
+                                               }])
+        expected_author3_summary['merge_commits_count'] = expected_author3_summary['merge_commits_count']\
+            .astype('int32')
         self.assertTrue(author3_summary.equals(expected_author3_summary))
 
     def test_history(self):
