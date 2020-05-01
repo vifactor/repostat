@@ -6,6 +6,12 @@ with [nvd3](http://nvd3.org/) -driven interactive metrics visualisations.
 
 Initially, a fork of [gitstats](https://github.com/hoxu/gitstats) tool.
 
+---
+Check how a *repostat*'s report looks like by going to:
+
+https://repostat.imfast.io/
+
+
 ## Installation
 Starting from v2.0.0, *repostat* is installable from [PyPi](https://pypi.org/project/repostat-app/)
 under the name *repostat-app*. Installation should be as simple as:
