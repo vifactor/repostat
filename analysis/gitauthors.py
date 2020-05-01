@@ -3,12 +3,18 @@ import pandas as pd
 
 class GitAuthors(object):
     def __init__(self, git_history: pd.DataFrame):
-        self.raw_authors_data = git_history[['author_timestamp', 'author_name', 'insertions', 'deletions']]
+        self.raw_authors_data = git_history[['author_timestamp',
+                                             'author_name',
+                                             'is_merge_commit',
+                                             'insertions',
+                                             'deletions']]
 
-        authors_grouped = self.raw_authors_data[['author_name', 'insertions', 'deletions']].groupby(
+        authors_grouped = self.raw_authors_data[['author_name', 'insertions', 'deletions', 'is_merge_commit']].groupby(
             [self.raw_authors_data['author_name']])
         self.authors_summary = authors_grouped.sum()
         self.authors_summary['commits_count'] = authors_grouped['author_name'].count()
+        self.authors_summary.rename(columns={'is_merge_commit': 'merge_commits_count'}, inplace=True)
+        self.authors_summary['merge_commits_count'] = self.authors_summary['merge_commits_count'].astype('int32')
         self.authors_summary.reset_index(inplace=True)
 
     def count(self):

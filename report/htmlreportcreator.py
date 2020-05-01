@@ -448,6 +448,7 @@ class HTMLReportCreator(object):
             author_dict = {
                 'name': author,
                 'commits_count': git_author.commits_count,
+                'merge_commits_count': self.git_repository_statistics.authors.get(author).merge_commits_count.iloc[0],
                 'lines_added_count': git_author.lines_added,
                 'lines_removed_count': git_author.lines_removed,
                 'first_commit_date': git_author.first_commit_date.strftime('%Y-%m-%d'),
