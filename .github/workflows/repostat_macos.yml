@@ -5,7 +5,9 @@ name: Repostat for Mac OS
 
 on:
   pull_request:
-    branches: [ master ]
+    branches:
+      - master
+      - v2.0.x
   schedule:
     # run every 5 days at 00:01
     - cron: '1 0 */5 * *'

@@ -1,3 +1,7 @@
+2.0.2 (2020-04-30)
+-------------------------
+- Fix Windows crash due to symlink creation by an unprivileged user
+
 2.0.1 (2020-04-25)
 -------------------------
 - Provide configuration option to adjust time-sampling

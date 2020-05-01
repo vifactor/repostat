@@ -59,8 +59,15 @@ $ pip3 install repostat-app
 builds libgit2 from source.
 
 ### Windows installation
-- Check [issue #57](https://github.com/vifactor/repostat/issues/57)
-- Check this [stackoverflow post](https://stackoverflow.com/a/59029604)
+![Repostat for Windows](https://github.com/vifactor/repostat/workflows/Repostat%20for%20Windows%202019/badge.svg)
+
+Once there is python v3.6+ in the system path, *repostat* can be installed via:
+```shell script
+python -m pip install repostat-app
+```
+
+*NOTE*: On Windows 10+, symlink to `general.html` is not generated, when
+*repostat* launched by an unprivileged user. 
 ___
 ## Usage
 ```bash

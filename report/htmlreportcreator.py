@@ -122,7 +122,12 @@ class HTMLReportCreator(object):
             # if symlink exists, it points to "general.html" so no need to re-create it
             # other solution would be to use approach from
             # https://stackoverflow.com/questions/8299386/modifying-a-symlink-in-python/8299671
-            pass
+            print("index.html already exists.")
+        except OSError:
+            print("index.html could not be created."
+                  "On newer versions of Windows, unprivileged accounts can create symlinks only"
+                  "if Developer Mode is enabled or SeCreateSymbolicLinkPrivilege privilege is granted."
+                  "Otherwise, run the process as an administrator.")
 
         ###
         # Activity
