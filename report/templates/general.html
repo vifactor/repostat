@@ -18,16 +18,17 @@
         <dd>{{submodule}}</dd>
         {% endfor %}
     {% endif %}
-    <dt>Total Commits</dt>
-        <dd>{{project.commits_count}}
-            (average {{'%0.2f'|format(project.commits_count|to_ratio(project.active_days_count))}} commits per active day,
-            {{'%0.2f'|format(project.commits_count|to_ratio(project.age))}} per all days)</dd>
-    <dt>Authors</dt>
-        <dd>{{project.authors_count}}
-            (average {{'%0.2f'|format(project.commits_count|to_ratio(project.authors_count))}} commits per author)</dd>
-    <dt>Total Files</dt>
+    <dt>Authors count</dt>
+        <dd>{{project.authors_count}}</dd>
+    <dt>Commits count</dt>
+        <dd> {{ project.commits_count }} total
+            (inc. {{'%0.2f'|format(project.merge_commits_count|to_percentage(project.commits_count))}}% merge commits) </dd>
+        <dd> {{ '%0.2f'|format(project.commits_count|to_ratio(project.age)) }} per day </dd>
+        <dd> {{ '%0.2f'|format(project.commits_count|to_ratio(project.active_days_count)) }} per active day </dd>
+        <dd> {{ '%0.2f'|format(project.commits_count|to_ratio(project.authors_count)) }} per author </dd>
+    <dt>Total files count</dt>
         <dd>{{project.files_count}}</dd>
-    <dt>Total Lines of Code</dt>
+    <dt>Total lines count</dt>
         <dd>{{project.total_lines_count}} ({{project.added_lines_count}} added, {{project.removed_lines_count}} removed)</dd>
 </dl>
 <p style="text-align:right;"> Report generated on {{generation.datetime}} </p>

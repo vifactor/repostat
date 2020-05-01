@@ -43,6 +43,7 @@ class WholeHistory(History):
         for commit in repo_walker:
             author_name, author_email = self.map_signature(commit.author)
 
+            is_merge_commit = False
             insertions, deletions = 0, 0
             if len(commit.parents) == 0:  # initial commit
                 st = commit.tree.diff_to_tree(swap=True).stats
@@ -53,8 +54,11 @@ class WholeHistory(History):
                 insertions, deletions = st.insertions, st.deletions
             # case len(commit.parents) > 1 corresponds to a merge commit
             # merge commits are ignored: changes in merge commits are normally because of integration issues
+            else:
+                is_merge_commit = True
 
             records.append({'commit_sha': commit.hex[:7],
+                            'is_merge_commit': is_merge_commit,
                             'author_name': author_name,
                             'author_email': author_email,
                             'author_tz_offset': commit.author.offset,
