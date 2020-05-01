@@ -55,6 +55,9 @@ class GitHistoryTest(unittest.TestCase):
         linear_history_df = LinearHistory(self.test_repo).as_dataframe()
         self.assertEqual(2, len(linear_history_df.index))
 
+        # check merge commits count (there is a single merge commit)
+        self.assertEqual(1, whole_history_df['is_merge_commit'].sum())
+
     def test_mailmap(self):
         # create second commit with another signature
         self.test_repo.commit_builder \
