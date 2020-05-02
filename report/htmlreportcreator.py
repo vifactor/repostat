@@ -10,8 +10,8 @@ from analysis.gitstatistics import GitStatistics
 from analysis.gitrepository import GitRepository
 from tools.configuration import Configuration
 from tools import sort_keys_by_value_of_key
-from tools import colormaps
 
+from . import colormaps
 from .html_page import HtmlPage, JsPlot
 
 HERE = os.path.dirname(os.path.abspath(__file__))
