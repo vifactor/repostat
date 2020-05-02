@@ -29,10 +29,6 @@ class HTMLReportCreator:
         self.has_tags_page = config.do_process_tags()
         self._time_sampling_interval = "W"
 
-        self.common_rendering_data = {
-            "has_tags_page": self.has_tags_page
-        }
-
         templates_dir = os.path.join(HERE, self.templates_subdir)
         self.j2_env = Environment(loader=FileSystemLoader(templates_dir), trim_blocks=True)
         self.j2_env.filters['to_month_name_abr'] = lambda im: calendar.month_abbr[im]
@@ -117,8 +113,9 @@ class HTMLReportCreator:
             pages.append(self.make_tags_page())
         pages.append(self.make_about_page())
 
+        # render and save all pages
         for page in pages:
-            rendered_page = page.render(self.j2_env)
+            rendered_page = page.render(self.j2_env, pages)
             page.save(self.path, rendered_page)
 
         try:
@@ -320,7 +317,6 @@ class HTMLReportCreator:
         with open(os.path.join(path, 'files.js'), 'w') as fg:
             fg.write(files_js)
 
-
     def make_general_page(self):
         date_format_str = '%Y-%m-%d %H:%M'
         first_commit_datetime = datetime.datetime.fromtimestamp(self.git_repository_statistics.first_commit_timestamp)
@@ -348,8 +344,7 @@ class HTMLReportCreator:
 
         page = HtmlPage(name="General",
                         project=project_data,
-                        generation=generation_data,
-                        **self.common_rendering_data)
+                        generation=generation_data)
         return page
 
     def make_activity_page(self):
@@ -367,9 +362,7 @@ class HTMLReportCreator:
         project_data['hourly_activity'] = wd_h_distribution.sum(axis=0)
 
         # load and render template
-        page = HtmlPage(name='Activity',
-                        project=project_data,
-                        **self.common_rendering_data)
+        page = HtmlPage(name='Activity', project=project_data)
         return page
 
     def make_authors_page(self):
@@ -429,10 +422,7 @@ class HTMLReportCreator:
 
             project_data['top_authors'].append(author_dict)
 
-        page = HtmlPage('Authors',
-                        project=project_data,
-                        **self.common_rendering_data
-                        )
+        page = HtmlPage('Authors', project=project_data)
         return page
 
     def make_files_page(self):
@@ -452,10 +442,7 @@ class HTMLReportCreator:
                               }
             project_data['files'].append(file_type_dict)
 
-        page = HtmlPage('Files',
-                        project=project_data,
-                        **self.common_rendering_data
-                        )
+        page = HtmlPage('Files', project=project_data)
         return page
 
     def make_tags_page(self):
@@ -492,9 +479,7 @@ class HTMLReportCreator:
                 }
                 project_data['tags'].append(tag_dict)
 
-        page = HtmlPage(name='Tags',
-                        project=project_data,
-                        **self.common_rendering_data)
+        page = HtmlPage(name='Tags', project=project_data)
         return page
 
     def make_about_page(self):
@@ -507,7 +492,5 @@ class HTMLReportCreator:
             "contributors": [author for author in self.configuration.get_release_data_info()['contributors']]
         }
 
-        page = HtmlPage('About',
-                        repostat=page_data,
-                        **self.common_rendering_data)
+        page = HtmlPage('About', repostat=page_data)
         return page
