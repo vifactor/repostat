@@ -5,6 +5,7 @@ import collections
 import json
 from jinja2 import Environment, FileSystemLoader
 
+from .html_page import HtmlPage
 from analysis.gitstatistics import GitStatistics
 from analysis.gitrepository import GitRepository
 from tools.configuration import Configuration
@@ -14,7 +15,7 @@ from tools import colormaps
 HERE = os.path.dirname(os.path.abspath(__file__))
 
 
-class HTMLReportCreator(object):
+class HTMLReportCreator:
     recent_activity_period_weeks = 32
     assets_subdir = "assets"
     templates_subdir = "templates"
@@ -29,7 +30,6 @@ class HTMLReportCreator(object):
         self._time_sampling_interval = "W"
 
         self.common_rendering_data = {
-            "assets_path": self.assets_path,
             "has_tags_page": self.has_tags_page
         }
 
@@ -105,15 +105,21 @@ class HTMLReportCreator(object):
 
         if self.configuration.is_report_relocatable():
             self._bundle_assets()
-            self.common_rendering_data.update({
-                "assets_path": self.assets_path
-            })
+        HtmlPage.set_assets_path(self.assets_path)
 
-        ###
-        # General
-        general_html = self.render_general_page()
-        with open(os.path.join(path, "general.html"), 'w', encoding='utf-8') as f:
-            f.write(general_html)
+        pages = [
+            self.make_general_page(),
+            self.make_activity_page(),
+            self.make_authors_page(),
+            self.make_files_page(),
+        ]
+        if self.has_tags_page:
+            pages.append(self.make_tags_page())
+        pages.append(self.make_about_page())
+
+        for page in pages:
+            rendered_page = page.render(self.j2_env)
+            page.save(self.path, rendered_page)
 
         try:
             # make the landing page for a web server
@@ -128,12 +134,6 @@ class HTMLReportCreator(object):
                   "On newer versions of Windows, unprivileged accounts can create symlinks only"
                   "if Developer Mode is enabled or SeCreateSymbolicLinkPrivilege privilege is granted."
                   "Otherwise, run the process as an administrator.")
-
-        ###
-        # Activity
-        activity_html = self.render_activity_page()
-        with open(os.path.join(path, "activity.html"), 'w', encoding='utf-8') as f:
-            f.write(activity_html)
 
         recent_activity = self._get_recent_activity_data()
 
@@ -197,11 +197,6 @@ class HTMLReportCreator(object):
         with open(os.path.join(path, 'activity.js'), 'w') as fg:
             fg.write(activity_js)
 
-        ###
-        # Authors
-        authors_html = self.render_authors_page()
-        with open(os.path.join(path, "authors.html"), 'w', encoding='utf-8') as f:
-            f.write(authors_html.decode('utf-8'))
 
         authors_activity_history = self.git_repository_statistics.authors.history(self._time_sampling_interval)
 
@@ -303,13 +298,6 @@ class HTMLReportCreator(object):
         with open(os.path.join(path, 'authors.js'), 'w') as fg:
             fg.write(authors_js)
 
-        ###
-        # Files
-        files_html = self.render_files_page()
-
-        with open(os.path.join(path, "files.html"), 'w', encoding='utf-8') as f:
-            f.write(files_html)
-
         import pandas as pd
         hst = self.git_repository_statistics.linear_history(self._time_sampling_interval).copy()
         hst["epoch"] = (hst.index - pd.Timestamp("1970-01-01 00:00:00+00:00")) // pd.Timedelta('1s') * 1000
@@ -332,21 +320,8 @@ class HTMLReportCreator(object):
         with open(os.path.join(path, 'files.js'), 'w') as fg:
             fg.write(files_js)
 
-        ###
-        # tags.html
 
-        if self.has_tags_page:
-            tags_html = self.render_tags_page()
-            with open(os.path.join(path, "tags.html"), 'w', encoding='utf-8') as f:
-                f.write(tags_html.decode('utf-8'))
-
-        ###
-        # about.html
-        about_html = self.render_about_page()
-        with open(os.path.join(path, "about.html"), 'w', encoding='utf-8') as f:
-            f.write(about_html.decode('utf-8'))
-
-    def render_general_page(self):
+    def make_general_page(self):
         date_format_str = '%Y-%m-%d %H:%M'
         first_commit_datetime = datetime.datetime.fromtimestamp(self.git_repository_statistics.first_commit_timestamp)
         last_commit_datetime = datetime.datetime.fromtimestamp(self.git_repository_statistics.last_commit_timestamp)
@@ -371,16 +346,13 @@ class HTMLReportCreator(object):
             "datetime": datetime.datetime.today().strftime(date_format_str)
         }
 
-        # load and render template
-        template_rendered = self.j2_env.get_template('general.html').render(
-            project=project_data,
-            generation=generation_data,
-            page_title="General",
-            **self.common_rendering_data
-        )
-        return template_rendered
+        page = HtmlPage(name="General",
+                        project=project_data,
+                        generation=generation_data,
+                        **self.common_rendering_data)
+        return page
 
-    def render_activity_page(self):
+    def make_activity_page(self):
         # TODO: this conversion from old 'data' to new 'project data' should perhaps be removed in future
         project_data = {
             'timezones_activity': collections.OrderedDict(
@@ -395,14 +367,12 @@ class HTMLReportCreator(object):
         project_data['hourly_activity'] = wd_h_distribution.sum(axis=0)
 
         # load and render template
-        template_rendered = self.j2_env.get_template('activity.html').render(
-            project=project_data,
-            page_title="Activity",
-            **self.common_rendering_data
-        )
-        return template_rendered
+        page = HtmlPage(name='Activity',
+                        project=project_data,
+                        **self.common_rendering_data)
+        return page
 
-    def render_authors_page(self):
+    def make_authors_page(self):
         project_data = {
             'top_authors': [],
             'non_top_authors': [],
@@ -459,16 +429,13 @@ class HTMLReportCreator(object):
 
             project_data['top_authors'].append(author_dict)
 
-        # load and render template
-        template_rendered = self.j2_env.get_template('authors.html').render(
-            project=project_data,
-            page_title="Authors",
-            **self.common_rendering_data
-        )
-        return template_rendered.encode('utf-8')
+        page = HtmlPage('Authors',
+                        project=project_data,
+                        **self.common_rendering_data
+                        )
+        return page
 
-    def render_files_page(self):
-        # TODO: this conversion from old 'data' to new 'project data' should perhaps be removed in future
+    def make_files_page(self):
         project_data = {
             'files_count': self.git_repo_statistics.total_files_count,
             'lines_count': self.git_repository_statistics.total_lines_count,
@@ -485,16 +452,13 @@ class HTMLReportCreator(object):
                               }
             project_data['files'].append(file_type_dict)
 
-        # load and render template
-        template_rendered = self.j2_env.get_template('files.html').render(
-            project=project_data,
-            page_title="Files",
-            **self.common_rendering_data
-        )
-        return template_rendered
+        page = HtmlPage('Files',
+                        project=project_data,
+                        **self.common_rendering_data
+                        )
+        return page
 
-    def render_tags_page(self):
-        # TODO: this conversion from old 'data' to new 'project data' should perhaps be removed in future
+    def make_tags_page(self):
         project_data = {
             'tags_count': len(self.git_repo_statistics.tags),
             'tags': []
@@ -528,15 +492,12 @@ class HTMLReportCreator(object):
                 }
                 project_data['tags'].append(tag_dict)
 
-        # load and render template
-        template_rendered = self.j2_env.get_template('tags.html').render(
-            project=project_data,
-            page_title="Tags",
-            **self.common_rendering_data
-        )
-        return template_rendered.encode('utf-8')
+        page = HtmlPage(name='Tags',
+                        project=project_data,
+                        **self.common_rendering_data)
+        return page
 
-    def render_about_page(self):
+    def make_about_page(self):
         repostat_version = self.configuration.get_release_data_info()['develop_version']
         repostat_version_date = self.configuration.get_release_data_info()['user_version']
         page_data = {
@@ -546,9 +507,7 @@ class HTMLReportCreator(object):
             "contributors": [author for author in self.configuration.get_release_data_info()['contributors']]
         }
 
-        template_rendered = self.j2_env.get_template('about.html').render(
-            repostat=page_data,
-            page_title="About",
-            **self.common_rendering_data
-        )
-        return template_rendered.encode('utf-8')
+        page = HtmlPage('About',
+                        repostat=page_data,
+                        **self.common_rendering_data)
+        return page
