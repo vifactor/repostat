@@ -4,17 +4,20 @@ import calendar
 import collections
 import json
 from jinja2 import Environment, FileSystemLoader
+import pandas as pd
 
 from analysis.gitstatistics import GitStatistics
 from analysis.gitrepository import GitRepository
 from tools.configuration import Configuration
 from tools import sort_keys_by_value_of_key
-from tools import colormaps
+
+from . import colormaps
+from .html_page import HtmlPage, JsPlot
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
 
-class HTMLReportCreator(object):
+class HTMLReportCreator:
     recent_activity_period_weeks = 32
     assets_subdir = "assets"
     templates_subdir = "templates"
@@ -27,11 +30,6 @@ class HTMLReportCreator(object):
         self.git_repository_statistics = repository
         self.has_tags_page = config.do_process_tags()
         self._time_sampling_interval = "W"
-
-        self.common_rendering_data = {
-            "assets_path": self.assets_path,
-            "has_tags_page": self.has_tags_page
-        }
 
         templates_dir = os.path.join(HERE, self.templates_subdir)
         self.j2_env = Environment(loader=FileSystemLoader(templates_dir), trim_blocks=True)
@@ -61,8 +59,6 @@ class HTMLReportCreator(object):
             } for i, commits in enumerate(recent_weekly_commits)
         ]
         graph_data = {
-            "xAxis": {"axisLabel": "Weeks ago"},
-            "yAxis": {"axisLabel": "Commits"},
             "config": {
                 "noData": "No recent activity.",
                 "padData": True,
@@ -70,7 +66,7 @@ class HTMLReportCreator(object):
                 "xDomain": [self.recent_activity_period_weeks - 1, 0]
             },
             "data": [
-                { 'key': "Commits", 'color': "#9400D3", 'values': values}
+                {'key': "Commits", 'color': "#9400D3", 'values': values}
             ]
         }
 
@@ -105,15 +101,22 @@ class HTMLReportCreator(object):
 
         if self.configuration.is_report_relocatable():
             self._bundle_assets()
-            self.common_rendering_data.update({
-                "assets_path": self.assets_path
-            })
+        HtmlPage.set_assets_path(self.assets_path)
 
-        ###
-        # General
-        general_html = self.render_general_page()
-        with open(os.path.join(path, "general.html"), 'w', encoding='utf-8') as f:
-            f.write(general_html)
+        pages = [
+            self.make_general_page(),
+            self.make_activity_page(),
+            self.make_authors_page(),
+            self.make_files_page(),
+        ]
+        if self.has_tags_page:
+            pages.append(self.make_tags_page())
+        pages.append(self.make_about_page())
+
+        # render and save all pages
+        for page in pages:
+            rendered_page = page.render(self.j2_env, pages)
+            page.save(self.path, rendered_page)
 
         try:
             # make the landing page for a web server
@@ -129,224 +132,7 @@ class HTMLReportCreator(object):
                   "if Developer Mode is enabled or SeCreateSymbolicLinkPrivilege privilege is granted."
                   "Otherwise, run the process as an administrator.")
 
-        ###
-        # Activity
-        activity_html = self.render_activity_page()
-        with open(os.path.join(path, "activity.html"), 'w', encoding='utf-8') as f:
-            f.write(activity_html)
-
-        recent_activity = self._get_recent_activity_data()
-
-        # Commits by current year's months
-        current_year = datetime.date.today().year
-        current_year_monthly_activity = self.git_repository_statistics.history('m')
-        current_year_monthly_activity = current_year_monthly_activity\
-            .loc[current_year_monthly_activity.index.year == current_year]
-
-        import pandas as pd
-        current_year_monthly_activity = pd.Series(current_year_monthly_activity.values,
-                                                  index=current_year_monthly_activity.index.month).to_dict()
-        values = [
-            {
-                'x': imonth,
-                'y': current_year_monthly_activity.get((imonth + 1), 0)
-            } for imonth in range(0, 12)
-        ]
-        by_month = {
-            "yAxis": {"axisLabel": "Commits in %d" % current_year},
-            "xAxis": {"rotateLabels": -90, "ticks": len(values)},
-            "config": {
-                "padData": True,
-                "showXAxis": True
-            },
-            "data": [
-                { "key": "Commits", "color": "#9400D3", "values": values }
-            ]
-        }
-
-        # Commits by year
-        yearly_activity = self.git_repository_statistics.history('Y')
-        values = [{'x': int(x.year), 'y': int(y)} for x, y in zip(yearly_activity.index, yearly_activity.values)]
-
-        by_year = {
-            "xAxis": {"rotateLabels": -90, "ticks": len(values)},
-            "yAxis": {"axisLabel": "Commits"},
-            "config": {
-                "padData": True,
-                "showXAxis": True
-            },
-            "data": [
-                { "key": "Commits", "color": "#9400D3", "values": values }
-            ]
-        }
-
-        review_duration = [
-            {
-                "label": label,
-                "value": count
-            }
-            for label, count in self.git_repository_statistics.review_duration_distribution.items()
-        ]
-
-        activity_js = self.j2_env.get_template('activity.js').render(
-            commits_by_month=json.dumps(by_month),
-            commits_by_year=json.dumps(by_year),
-            recent_activity=json.dumps(recent_activity),
-            review_duration=json.dumps(review_duration)
-        )
-        with open(os.path.join(path, 'activity.js'), 'w') as fg:
-            fg.write(activity_js)
-
-        ###
-        # Authors
-        authors_html = self.render_authors_page()
-        with open(os.path.join(path, "authors.html"), 'w', encoding='utf-8') as f:
-            f.write(authors_html.decode('utf-8'))
-
-        authors_activity_history = self.git_repository_statistics.authors.history(self._time_sampling_interval)
-
-        authors_commits_history = self._squash_authors_history(authors_activity_history.commits_count,
-                                                               self.configuration['max_authors'])
-
-        authors_added_lines_history = self._squash_authors_history(authors_activity_history.insertions,
-                                                                   self.configuration['max_authors'])
-
-        # "Added lines" graph
-        data = []
-
-        for author in authors_added_lines_history:
-            authorstats = {}
-            authorstats['key'] = author
-            series = authors_added_lines_history[author]
-            authorstats['values'] = [{'x': int(x.timestamp()) * 1000, 'y': int(y)} for x, y in zip(series.index, series.values)]
-            data.append(authorstats)
-
-        lines_by_authors = {
-            "xAxis": { "rotateLabels": -45 },
-            "yAxis": { "axisLabel": "Lines" },
-            "data" : data
-        }
-
-        # "Commit count" and streamgraph
-        # TODO move the "added lines" into the same JSON to save space and download time
-        data = []
-
-        for author in authors_commits_history:
-            authorstats = {}
-            authorstats['key'] = author
-            series = authors_commits_history[author]
-            stream = series.diff().fillna(0)
-            authorstats['values'] = [[int(x.timestamp() * 1000), int(y), int(z)] for x, y, z in zip(series.index, series.values, stream.values)]
-            data.append(authorstats)
-
-        commits_by_authors = {
-            "xAxis": { "rotateLabels": -45 },
-            "yAxis": { "axisLabel": "Commits" },
-            "config": {
-                "useInteractiveGuideline": True, 
-                "style": "stream-center",
-                "showControls": False,
-                "showLegend": False,
-            },
-            "data": data
-        }
-
-        email_domains_distribution = self.git_repository_statistics.domains_distribution\
-            .sort_values(ascending=False)
-        if self.configuration['max_domains'] < email_domains_distribution.shape[0]:
-            top_domains = email_domains_distribution[:self.configuration['max_domains']]
-            other_domains = email_domains_distribution[self.configuration['max_domains']:].sum()
-            email_domains_distribution = top_domains.append(pd.Series(other_domains, index=["Others"]))
-
-        from collections import OrderedDict
-        email_domains_distribution = email_domains_distribution.to_dict(OrderedDict)
-
-        # Domains
-        domains = {
-            "config": {
-                "donut": True,
-                "padAngle": 0.01,
-                "cornerRadius": 5
-            },
-            "data": [{"key": domain, "y": commits_count} for domain, commits_count in email_domains_distribution.items()]
-        }
-
-        if self.git_repo_statistics.contribution:
-            authors_names = self.git_repository_statistics.authors.sort().names()
-            valuable_contribution = [(name, self.git_repo_statistics.contribution.get(name)) for name in authors_names
-                                     if self.git_repo_statistics.contribution.get(name) is not None]
-
-            # sort and limit to only top authors
-            valuable_contribution.sort(key=lambda tup: tup[1], reverse=True)
-            if len(valuable_contribution) > self.configuration['max_authors'] + 1:
-                rest_contributions = sum(tup[1] for tup in valuable_contribution[self.configuration['max_authors']:])
-                valuable_contribution = valuable_contribution[:self.configuration['max_authors']] + [
-                    ("others", rest_contributions)]
-            # Contribution
-            contribution = {
-                "config": {
-                    "donut": True,
-                    "padAngle": 0.01,
-                    "cornerRadius": 5
-                },
-                "data": [{"key": name, "y": lines_count} for name, lines_count in valuable_contribution]
-            }
-        else:
-            contribution = {}
-
-        authors_js = self.j2_env.get_template('authors.js').render(
-            lines_by_authors=json.dumps(lines_by_authors),
-            commits_by_authors=json.dumps(commits_by_authors),
-            domains=json.dumps(domains),
-            contribution=json.dumps(contribution)
-        )
-        with open(os.path.join(path, 'authors.js'), 'w') as fg:
-            fg.write(authors_js)
-
-        ###
-        # Files
-        files_html = self.render_files_page()
-
-        with open(os.path.join(path, "files.html"), 'w', encoding='utf-8') as f:
-            f.write(files_html)
-
-        import pandas as pd
-        hst = self.git_repository_statistics.linear_history(self._time_sampling_interval).copy()
-        hst["epoch"] = (hst.index - pd.Timestamp("1970-01-01 00:00:00+00:00")) // pd.Timedelta('1s') * 1000
-
-        files_count_ts = hst[["epoch", 'files_count']].rename(columns={"epoch": "x", 'files_count': "y"})\
-            .to_dict('records')
-        lines_count_ts = hst[["epoch", 'lines_count']].rename(columns={"epoch": "x", 'lines_count': "y"})\
-            .to_dict('records')
-        graph_data = {
-            "xAxis": {"rotateLabels": -45},
-            "yAxis1": {"axisLabel": "Files"},
-            "yAxis2": {"axisLabel": "Lines"},
-            "data": [
-                {"key": "Files", "color": "#9400d3", "type": "line", "yAxis": 1, "values": files_count_ts},
-                {"key": "Lines", "color": "#d30094", "type": "line", "yAxis": 2, "values": lines_count_ts},
-            ]
-        }
-
-        files_js = self.j2_env.get_template('files.js').render(json_data=json.dumps(graph_data))
-        with open(os.path.join(path, 'files.js'), 'w') as fg:
-            fg.write(files_js)
-
-        ###
-        # tags.html
-
-        if self.has_tags_page:
-            tags_html = self.render_tags_page()
-            with open(os.path.join(path, "tags.html"), 'w', encoding='utf-8') as f:
-                f.write(tags_html.decode('utf-8'))
-
-        ###
-        # about.html
-        about_html = self.render_about_page()
-        with open(os.path.join(path, "about.html"), 'w', encoding='utf-8') as f:
-            f.write(about_html.decode('utf-8'))
-
-    def render_general_page(self):
+    def make_general_page(self):
         date_format_str = '%Y-%m-%d %H:%M'
         first_commit_datetime = datetime.datetime.fromtimestamp(self.git_repository_statistics.first_commit_timestamp)
         last_commit_datetime = datetime.datetime.fromtimestamp(self.git_repository_statistics.last_commit_timestamp)
@@ -371,16 +157,12 @@ class HTMLReportCreator(object):
             "datetime": datetime.datetime.today().strftime(date_format_str)
         }
 
-        # load and render template
-        template_rendered = self.j2_env.get_template('general.html').render(
-            project=project_data,
-            generation=generation_data,
-            page_title="General",
-            **self.common_rendering_data
-        )
-        return template_rendered
+        page = HtmlPage(name="General",
+                        project=project_data,
+                        generation=generation_data)
+        return page
 
-    def render_activity_page(self):
+    def make_activity_page(self):
         # TODO: this conversion from old 'data' to new 'project data' should perhaps be removed in future
         project_data = {
             'timezones_activity': collections.OrderedDict(
@@ -394,15 +176,65 @@ class HTMLReportCreator(object):
         project_data['weekday_activity'] = wd_h_distribution.sum(axis=1)
         project_data['hourly_activity'] = wd_h_distribution.sum(axis=0)
 
-        # load and render template
-        template_rendered = self.j2_env.get_template('activity.html').render(
-            project=project_data,
-            page_title="Activity",
-            **self.common_rendering_data
-        )
-        return template_rendered
+        page = HtmlPage(name='Activity', project=project_data)
+        page.add_plot(self.make_activity_plot())
 
-    def render_authors_page(self):
+        return page
+
+    def make_activity_plot(self) -> JsPlot:
+        recent_activity = self._get_recent_activity_data()
+
+        # Commits by current year's months
+        current_year = datetime.date.today().year
+        current_year_monthly_activity = self.git_repository_statistics.history('m')
+        current_year_monthly_activity = current_year_monthly_activity \
+            .loc[current_year_monthly_activity.index.year == current_year]
+
+        current_year_monthly_activity = pd.Series(current_year_monthly_activity.values,
+                                                  index=current_year_monthly_activity.index.month).to_dict()
+        values = [
+            {
+                'x': imonth,
+                'y': current_year_monthly_activity.get((imonth + 1), 0)
+            } for imonth in range(0, 12)
+        ]
+        by_month = {
+            "yAxis": {"axisLabel": "Commits in %d" % current_year},
+            "xAxis": {"rotateLabels": -90, "ticks": len(values)},
+            "data": [
+                {"key": "Commits", "color": "#9400D3", "values": values}
+            ]
+        }
+
+        # Commits by year
+        yearly_activity = self.git_repository_statistics.history('Y')
+        values = [{'x': int(x.year), 'y': int(y)} for x, y in zip(yearly_activity.index, yearly_activity.values)]
+
+        by_year = {
+            "xAxis": {"rotateLabels": -90, "ticks": len(values)},
+            "yAxis": {"axisLabel": "Commits"},
+            "data": [
+                {"key": "Commits", "color": "#9400D3", "values": values}
+            ]
+        }
+
+        review_duration = [
+            {
+                "label": label,
+                "value": count
+            }
+            for label, count in self.git_repository_statistics.review_duration_distribution.items()
+        ]
+
+        activity_plot = JsPlot('activity.js',
+                               commits_by_month=json.dumps(by_month),
+                               commits_by_year=json.dumps(by_year),
+                               recent_activity=json.dumps(recent_activity),
+                               review_duration=json.dumps(review_duration),
+                               )
+        return activity_plot
+
+    def make_authors_page(self):
         project_data = {
             'top_authors': [],
             'non_top_authors': [],
@@ -459,16 +291,86 @@ class HTMLReportCreator(object):
 
             project_data['top_authors'].append(author_dict)
 
-        # load and render template
-        template_rendered = self.j2_env.get_template('authors.html').render(
-            project=project_data,
-            page_title="Authors",
-            **self.common_rendering_data
-        )
-        return template_rendered.encode('utf-8')
+        page = HtmlPage('Authors', project=project_data)
+        page.add_plot(self.make_authors_plot())
+        return page
 
-    def render_files_page(self):
-        # TODO: this conversion from old 'data' to new 'project data' should perhaps be removed in future
+    def make_authors_plot(self) -> JsPlot:
+        authors_activity_history = self.git_repository_statistics.authors.history(self._time_sampling_interval)
+
+        authors_commits_history = self._squash_authors_history(authors_activity_history.commits_count,
+                                                               self.configuration['max_authors'])
+        authors_added_lines_history = self._squash_authors_history(authors_activity_history.insertions,
+                                                                   self.configuration['max_authors'])
+
+        # "Added lines" graph
+        data = []
+        for author in authors_added_lines_history:
+            authorstats = {'key': author}
+            series = authors_added_lines_history[author]
+            authorstats['values'] = [{'x': int(x.timestamp()) * 1000, 'y': int(y)} for x, y in zip(series.index, series.values)]
+            data.append(authorstats)
+
+        lines_by_authors = {
+            "data": data
+        }
+
+        # "Commit count" and streamgraph
+        # TODO move the "added lines" into the same JSON to save space and download time
+        data = []
+        for author in authors_commits_history:
+            authorstats = {'key': author}
+            series = authors_commits_history[author]
+            stream = series.diff().fillna(0)
+            authorstats['values'] = [[int(x.timestamp() * 1000), int(y), int(z)] for x, y, z in zip(series.index, series.values, stream.values)]
+            data.append(authorstats)
+
+        commits_by_authors = {
+            "data": data
+        }
+
+        email_domains_distribution = self.git_repository_statistics.domains_distribution\
+            .sort_values(ascending=False)
+        if self.configuration['max_domains'] < email_domains_distribution.shape[0]:
+            top_domains = email_domains_distribution[:self.configuration['max_domains']]
+            other_domains = email_domains_distribution[self.configuration['max_domains']:].sum()
+            email_domains_distribution = top_domains.append(pd.Series(other_domains, index=["Others"]))
+
+        from collections import OrderedDict
+        email_domains_distribution = email_domains_distribution.to_dict(OrderedDict)
+
+        # Domains
+        domains = {
+            "data": [{"key": domain, "y": commits_count} for domain, commits_count in email_domains_distribution.items()]
+        }
+
+        if self.git_repo_statistics.contribution:
+            authors_names = self.git_repository_statistics.authors.sort().names()
+            valuable_contribution = [(name, self.git_repo_statistics.contribution.get(name)) for name in authors_names
+                                     if self.git_repo_statistics.contribution.get(name) is not None]
+
+            # sort and limit to only top authors
+            valuable_contribution.sort(key=lambda tup: tup[1], reverse=True)
+            if len(valuable_contribution) > self.configuration['max_authors'] + 1:
+                rest_contributions = sum(tup[1] for tup in valuable_contribution[self.configuration['max_authors']:])
+                valuable_contribution = valuable_contribution[:self.configuration['max_authors']] + [
+                    ("others", rest_contributions)]
+            # Contribution
+            contribution = {
+                "data": [{"key": name, "y": lines_count} for name, lines_count in valuable_contribution]
+            }
+        else:
+            contribution = {}
+
+        authors_plot = JsPlot('authors.js',
+                              lines_by_authors=json.dumps(lines_by_authors),
+                              commits_by_authors=json.dumps(commits_by_authors),
+                              domains=json.dumps(domains),
+                              contribution=json.dumps(contribution)
+                              )
+        return authors_plot
+
+    def make_files_page(self):
         project_data = {
             'files_count': self.git_repo_statistics.total_files_count,
             'lines_count': self.git_repository_statistics.total_lines_count,
@@ -485,16 +387,29 @@ class HTMLReportCreator(object):
                               }
             project_data['files'].append(file_type_dict)
 
-        # load and render template
-        template_rendered = self.j2_env.get_template('files.html').render(
-            project=project_data,
-            page_title="Files",
-            **self.common_rendering_data
-        )
-        return template_rendered
+        page = HtmlPage('Files', project=project_data)
+        page.add_plot(self.make_files_plot())
+        return page
 
-    def render_tags_page(self):
-        # TODO: this conversion from old 'data' to new 'project data' should perhaps be removed in future
+    def make_files_plot(self) -> JsPlot:
+        hst = self.git_repository_statistics.linear_history(self._time_sampling_interval).copy()
+        hst["epoch"] = (hst.index - pd.Timestamp("1970-01-01 00:00:00+00:00")) // pd.Timedelta('1s') * 1000
+
+        files_count_ts = hst[["epoch", 'files_count']].rename(columns={"epoch": "x", 'files_count': "y"})\
+            .to_dict('records')
+        lines_count_ts = hst[["epoch", 'lines_count']].rename(columns={"epoch": "x", 'lines_count': "y"})\
+            .to_dict('records')
+        graph_data = {
+            "data": [
+                {"key": "Files", "color": "#9400d3", "type": "line", "yAxis": 1, "values": files_count_ts},
+                {"key": "Lines", "color": "#d30094", "type": "line", "yAxis": 2, "values": lines_count_ts},
+            ]
+        }
+
+        files_plot = JsPlot('files.js', json_data=json.dumps(graph_data))
+        return files_plot
+
+    def make_tags_page(self):
         project_data = {
             'tags_count': len(self.git_repo_statistics.tags),
             'tags': []
@@ -528,15 +443,10 @@ class HTMLReportCreator(object):
                 }
                 project_data['tags'].append(tag_dict)
 
-        # load and render template
-        template_rendered = self.j2_env.get_template('tags.html').render(
-            project=project_data,
-            page_title="Tags",
-            **self.common_rendering_data
-        )
-        return template_rendered.encode('utf-8')
+        page = HtmlPage(name='Tags', project=project_data)
+        return page
 
-    def render_about_page(self):
+    def make_about_page(self):
         repostat_version = self.configuration.get_release_data_info()['develop_version']
         repostat_version_date = self.configuration.get_release_data_info()['user_version']
         page_data = {
@@ -546,9 +456,5 @@ class HTMLReportCreator(object):
             "contributors": [author for author in self.configuration.get_release_data_info()['contributors']]
         }
 
-        template_rendered = self.j2_env.get_template('about.html').render(
-            repostat=page_data,
-            page_title="About",
-            **self.common_rendering_data
-        )
-        return template_rendered.encode('utf-8')
+        page = HtmlPage('About', repostat=page_data)
+        return page
