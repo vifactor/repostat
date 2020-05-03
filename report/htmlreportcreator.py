@@ -296,12 +296,14 @@ class HTMLReportCreator:
         return page
 
     def make_authors_plot(self) -> JsPlot:
+        max_authors_per_plot_count = self.configuration['max_plot_authors_count']
+
         authors_activity_history = self.git_repository_statistics.authors.history(self._time_sampling_interval)
 
         authors_commits_history = self._squash_authors_history(authors_activity_history.commits_count,
-                                                               self.configuration['max_authors'])
+                                                               max_authors_per_plot_count)
         authors_added_lines_history = self._squash_authors_history(authors_activity_history.insertions,
-                                                                   self.configuration['max_authors'])
+                                                                   max_authors_per_plot_count)
 
         # "Added lines" graph
         data = []
@@ -351,9 +353,9 @@ class HTMLReportCreator:
 
             # sort and limit to only top authors
             valuable_contribution.sort(key=lambda tup: tup[1], reverse=True)
-            if len(valuable_contribution) > self.configuration['max_authors'] + 1:
-                rest_contributions = sum(tup[1] for tup in valuable_contribution[self.configuration['max_authors']:])
-                valuable_contribution = valuable_contribution[:self.configuration['max_authors']] + [
+            if len(valuable_contribution) > max_authors_per_plot_count + 1:
+                rest_contributions = sum(tup[1] for tup in valuable_contribution[max_authors_per_plot_count:])
+                valuable_contribution = valuable_contribution[:max_authors_per_plot_count] + [
                     ("others", rest_contributions)]
             # Contribution
             contribution = {
