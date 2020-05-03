@@ -9,9 +9,19 @@ class GitAuthors(object):
                                              'insertions',
                                              'deletions']]
 
-        authors_grouped = self.raw_authors_data[['author_name', 'insertions', 'deletions', 'is_merge_commit']].groupby(
+        authors_grouped = self.raw_authors_data[['author_name', 'author_timestamp',
+                                                 'insertions', 'deletions', 'is_merge_commit']].groupby(
             [self.raw_authors_data['author_name']])
         self.authors_summary = authors_grouped.sum()
+        self.authors_summary['first_commit_date'] = pd.to_datetime(authors_grouped['author_timestamp'].min(), unit='s', utc=True)
+        self.authors_summary['latest_commit_date'] = pd.to_datetime(authors_grouped['author_timestamp'].max(), unit='s', utc=True)
+        self.authors_summary['active_days_count'] = authors_grouped['author_timestamp'] \
+            .apply(lambda g: pd.to_datetime(g, unit='s', utc=True).dt.normalize().unique().shape[0])
+        self.authors_summary['contributed_days_count'] = (self.authors_summary['latest_commit_date']
+                                                          - self.authors_summary['first_commit_date']).dt.days
+        # if contributor did commits in one day, difference in days between latest and first commit is 0
+        # next string fixed this issue by replacing 0 with 1
+        self.authors_summary['contributed_days_count'].replace(0, 1, inplace=True)
         self.authors_summary['commits_count'] = authors_grouped['author_name'].count()
         self.authors_summary.rename(columns={'is_merge_commit': 'merge_commits_count'}, inplace=True)
         self.authors_summary['merge_commits_count'] = self.authors_summary['merge_commits_count'].astype('int32')
