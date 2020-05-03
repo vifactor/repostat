@@ -59,8 +59,6 @@ class HTMLReportCreator:
             } for i, commits in enumerate(recent_weekly_commits)
         ]
         graph_data = {
-            "xAxis": {"axisLabel": "Weeks ago"},
-            "yAxis": {"axisLabel": "Commits"},
             "config": {
                 "noData": "No recent activity.",
                 "padData": True,
@@ -68,7 +66,7 @@ class HTMLReportCreator:
                 "xDomain": [self.recent_activity_period_weeks - 1, 0]
             },
             "data": [
-                { 'key': "Commits", 'color': "#9400D3", 'values': values}
+                {'key': "Commits", 'color': "#9400D3", 'values': values}
             ]
         }
 
@@ -203,10 +201,6 @@ class HTMLReportCreator:
         by_month = {
             "yAxis": {"axisLabel": "Commits in %d" % current_year},
             "xAxis": {"rotateLabels": -90, "ticks": len(values)},
-            "config": {
-                "padData": True,
-                "showXAxis": True
-            },
             "data": [
                 {"key": "Commits", "color": "#9400D3", "values": values}
             ]
@@ -219,10 +213,6 @@ class HTMLReportCreator:
         by_year = {
             "xAxis": {"rotateLabels": -90, "ticks": len(values)},
             "yAxis": {"axisLabel": "Commits"},
-            "config": {
-                "padData": True,
-                "showXAxis": True
-            },
             "data": [
                 {"key": "Commits", "color": "#9400D3", "values": values}
             ]
@@ -322,32 +312,20 @@ class HTMLReportCreator:
             data.append(authorstats)
 
         lines_by_authors = {
-            "xAxis": { "rotateLabels": -45 },
-            "yAxis": { "axisLabel": "Lines" },
-            "data" : data
+            "data": data
         }
 
         # "Commit count" and streamgraph
         # TODO move the "added lines" into the same JSON to save space and download time
         data = []
-
         for author in authors_commits_history:
-            authorstats = {}
-            authorstats['key'] = author
+            authorstats = {'key': author}
             series = authors_commits_history[author]
             stream = series.diff().fillna(0)
             authorstats['values'] = [[int(x.timestamp() * 1000), int(y), int(z)] for x, y, z in zip(series.index, series.values, stream.values)]
             data.append(authorstats)
 
         commits_by_authors = {
-            "xAxis": { "rotateLabels": -45 },
-            "yAxis": { "axisLabel": "Commits" },
-            "config": {
-                "useInteractiveGuideline": True,
-                "style": "stream-center",
-                "showControls": False,
-                "showLegend": False,
-            },
             "data": data
         }
 
@@ -363,11 +341,6 @@ class HTMLReportCreator:
 
         # Domains
         domains = {
-            "config": {
-                "donut": True,
-                "padAngle": 0.01,
-                "cornerRadius": 5
-            },
             "data": [{"key": domain, "y": commits_count} for domain, commits_count in email_domains_distribution.items()]
         }
 
@@ -384,11 +357,6 @@ class HTMLReportCreator:
                     ("others", rest_contributions)]
             # Contribution
             contribution = {
-                "config": {
-                    "donut": True,
-                    "padAngle": 0.01,
-                    "cornerRadius": 5
-                },
                 "data": [{"key": name, "y": lines_count} for name, lines_count in valuable_contribution]
             }
         else:
@@ -432,9 +400,6 @@ class HTMLReportCreator:
         lines_count_ts = hst[["epoch", 'lines_count']].rename(columns={"epoch": "x", 'lines_count': "y"})\
             .to_dict('records')
         graph_data = {
-            "xAxis": {"rotateLabels": -45},
-            "yAxis1": {"axisLabel": "Files"},
-            "yAxis2": {"axisLabel": "Lines"},
             "data": [
                 {"key": "Files", "color": "#9400d3", "type": "line", "yAxis": 1, "values": files_count_ts},
                 {"key": "Lines", "color": "#d30094", "type": "line", "yAxis": 2, "values": lines_count_ts},
