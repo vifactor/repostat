@@ -1,6 +1,8 @@
 import unittest
 from unittest.mock import patch, MagicMock
 
+import datetime
+import pytz
 from pandas import DataFrame
 
 from analysis.gitdata import WholeHistory
@@ -44,30 +46,63 @@ class GitAuthorsTest(unittest.TestCase):
         # second and third authors have both by 1 commits
         self.assertCountEqual(['Author3', 'Author2'], names_sorted_by_commits_count[1:])
 
+    @staticmethod
+    def equals_authors_summary(author: str, summary: DataFrame, expected: dict):
+        summary_columns = list(summary.columns.values)
+        # remove 'authors_name' column
+        summary_columns.remove('author_name')
+
+        expected_summary_columns = list(expected.keys())
+        # sort before checking for list equality
+        summary_columns.sort()
+        expected_summary_columns.sort()
+        are_all_columns_checked = (summary_columns == expected_summary_columns)
+
+        author_summary = summary.loc[summary['author_name'] == author].reset_index()
+        all_entries_equal = all(v == author_summary[k][0] for k, v in expected.items())
+        return are_all_columns_checked and all_entries_equal
+
+    def get_first_commit_date(self, author):
+        timestamps = [datetime.datetime.utcfromtimestamp(rec['author_timestamp'])
+                      for rec in self.test_whole_history_records if rec['author_name'] == author]
+
+        return min(timestamps).replace(tzinfo=pytz.utc)
+
+    def get_latest_commit_date(self, author):
+        timestamps = [datetime.datetime.utcfromtimestamp(rec['author_timestamp'])
+                      for rec in self.test_whole_history_records if rec['author_name'] == author]
+
+        return max(timestamps).replace(tzinfo=pytz.utc)
+
+    def get_contributed_days_count(self, author):
+        d2 = self.get_latest_commit_date(author)
+        d1 = self.get_first_commit_date(author)
+        days = (d2 - d1).days
+        return days if days else 1
+
     def test_summary(self):
         summary = self.repo.authors.sort(by='deletions').summary
+        self.assertTrue(self.equals_authors_summary('Author1', summary, {
+            'contributed_days_count': self.get_contributed_days_count('Author1'),
+            'active_days_count': 2,
+            'first_commit_date': self.get_first_commit_date('Author1'),
+            'latest_commit_date': self.get_latest_commit_date('Author1'),
+            'insertions': 6,
+            'deletions': 4,
+            'merge_commits_count': 1,
+            'commits_count': 2,
+        }))
 
-        author1_summary = summary.loc[summary['author_name'] == 'Author1']
-        expected_author1_summary = DataFrame([{'author_name': 'Author1',
-                                               'insertions': 6,
-                                               'deletions': 4,
-                                               'merge_commits_count': 1,
-                                               'commits_count': 2,
-                                               }])
-        expected_author1_summary['merge_commits_count'] = expected_author1_summary['merge_commits_count']\
-            .astype('int32')
-        self.assertTrue(author1_summary.equals(expected_author1_summary))
-
-        author3_summary = summary.loc[summary['author_name'] == 'Author3'].reset_index(drop=True)
-        expected_author3_summary = DataFrame([{'author_name': 'Author3',
-                                               'insertions': 1,
-                                               'deletions': 4,
-                                               'merge_commits_count': 0,
-                                               'commits_count': 1,
-                                               }])
-        expected_author3_summary['merge_commits_count'] = expected_author3_summary['merge_commits_count']\
-            .astype('int32')
-        self.assertTrue(author3_summary.equals(expected_author3_summary))
+        self.assertTrue(self.equals_authors_summary('Author3', summary, {
+            'contributed_days_count': self.get_contributed_days_count('Author3'),
+            'active_days_count': 1,
+            'first_commit_date': self.get_first_commit_date('Author3'),
+            'latest_commit_date': self.get_latest_commit_date('Author3'),
+            'insertions': 1,
+            'deletions': 4,
+            'merge_commits_count': 0,
+            'commits_count': 1,
+        }))
 
     def test_history(self):
         # TODO: figure out how to test it properly
