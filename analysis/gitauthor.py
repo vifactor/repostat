@@ -9,13 +9,6 @@ class GitAuthor(object):
         self.name = name
         self.group = self.author_groups.get_group(name)
 
-    @classmethod
-    def get_authors_sorted_by_commit_count(cls):
-        authors = cls.author_groups['author_timestamp'].count() \
-            .reset_index(name='count') \
-            .sort_values(['count'], ascending=False)
-        return authors['author_name'].values
-
     @property
     def first_commit_date(self):
         timestamp = self.group.min().loc['author_timestamp']

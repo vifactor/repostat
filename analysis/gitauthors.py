@@ -3,20 +3,20 @@ import pandas as pd
 
 class GitAuthors(object):
     def __init__(self, git_history: pd.DataFrame):
-        self.raw_authors_data = git_history[['author_timestamp',
-                                             'author_name',
+        self.raw_authors_data = git_history[['author_name',
                                              'is_merge_commit',
                                              'insertions',
-                                             'deletions']]
+                                             'deletions']].copy()
+        self.raw_authors_data['author_datetime'] = pd.to_datetime(git_history['author_timestamp'], unit='s', utc=True)
 
-        authors_grouped = self.raw_authors_data[['author_name', 'author_timestamp',
+        authors_grouped = self.raw_authors_data[['author_name', 'author_datetime',
                                                  'insertions', 'deletions', 'is_merge_commit']].groupby(
             [self.raw_authors_data['author_name']])
         self.authors_summary = authors_grouped.sum()
-        self.authors_summary['first_commit_date'] = pd.to_datetime(authors_grouped['author_timestamp'].min(), unit='s', utc=True)
-        self.authors_summary['latest_commit_date'] = pd.to_datetime(authors_grouped['author_timestamp'].max(), unit='s', utc=True)
-        self.authors_summary['active_days_count'] = authors_grouped['author_timestamp'] \
-            .apply(lambda g: pd.to_datetime(g, unit='s', utc=True).dt.normalize().unique().shape[0])
+        self.authors_summary['first_commit_date'] = authors_grouped['author_datetime'].min()
+        self.authors_summary['latest_commit_date'] = authors_grouped['author_datetime'].max()
+        self.authors_summary['active_days_count'] = authors_grouped['author_datetime'] \
+            .apply(lambda g: g.dt.normalize().unique().shape[0])
         self.authors_summary['contributed_days_count'] = (self.authors_summary['latest_commit_date']
                                                           - self.authors_summary['first_commit_date']).dt.days
         # if contributor did commits in one day, difference in days between latest and first commit is 0
@@ -50,8 +50,7 @@ class GitAuthors(object):
         :param sampling: frequency string https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases
         :return: Dataframe with Datetime multiindexindex and changes history data by authors
         """
-        wh = self.raw_authors_data[['author_name', 'insertions', 'deletions']].copy()
-        wh['author_datetime'] = pd.to_datetime(self.raw_authors_data['author_timestamp'], unit='s', utc=True)
+        wh = self.raw_authors_data[['author_name', 'insertions', 'deletions', 'author_datetime']].copy()
         wh = wh.set_index(wh['author_datetime'])
         wh_grouped = wh[['author_name', 'insertions', 'deletions']].groupby(
             [wh['author_name'], pd.Grouper(freq=sampling)])
