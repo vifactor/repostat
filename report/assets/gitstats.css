@@ -142,6 +142,11 @@ h2 a {
 	color: white;
 }
 
+.nontop {
+  columns: 60px 6;
+  font-size: 80%;
+}
+
 .moreauthors {
 	font-size: 80%;
 }

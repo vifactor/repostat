@@ -96,6 +96,7 @@ Configuration file might contain following fields (all are optional):
     "max_domains": 10,
     "max_ext_length": 10,
     "max_authors": 7,
+    "max_plot_authors_count": 10,
     "max_authors_of_months": 6,
     "authors_top": 5,
     "colormap": "classic",
@@ -116,9 +117,11 @@ information.
 consider substring as a file extension
 * `max_authors`: number of authors in the "top authors" table 
 (other authors are listed without detailed stats)
+* `max_plot_authors_count`: number of authors to include in plots
+in "Authors"-page (rest of the authors will be grouped as "Others"). 
 * `max_authors_of_months`: number of months for which "author of 
 the month" should be displayed
-* `authors_top`: number of authors to show for each month in the
+* `authors_top`: number of authors to show for each month/year in the
 author of month/year list
 
 #### Colorscheme configuration

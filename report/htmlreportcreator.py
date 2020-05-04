@@ -235,18 +235,19 @@ class HTMLReportCreator:
         return activity_plot
 
     def make_authors_page(self):
+        authors_summary = self.git_repository_statistics.authors.summary \
+            .sort_values(by="commits_count", ascending=False)
+
+        top_authors_statistics = authors_summary[:self.configuration['max_authors']]
+        non_top_authors_names = authors_summary[self.configuration['max_authors']:]['author_name'].values
         project_data = {
-            'top_authors': [],
-            'non_top_authors': [],
+            'top_authors_statistics': top_authors_statistics,
+            'non_top_authors': non_top_authors_names,
             'authors_top': self.configuration['authors_top'],
             'total_commits_count': self.git_repository_statistics.total_commits_count,
             'total_lines_count': self.git_repository_statistics.total_lines_count,
             'do_plot_contribution': True if self.git_repo_statistics.contribution else False
         }
-
-        all_authors = self.git_repository_statistics.authors.sort().names()
-        if len(all_authors) > self.configuration['max_authors']:
-            project_data['non_top_authors'] = all_authors[self.configuration['max_authors']:]
 
         raw_authors_data = self.git_repository_statistics.get_authors_ranking_by_month()
         ordered_months = raw_authors_data.index.get_level_values(0).unique().sort_values(ascending=False)
@@ -275,33 +276,19 @@ class HTMLReportCreator:
                 'total_authors_count': authors_in_year.size
             })
 
-        for author in all_authors[:self.configuration['max_authors']]:
-            git_author = self.git_repository_statistics.get_author(author)
-            author_dict = {
-                'name': author,
-                'commits_count': git_author.commits_count,
-                'merge_commits_count': self.git_repository_statistics.authors.get(author).merge_commits_count.iloc[0],
-                'lines_added_count': git_author.lines_added,
-                'lines_removed_count': git_author.lines_removed,
-                'first_commit_date': git_author.first_commit_date.strftime('%Y-%m-%d'),
-                'latest_commit_date': git_author.latest_commit_date.strftime('%Y-%m-%d'),
-                'contributed_days_count': git_author.contributed_days_count,
-                'active_days_count': git_author.active_days_count
-            }
-
-            project_data['top_authors'].append(author_dict)
-
         page = HtmlPage('Authors', project=project_data)
         page.add_plot(self.make_authors_plot())
         return page
 
     def make_authors_plot(self) -> JsPlot:
+        max_authors_per_plot_count = self.configuration['max_plot_authors_count']
+
         authors_activity_history = self.git_repository_statistics.authors.history(self._time_sampling_interval)
 
         authors_commits_history = self._squash_authors_history(authors_activity_history.commits_count,
-                                                               self.configuration['max_authors'])
+                                                               max_authors_per_plot_count)
         authors_added_lines_history = self._squash_authors_history(authors_activity_history.insertions,
-                                                                   self.configuration['max_authors'])
+                                                                   max_authors_per_plot_count)
 
         # "Added lines" graph
         data = []
@@ -351,9 +338,9 @@ class HTMLReportCreator:
 
             # sort and limit to only top authors
             valuable_contribution.sort(key=lambda tup: tup[1], reverse=True)
-            if len(valuable_contribution) > self.configuration['max_authors'] + 1:
-                rest_contributions = sum(tup[1] for tup in valuable_contribution[self.configuration['max_authors']:])
-                valuable_contribution = valuable_contribution[:self.configuration['max_authors']] + [
+            if len(valuable_contribution) > max_authors_per_plot_count + 1:
+                rest_contributions = sum(tup[1] for tup in valuable_contribution[max_authors_per_plot_count:])
+                valuable_contribution = valuable_contribution[:max_authors_per_plot_count] + [
                     ("others", rest_contributions)]
             # Contribution
             contribution = {
