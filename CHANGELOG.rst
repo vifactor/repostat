@@ -1,3 +1,12 @@
+2.1.0 (2020-05-05)
+-------------------------
+- Added contribution pie-chart (instead of column in top authors table)
+- Decoupled limits on number of authors in plots and in top authors table
+- Added merge commits statistics
+- Introduce --with-index-page option to generate index.html
+- Minor visual changes on General- and Authors-pages
+- Code refactoring
+
 2.0.2 (2020-04-30)
 -------------------------
 - Fix Windows crash due to symlink creation by an unprivileged user

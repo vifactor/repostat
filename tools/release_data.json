@@ -1,14 +1,14 @@
 {
-    "develop_version": "v2.0.2",
-    "user_version": "2020-04-30",
+    "develop_version": "v2.1.0",
+    "user_version": "2020-05-05",
     "contributors": [
         "Viktor Kopp",
         "Adrien Destugues",
         "Tobias Gruetzmacher",
-        "G\u00e1bor Bereczki",
         "Heikki Hokkanen",
+        "G\u00e1bor Bereczki",
         "Jan Beran",
         "Sylvain Joubert"
     ],
-    "git_sha1": "5cae458"
+    "git_sha1": "af3a691"
 }

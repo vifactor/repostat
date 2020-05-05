@@ -28,10 +28,9 @@ jobs:
         password: ${{ secrets.test_pypi_password }}
         repository_url: https://test.pypi.org/legacy/
 
-# This step is needed because Test PyPi does not necessary contains all deps for next step
+    # This step is needed because Test PyPi does not necessary contains all deps for next step
     - name: Install repostat dependencies
-      run: |
-        python -m pip install -r requirements.txt --user
+      run: python -m pip install -r requirements.txt --user
 
     - name: Install repostat from Test PyPi and run
       run: |
