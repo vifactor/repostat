@@ -45,6 +45,7 @@ def main():
     print('Generating HTML report...')
     HTMLReportCreator(config, repo_statistics, repository_statistics)\
         .set_time_sampling(config.get_time_sampling())\
+        .generate_index_page(config.do_generate_index_page())\
         .create(output_path)
     exec_time_seconds = get_execution_time()
     print('Report generated in %.2f secs.' % exec_time_seconds)
