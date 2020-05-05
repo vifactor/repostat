@@ -19,6 +19,7 @@ if __name__ == "__main__":
     argparser = argparse.ArgumentParser(prog='ReportChecker',
                                         description="Checks presence of all expected repostat's report files")
     argparser.add_argument('--is-relocatable', action="store_true", help="Is generated report relocatable")
+    argparser.add_argument('--has-index-page', action="store_true", help="Report is generated with index.html")
     argparser.add_argument('report_path', type=str, action=ReadableDir, help="Path to generated report")
     parsed_args = argparser.parse_args(sys.argv[1:])
 
@@ -31,9 +32,11 @@ if __name__ == "__main__":
         "files.html",
         "files.js",
         "general.html",
-        "index.html",
         "tags.html"
     ]
+
+    if parsed_args.has_index_page:
+        expected_files.append("index.html")
 
     # relocatable report has asset files in its dir
     if parsed_args.is_relocatable:

@@ -107,6 +107,9 @@ class Configuration(dict):
     def is_report_relocatable(self):
         return self.args.copy_assets
 
+    def do_generate_index_page(self):
+        return self.args.with_index_page
+
     def do_calculate_contribution(self):
         return self.args.contribution
 
@@ -131,6 +134,8 @@ class Configuration(dict):
                                                                         "Attention: this is slow calculation!")
         parser.add_argument('--copy-assets', action="store_true",
                             help="Copy assets (images, css, etc.) into report folder (report becomes relocatable)")
+        parser.add_argument('--with-index-page', action="store_true",
+                            help="Generate 'index.html' (a copy of 'general.html')")
 
         parser.add_argument('git_repo', type=str, action=ReadableDir, help="Path to git repository")
         parser.add_argument('output_path', type=str, action=WritableDir, help="Path to an output directory")

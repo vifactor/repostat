@@ -30,6 +30,7 @@ class HTMLReportCreator:
         self.git_repository_statistics = repository
         self.has_tags_page = config.do_process_tags()
         self._time_sampling_interval = "W"
+        self._do_generate_index_page = False
 
         templates_dir = os.path.join(HERE, self.templates_subdir)
         self.j2_env = Environment(loader=FileSystemLoader(templates_dir), trim_blocks=True)
@@ -46,6 +47,10 @@ class HTMLReportCreator:
             https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases
         """
         self._time_sampling_interval = offset
+        return self
+
+    def generate_index_page(self, do_generate: bool = True):
+        self._do_generate_index_page = do_generate
         return self
 
     def _get_recent_activity_data(self):
@@ -118,19 +123,10 @@ class HTMLReportCreator:
             rendered_page = page.render(self.j2_env, pages)
             page.save(self.path, rendered_page)
 
-        try:
+        if self._do_generate_index_page:
             # make the landing page for a web server
-            os.symlink("general.html", os.path.join(path, "index.html"))
-        except FileExistsError:
-            # if symlink exists, it points to "general.html" so no need to re-create it
-            # other solution would be to use approach from
-            # https://stackoverflow.com/questions/8299386/modifying-a-symlink-in-python/8299671
-            print("index.html already exists.")
-        except OSError:
-            print("index.html could not be created."
-                  "On newer versions of Windows, unprivileged accounts can create symlinks only"
-                  "if Developer Mode is enabled or SeCreateSymbolicLinkPrivilege privilege is granted."
-                  "Otherwise, run the process as an administrator.")
+            from shutil import copyfile
+            copyfile(os.path.join(path, "general.html"), os.path.join(path, "index.html"))
 
     def make_general_page(self):
         date_format_str = '%Y-%m-%d %H:%M'
