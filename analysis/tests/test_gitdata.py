@@ -1,9 +1,10 @@
 import unittest
 import os
+from collections import defaultdict
 from pygit2 import Signature
 
 import test
-from analysis.gitdata import WholeHistory, LinearHistory
+from analysis.gitdata import WholeHistory, LinearHistory, RevisionData
 
 
 class GitHistoryTest(unittest.TestCase):
@@ -81,3 +82,63 @@ class GitHistoryTest(unittest.TestCase):
         self.assertCountEqual(["john@doe.com", "author@author.net"], emails)
 
     # TODO: add test for inserted/deleted lines count
+
+
+class GitSnapshotTest(unittest.TestCase):
+    def setUp(self):
+        self.test_repo = test.GitRepository()
+
+        self.test_repo.commit_builder \
+            .set_author("Jack Dau", "jack@dau.org") \
+            .add_file(filename="jacksfile.txt", content=["JackJack", "DauDau"]) \
+            .commit()
+
+        self.test_repo.commit_builder \
+            .set_author("John Snow", "john@snow.com") \
+            .append_file(filename="jacksfile.txt", content=["Winter", "is", "coming"]) \
+            .commit()
+
+        self.test_repo.commit_builder \
+            .set_author("John Snow", "john@snow.com") \
+            .add_file(filename="johnsfile.txt", content=["bzyk"]) \
+            .commit()
+
+        self.test_repo.commit_builder \
+            .set_author("Gandalf", "gandalf@castle.ua") \
+            .add_file(content=["You", "shall", "not", "pass"]) \
+            .commit()
+
+        self.test_repo.commit_builder \
+            .set_author("John Doe", "random@random.rnd") \
+            .add_file(filename="jd.dat", content=["Random"]) \
+            .commit()
+
+        self.test_repo.commit_builder \
+            .set_author("Abc Abc", "abc@abc.io") \
+            .add_file(filename="abc.doc", content=["Abc", "Abc"]) \
+            .commit()
+
+    @staticmethod
+    def records_for_author(snapshot_data):
+        recs = defaultdict(list)
+        for name, lines, time, file in snapshot_data:
+            recs[name].append((lines, file))
+        return recs
+
+    def test_records_content(self):
+        snapshot_data = RevisionData(self.test_repo).fetch()
+        recs = self.records_for_author(snapshot_data)
+        self.assertCountEqual(recs["Jack Dau"], [(2, 'jacksfile.txt')])
+        self.assertCountEqual(recs["John Snow"], [(3, 'jacksfile.txt'), (1, 'johnsfile.txt')])
+        self.assertCountEqual(recs["John Doe"], [(1, 'jd.dat')])
+        self.assertCountEqual(recs["Abc Abc"], [(2, 'abc.doc')])
+
+    def test_records_content_with_mailmap(self):
+        real_author = ("John Snow", "john@snow.com")
+        pseudo_author = ("John Doe", "random@random.rnd")
+        with open(os.path.join(self.test_repo.location, ".mailmap"), 'w') as mm:
+            mm.write(f"{real_author[0]} <{real_author[1]}> "
+                     f"{pseudo_author[0]} <{pseudo_author[1]}>")
+        snapshot_data = RevisionData(self.test_repo).fetch()
+        recs = self.records_for_author(snapshot_data)
+        self.assertCountEqual(recs["John Snow"], [(3, 'jacksfile.txt'), (1, 'johnsfile.txt'), (1, 'jd.dat')])
