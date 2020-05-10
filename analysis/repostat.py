@@ -34,7 +34,6 @@ def main():
     print('Git path: %s' % config.git_repository_path)
     print('Collecting data...')
     repo_statistics = GitStatistics(config.git_repository_path,
-                                    config.do_calculate_contribution(),
                                     config.do_process_tags())
     repository_statistics = GitRepository(config.git_repository_path)
 
@@ -46,6 +45,7 @@ def main():
     HTMLReportCreator(config, repo_statistics, repository_statistics)\
         .set_time_sampling(config.get_time_sampling())\
         .generate_index_page(config.do_generate_index_page())\
+        .plot_contribution_graph(config.do_calculate_contribution())\
         .create(output_path)
     exec_time_seconds = get_execution_time()
     print('Report generated in %.2f secs.' % exec_time_seconds)

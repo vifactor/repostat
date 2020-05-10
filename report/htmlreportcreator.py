@@ -31,6 +31,7 @@ class HTMLReportCreator:
         self.has_tags_page = config.do_process_tags()
         self._time_sampling_interval = "W"
         self._do_generate_index_page = False
+        self._do_plot_contribution_graph = False
 
         templates_dir = os.path.join(HERE, self.templates_subdir)
         self.j2_env = Environment(loader=FileSystemLoader(templates_dir), trim_blocks=True)
@@ -47,6 +48,10 @@ class HTMLReportCreator:
             https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases
         """
         self._time_sampling_interval = offset
+        return self
+
+    def plot_contribution_graph(self, do_plot=True):
+        self._do_plot_contribution_graph = do_plot
         return self
 
     def generate_index_page(self, do_generate: bool = True):
@@ -242,7 +247,7 @@ class HTMLReportCreator:
             'authors_top': self.configuration['authors_top'],
             'total_commits_count': self.git_repository_statistics.total_commits_count,
             'total_lines_count': self.git_repository_statistics.total_lines_count,
-            'do_plot_contribution': True if self.git_repo_statistics.contribution else False
+            'do_plot_contribution': self._do_plot_contribution_graph
         }
 
         raw_authors_data = self.git_repository_statistics.get_authors_ranking_by_month()
@@ -327,7 +332,7 @@ class HTMLReportCreator:
             "data": [{"key": domain, "y": commits_count} for domain, commits_count in email_domains_distribution.items()]
         }
 
-        if self.git_repo_statistics.contribution:
+        if self._do_plot_contribution_graph:
             # sort by contribution
             sorted_contribution = self.git_repository_statistics.head.authors_contribution.sort_values(ascending=False)
             # limit to only top authors

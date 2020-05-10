@@ -7,7 +7,7 @@ from tools.timeit import Timeit
 
 
 class GitStatistics:
-    def __init__(self, path, fetch_contribution=False, fetch_tags=True):
+    def __init__(self, path, fetch_tags=True):
         """
         :param path: path to a repository
         """
@@ -17,11 +17,6 @@ class GitStatistics:
         self.repo_name = os.path.basename(os.path.abspath(path))
         self.analysed_branch = self.repo.head.shorthand
 
-        if fetch_contribution:
-            # this is slow
-            self.contribution = self.fetch_contributors()
-        else:
-            self.contribution = {}
         if fetch_tags:
             self.tags = self.fetch_tags_info()
         else:
@@ -109,30 +104,3 @@ class GitStatistics:
                 authors = {}
 
         return result
-
-    @Timeit("Fetching current tree contributors")
-    def fetch_contributors(self):
-        head_commit = self.repo.head.peel()
-        contribution = {}
-
-        submodules_paths = self.repo.listall_submodules()
-        diff_to_tree = head_commit.tree.diff_to_tree()
-        diff_len = len(list(diff_to_tree))
-        i = 0
-        for p in diff_to_tree:
-            file_to_blame = p.delta.new_file.path
-            if file_to_blame not in submodules_paths and not p.delta.is_binary:
-                blob_blame = self.repo.blame(file_to_blame)
-                for blame_hunk in blob_blame:
-                    hunk_committer = blame_hunk.final_committer
-                    if not hunk_committer:
-                        # if committer configured an empty email when created commit
-                        # blame hunk corresponding to that commit will produce a None signature
-                        # the following substitutes hunk's final committer with an author of the commit
-                        hunk_committer = self.repo[blame_hunk.orig_commit_id].author
-                    committer = self.map_signature(hunk_committer)
-                    contribution[committer.name] = contribution.get(committer.name, 0) + blame_hunk.lines_in_hunk
-            i += 1
-            print(f"Working... ({i} / {diff_len})", end="\r", flush=True)
-
-        return contribution
