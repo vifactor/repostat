@@ -328,19 +328,17 @@ class HTMLReportCreator:
         }
 
         if self.git_repo_statistics.contribution:
-            authors_names = self.git_repository_statistics.authors.sort().names()
-            valuable_contribution = [(name, self.git_repo_statistics.contribution.get(name)) for name in authors_names
-                                     if self.git_repo_statistics.contribution.get(name) is not None]
-
-            # sort and limit to only top authors
-            valuable_contribution.sort(key=lambda tup: tup[1], reverse=True)
-            if len(valuable_contribution) > max_authors_per_plot_count + 1:
-                rest_contributions = sum(tup[1] for tup in valuable_contribution[max_authors_per_plot_count:])
-                valuable_contribution = valuable_contribution[:max_authors_per_plot_count] + [
-                    ("others", rest_contributions)]
-            # Contribution
+            # sort by contribution
+            sorted_contribution = self.git_repository_statistics.head.authors_contribution.sort_values(ascending=False)
+            # limit to only top authors
+            if sorted_contribution.shape[0] > max_authors_per_plot_count + 1:
+                rest_contributions = sorted_contribution[max_authors_per_plot_count:].sum()
+                sorted_contribution = sorted_contribution[:max_authors_per_plot_count] \
+                    .append(pd.Series(rest_contributions, index=["others"]))
+            sorted_contribution = sorted_contribution.to_dict(OrderedDict)
+            # Contribution plot data
             contribution = {
-                "data": [{"key": name, "y": lines_count} for name, lines_count in valuable_contribution]
+                "data": [{"key": name, "y": lines_count} for name, lines_count in sorted_contribution.items()]
             }
         else:
             contribution = {}
