@@ -1,15 +1,17 @@
+import subprocess
 import unittest
 import os
 from collections import defaultdict
-from pygit2 import Signature
+from pygit2 import Signature, Repository
 
-import test
 from analysis.gitdata import WholeHistory, LinearHistory, RevisionData
+
+from analysis.tests.gitrepository import GitTestRepository
 
 
 class GitHistoryTest(unittest.TestCase):
     def setUp(self):
-        self.test_repo = test.GitRepository()
+        self.test_repo = GitTestRepository()
 
         # create commit in master branch (created by default)
         self.test_repo.commit_builder \
@@ -86,7 +88,7 @@ class GitHistoryTest(unittest.TestCase):
 
 class GitSnapshotTest(unittest.TestCase):
     def setUp(self):
-        self.test_repo = test.GitRepository()
+        self.test_repo = GitTestRepository()
 
         self.test_repo.commit_builder \
             .set_author("Jack Dau", "jack@dau.org") \
@@ -142,3 +144,30 @@ class GitSnapshotTest(unittest.TestCase):
         snapshot_data = RevisionData(self.test_repo).fetch()
         recs = self.records_for_author(snapshot_data)
         self.assertCountEqual(recs["John Snow"], [(3, 'jacksfile.txt'), (1, 'johnsfile.txt'), (1, 'jd.dat')])
+
+
+class IncompleteSignaturesTest(unittest.TestCase):
+
+    def test_incomplete_signature_does_not_crash_gitdata_classes(self):
+        import tempfile
+
+        with tempfile.TemporaryDirectory(prefix="tmprepo_") as tmp_repo_location:
+            # change working directory
+            os.chdir(tmp_repo_location)
+            subprocess.run(['git', 'init'], cwd=tmp_repo_location)
+            # create a file a single line in it
+            filename = 'file.txt'
+            with open(os.path.join(tmp_repo_location, filename), "w") as f:
+                f.write("A single line of code\n")
+            subprocess.run(['git', 'add', 'file.txt'], cwd=tmp_repo_location)
+            # apparently it is not possible to create pygit.Signature with empty author's email (and name)
+            # but commits with no author's email can be created via git
+            subprocess.run(['git', 'commit', '-m "No-email author" --author "Author NoEmail <>"'],
+                           cwd=tmp_repo_location)
+            try:
+                # Commit without author's email does not crash data fetch
+                git_repository = Repository(tmp_repo_location)
+                WholeHistory(git_repository)
+                RevisionData(git_repository)
+            except Exception as e:
+                self.fail(str(e))

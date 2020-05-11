@@ -6,7 +6,7 @@ import os
 from typing import List
 
 
-class GitRepository(git.Repository):
+class GitTestRepository(git.Repository):
     class CommitBuilder:
 
         def __init__(self, repo):
@@ -65,7 +65,7 @@ class GitRepository(git.Repository):
         git.init_repository(self.location)
         super().__init__(self.location)
         print(f"Repo has been initialized in {self.location}")
-        self.commit_builder = GitRepository.CommitBuilder(self)
+        self.commit_builder = GitTestRepository.CommitBuilder(self)
 
     def __del__(self):
         shutil.rmtree(self.path)

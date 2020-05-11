@@ -35,4 +35,4 @@ jobs:
         repostat . ./output --no-browser --contribution
 
     - name: Check generated report integrity
-      run: python test/check_report_files.py ./output
+      run: python tools/check_report_files.py ./output
