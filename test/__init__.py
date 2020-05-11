@@ -1,1 +1,0 @@
-from .gitrepository import GitRepository

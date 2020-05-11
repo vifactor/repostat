@@ -31,6 +31,7 @@ class HTMLReportCreator:
         self.has_tags_page = config.do_process_tags()
         self._time_sampling_interval = "W"
         self._do_generate_index_page = False
+        self._do_plot_contribution_graph = False
 
         templates_dir = os.path.join(HERE, self.templates_subdir)
         self.j2_env = Environment(loader=FileSystemLoader(templates_dir), trim_blocks=True)
@@ -47,6 +48,10 @@ class HTMLReportCreator:
             https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases
         """
         self._time_sampling_interval = offset
+        return self
+
+    def plot_contribution_graph(self, do_plot=True):
+        self._do_plot_contribution_graph = do_plot
         return self
 
     def generate_index_page(self, do_generate: bool = True):
@@ -242,7 +247,7 @@ class HTMLReportCreator:
             'authors_top': self.configuration['authors_top'],
             'total_commits_count': self.git_repository_statistics.total_commits_count,
             'total_lines_count': self.git_repository_statistics.total_lines_count,
-            'do_plot_contribution': True if self.git_repo_statistics.contribution else False
+            'do_plot_contribution': self._do_plot_contribution_graph
         }
 
         raw_authors_data = self.git_repository_statistics.get_authors_ranking_by_month()
@@ -327,20 +332,18 @@ class HTMLReportCreator:
             "data": [{"key": domain, "y": commits_count} for domain, commits_count in email_domains_distribution.items()]
         }
 
-        if self.git_repo_statistics.contribution:
-            authors_names = self.git_repository_statistics.authors.sort().names()
-            valuable_contribution = [(name, self.git_repo_statistics.contribution.get(name)) for name in authors_names
-                                     if self.git_repo_statistics.contribution.get(name) is not None]
-
-            # sort and limit to only top authors
-            valuable_contribution.sort(key=lambda tup: tup[1], reverse=True)
-            if len(valuable_contribution) > max_authors_per_plot_count + 1:
-                rest_contributions = sum(tup[1] for tup in valuable_contribution[max_authors_per_plot_count:])
-                valuable_contribution = valuable_contribution[:max_authors_per_plot_count] + [
-                    ("others", rest_contributions)]
-            # Contribution
+        if self._do_plot_contribution_graph:
+            # sort by contribution
+            sorted_contribution = self.git_repository_statistics.head.authors_contribution.sort_values(ascending=False)
+            # limit to only top authors
+            if sorted_contribution.shape[0] > max_authors_per_plot_count + 1:
+                rest_contributions = sorted_contribution[max_authors_per_plot_count:].sum()
+                sorted_contribution = sorted_contribution[:max_authors_per_plot_count] \
+                    .append(pd.Series(rest_contributions, index=["others"]))
+            sorted_contribution = sorted_contribution.to_dict(OrderedDict)
+            # Contribution plot data
             contribution = {
-                "data": [{"key": name, "y": lines_count} for name, lines_count in valuable_contribution]
+                "data": [{"key": name, "y": lines_count} for name, lines_count in sorted_contribution.items()]
             }
         else:
             contribution = {}

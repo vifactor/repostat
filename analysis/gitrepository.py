@@ -7,11 +7,13 @@ import pytz
 from tools import split_email_address
 from .gitdata import WholeHistory as GitWholeHistory
 from .gitdata import LinearHistory as GitLinearHistory
+from .gitdata import RevisionData as GitRevisionData
+from .gitrevision import GitRevision
 from .gitauthor import GitAuthor
 from .gitauthors import GitAuthors
 
 
-class GitRepository(object):
+class GitRepository:
     def __init__(self, path: str):
         """
         :param path: path to a repository
@@ -19,6 +21,14 @@ class GitRepository(object):
         self.repo = git.Repository(path)
         self.whole_history_df = GitWholeHistory(self.repo).as_dataframe()
         self.linear_history_df = GitLinearHistory(self.repo).as_dataframe()
+        self._head_revision = None
+
+    @property
+    def head(self):
+        if not self._head_revision:
+            revision_data = GitRevisionData(self.repo, 'HEAD')
+            self._head_revision = GitRevision(revision_data)
+        return self._head_revision
 
     @property
     def total_commits_count(self):

@@ -45,4 +45,4 @@ jobs:
       run: repostat . /tmp --no-browser --contribution --copy-assets
 
     - name: Check generated report integrity
-      run: python test/check_report_files.py --is-relocatable /tmp
+      run: python tools/check_report_files.py --is-relocatable /tmp

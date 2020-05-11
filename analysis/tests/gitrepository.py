@@ -3,8 +3,10 @@ import tempfile
 import shutil
 import os
 
+from typing import List
 
-class GitRepository(git.Repository):
+
+class GitTestRepository(git.Repository):
     class CommitBuilder:
 
         def __init__(self, repo):
@@ -14,7 +16,7 @@ class GitRepository(git.Repository):
             self.latest_commit = None
             self.author_signatures = []
 
-        def add_file(self, filename=None, content: list = None):
+        def add_file(self, filename=None, content: List[str] = None):
             if filename is None:
                 (fd, file_abs_path) = tempfile.mkstemp(dir=self.repository.location)
                 file_rel_path = os.path.basename(file_abs_path)
@@ -28,6 +30,15 @@ class GitRepository(git.Repository):
                         f.write(line + "\n")
 
             self.repository.index.add(file_rel_path)
+            self.repository.index.write()
+            return self
+
+        def append_file(self, filename, content: List[str]):
+            with open(os.path.join(self.repository.location, filename), 'a+') as f:
+                for line in content:
+                    f.write(f"{line}\n")
+
+            self.repository.index.add(filename)
             self.repository.index.write()
             return self
 
@@ -54,7 +65,7 @@ class GitRepository(git.Repository):
         git.init_repository(self.location)
         super().__init__(self.location)
         print(f"Repo has been initialized in {self.location}")
-        self.commit_builder = GitRepository.CommitBuilder(self)
+        self.commit_builder = GitTestRepository.CommitBuilder(self)
 
     def __del__(self):
         shutil.rmtree(self.path)
