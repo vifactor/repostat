@@ -9,8 +9,11 @@ jobs:
 
     name: Build and publish Python distributions to PyPI
     runs-on: ubuntu-18.04
+
     steps:
     - uses: actions/checkout@master
+      with:
+        fetch-depth: 0
 
     - name: Set up Python 3.7
       uses: actions/setup-python@v1
@@ -32,10 +35,17 @@ jobs:
     - name: Install repostat dependencies
       run: python -m pip install -r requirements.txt --user
 
-    - name: Install repostat from Test PyPi and run
+    - name: Install repostat from Test PyPi
+      run: python -m pip install --index-url https://test.pypi.org/simple/ repostat-app --user
+
+    - name: Run installed repostat launch script
       run: |
-        python -m pip install --index-url https://test.pypi.org/simple/ repostat-app --user
+        export PATH=$HOME/.local/bin:$PATH
         repostat --help
+        repostat . /tmp/repostat_output/ --no-browser --contribution
+
+    - name: Check generated report integrity
+      run: python tools/check_report_files.py /tmp/repostat_output/
 
     - name: Publish distribution to PyPI
 #     if: startsWith(github.event.ref, 'refs/tags')
