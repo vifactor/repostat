@@ -20,6 +20,10 @@ class GitRevision:
         return self.files_df["file"].unique().shape[0]
 
     @property
+    def size(self):
+        return self.files_df["size_bytes"].sum()
+
+    @property
     def files_extensions_summary(self):
         df = self.files_df[["size_bytes", "lines_count"]]
         df["extension"] = self.files_df['file'].apply(functools.partial(get_file_extension, max_ext_length=6))

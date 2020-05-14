@@ -4,7 +4,6 @@ import warnings
 import os
 
 from tools.timeit import Timeit
-from tools import get_file_extension
 
 
 class GitStatistics:
@@ -22,11 +21,6 @@ class GitStatistics:
             self.tags = self.fetch_tags_info()
         else:
             self.tags = {}
-
-        # extension -> files, lines, size
-        self.extensions = self.get_current_files_info()
-        self.total_files_count = sum(v['files'] for k, v in self.extensions.items())
-        self.total_tree_size = sum(v['size'] for k, v in self.extensions.items())
 
     def map_signature(self, sig: git.Signature) -> git.Signature:
         """
@@ -48,23 +42,6 @@ class GitStatistics:
             return git.Signature(name, email, sig.time, sig.offset, 'utf-8')
         else:
             return mapped_signature
-
-    def get_current_files_info(self):
-        """
-        :return: returns total files count and distribution of lines and files count by file extensions
-        """
-        head_commit = self.repo.revparse_single('HEAD')
-        head_commit_tree = head_commit.tree.diff_to_tree(swap=True)
-        extensions = {}
-        for p in head_commit_tree:
-            ext = get_file_extension(p.delta.new_file.path)
-            if ext not in extensions:
-                extensions[ext] = {'files': 0, 'lines': 0, 'size': 0}
-            _, lines_count, _ = p.line_stats
-            extensions[ext]['lines'] += lines_count
-            extensions[ext]['files'] += 1
-            extensions[ext]['size'] += p.delta.new_file.size
-        return extensions
 
     @classmethod
     def get_fetching_tool_info(cls):
