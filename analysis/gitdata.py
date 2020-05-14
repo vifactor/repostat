@@ -138,3 +138,30 @@ class RevisionData:
     def as_dataframe(self):
         data = self.fetch()
         return pd.DataFrame(data, columns=["committer_name", "lines_count", "timestamp", "filepath"])
+
+
+class FilesData:
+    """
+    Class to fetch raw data about repository state at certain revision
+    """
+    def __init__(self, repository: git.Repository, revision: str = None):
+        self.repo = repository
+        self.revision_commit = self.repo.revparse_single(revision) if revision else self.repo.head.peel()
+
+    def _fetch(self):
+        submodules_paths = self.repo.listall_submodules()
+        head_commit_tree = self.revision_commit.tree.diff_to_tree(swap=True)
+        records = []
+        for p in head_commit_tree:
+            filepath = p.delta.new_file.path
+            if filepath not in submodules_paths:
+                records.append({
+                    "file": filepath,
+                    "size_bytes": p.delta.new_file.size,
+                    "lines_count": p.line_stats[1]
+                })
+        return records
+
+    def as_dataframe(self):
+        data = self._fetch()
+        return pd.DataFrame(data)
