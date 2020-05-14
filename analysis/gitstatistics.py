@@ -4,6 +4,7 @@ import warnings
 import os
 
 from tools.timeit import Timeit
+from tools import get_file_extension
 
 
 class GitStatistics:
@@ -48,15 +49,6 @@ class GitStatistics:
         else:
             return mapped_signature
 
-    @staticmethod
-    def _get_file_extension(git_file_path, max_ext_length=5):
-        filename = os.path.basename(git_file_path)
-        basename_parts = filename.split('.')
-        ext = basename_parts[1] if len(basename_parts) == 2 and basename_parts[0] else ''
-        if len(ext) > max_ext_length:
-            ext = ''
-        return ext
-
     def get_current_files_info(self):
         """
         :return: returns total files count and distribution of lines and files count by file extensions
@@ -65,7 +57,7 @@ class GitStatistics:
         head_commit_tree = head_commit.tree.diff_to_tree(swap=True)
         extensions = {}
         for p in head_commit_tree:
-            ext = self._get_file_extension(p.delta.new_file.path)
+            ext = get_file_extension(p.delta.new_file.path)
             if ext not in extensions:
                 extensions[ext] = {'files': 0, 'lines': 0, 'size': 0}
             _, lines_count, _ = p.line_stats
