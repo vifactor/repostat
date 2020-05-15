@@ -146,7 +146,7 @@ class HTMLReportCreator:
             "commits_count": self.git_repository_statistics.total_commits_count,
             "merge_commits_count": self.git_repository_statistics.merge_commits_count,
             "authors_count": self.git_repository_statistics.authors.count(),
-            "files_count": self.git_repo_statistics.total_files_count,
+            "files_count": self.git_repository_statistics.head.files_count,
             "total_lines_count": self.git_repository_statistics.total_lines_count,
             "added_lines_count": self.git_repository_statistics.total_lines_added,
             "removed_lines_count": self.git_repository_statistics.total_lines_removed,
@@ -358,20 +358,11 @@ class HTMLReportCreator:
 
     def make_files_page(self):
         project_data = {
-            'files_count': self.git_repo_statistics.total_files_count,
-            'lines_count': self.git_repository_statistics.total_lines_count,
-            'size': self.git_repo_statistics.total_tree_size,
-            'files': []
+            'total_files_count': self.git_repository_statistics.head.files_count,
+            'total_lines_count': self.git_repository_statistics.total_lines_count,
+            'size': self.git_repository_statistics.head.size,
+            'file_summary': self.git_repository_statistics.head.files_extensions_summary
         }
-
-        for ext in sorted(self.git_repo_statistics.extensions.keys()):
-            files = self.git_repo_statistics.extensions[ext]['files']
-            lines = self.git_repo_statistics.extensions[ext]['lines']
-            file_type_dict = {"extension": ext,
-                              "count": files,
-                              "lines_count": lines
-                              }
-            project_data['files'].append(file_type_dict)
 
         page = HtmlPage('Files', project=project_data)
         page.add_plot(self.make_files_plot())

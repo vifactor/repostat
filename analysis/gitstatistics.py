@@ -22,11 +22,6 @@ class GitStatistics:
         else:
             self.tags = {}
 
-        # extension -> files, lines, size
-        self.extensions = self.get_current_files_info()
-        self.total_files_count = sum(v['files'] for k, v in self.extensions.items())
-        self.total_tree_size = sum(v['size'] for k, v in self.extensions.items())
-
     def map_signature(self, sig: git.Signature) -> git.Signature:
         """
         Maps of a contributor signature as read from a repository using a provided .mailmap file
@@ -47,32 +42,6 @@ class GitStatistics:
             return git.Signature(name, email, sig.time, sig.offset, 'utf-8')
         else:
             return mapped_signature
-
-    @staticmethod
-    def _get_file_extension(git_file_path, max_ext_length=5):
-        filename = os.path.basename(git_file_path)
-        basename_parts = filename.split('.')
-        ext = basename_parts[1] if len(basename_parts) == 2 and basename_parts[0] else ''
-        if len(ext) > max_ext_length:
-            ext = ''
-        return ext
-
-    def get_current_files_info(self):
-        """
-        :return: returns total files count and distribution of lines and files count by file extensions
-        """
-        head_commit = self.repo.revparse_single('HEAD')
-        head_commit_tree = head_commit.tree.diff_to_tree(swap=True)
-        extensions = {}
-        for p in head_commit_tree:
-            ext = self._get_file_extension(p.delta.new_file.path)
-            if ext not in extensions:
-                extensions[ext] = {'files': 0, 'lines': 0, 'size': 0}
-            _, lines_count, _ = p.line_stats
-            extensions[ext]['lines'] += lines_count
-            extensions[ext]['files'] += 1
-            extensions[ext]['size'] += p.delta.new_file.size
-        return extensions
 
     @classmethod
     def get_fetching_tool_info(cls):

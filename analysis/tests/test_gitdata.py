@@ -4,7 +4,7 @@ import os
 from collections import defaultdict
 from pygit2 import Signature, Repository
 
-from analysis.gitdata import WholeHistory, LinearHistory, RevisionData
+from analysis.gitdata import WholeHistory, LinearHistory, RevisionData, FilesData
 
 from analysis.tests.gitrepository import GitTestRepository
 
@@ -107,7 +107,7 @@ class GitSnapshotTest(unittest.TestCase):
 
         self.test_repo.commit_builder \
             .set_author("Gandalf", "gandalf@castle.ua") \
-            .add_file(content=["You", "shall", "not", "pass"]) \
+            .add_file(filename="xxx.xxx", content=["You", "shall", "not", "pass"]) \
             .commit()
 
         self.test_repo.commit_builder \
@@ -127,7 +127,7 @@ class GitSnapshotTest(unittest.TestCase):
             recs[name].append((lines, file))
         return recs
 
-    def test_records_content(self):
+    def test_blame_records_content(self):
         snapshot_data = RevisionData(self.test_repo).fetch()
         recs = self.records_for_author(snapshot_data)
         self.assertCountEqual(recs["Jack Dau"], [(2, 'jacksfile.txt')])
@@ -135,7 +135,7 @@ class GitSnapshotTest(unittest.TestCase):
         self.assertCountEqual(recs["John Doe"], [(1, 'jd.dat')])
         self.assertCountEqual(recs["Abc Abc"], [(2, 'abc.doc')])
 
-    def test_records_content_with_mailmap(self):
+    def test_blame_records_content_with_mailmap(self):
         real_author = ("John Snow", "john@snow.com")
         pseudo_author = ("John Doe", "random@random.rnd")
         with open(os.path.join(self.test_repo.location, ".mailmap"), 'w') as mm:
@@ -144,6 +144,24 @@ class GitSnapshotTest(unittest.TestCase):
         snapshot_data = RevisionData(self.test_repo).fetch()
         recs = self.records_for_author(snapshot_data)
         self.assertCountEqual(recs["John Snow"], [(3, 'jacksfile.txt'), (1, 'johnsfile.txt'), (1, 'jd.dat')])
+
+    def test_files_records_content(self):
+        files_data = FilesData(self.test_repo)._fetch()
+        expected_files_data = {
+            "abc.doc": 2,
+            "jacksfile.txt": 5,
+            "jd.dat": 1,
+            "johnsfile.txt": 1,
+            "xxx.xxx": 4
+        }
+
+        self.assertEqual(len(expected_files_data), len(files_data))
+        for file_data in files_data:
+            filename = file_data["file"]
+            self.assertEqual(expected_files_data[filename], file_data["lines_count"])
+
+            file_abs_path = os.path.join(self.test_repo.location, filename)
+            self.assertEqual(os.stat(file_abs_path).st_size, file_data["size_bytes"])
 
 
 class IncompleteSignaturesTest(unittest.TestCase):
