@@ -8,4 +8,4 @@ install:
 virtualenv:
   system_site_packages: true
 script:
-  - python3 -m unittest
+  - python3 -m unittest -v

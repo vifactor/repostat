@@ -94,7 +94,6 @@ Configuration file might contain following fields (all are optional):
 ```json
 {
     "max_domains": 10,
-    "max_ext_length": 10,
     "max_authors": 7,
     "max_plot_authors_count": 10,
     "max_authors_of_months": 6,
@@ -113,8 +112,6 @@ of contributors and activity levels, to avoid showing too much or too little
 information.
 
 * `max_domains`: number of e-mail domains to show in author stats
-* `max_ext_length`: max symbols count after `.` in a filename to 
-consider substring as a file extension
 * `max_authors`: number of authors in the "top authors" table 
 (other authors are listed without detailed stats)
 * `max_plot_authors_count`: number of authors to include in plots
