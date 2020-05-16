@@ -1,7 +1,6 @@
 import os
 import argparse
 import json
-import warnings
 
 here = os.path.dirname(os.path.abspath(__file__))
 
@@ -25,7 +24,6 @@ class WritableDir(argparse.Action):
         if os.path.isdir(prospective_dir):
             if not os.access(prospective_dir, os.W_OK):
                 raise argparse.ArgumentTypeError("Directory {0} is not writable.".format(prospective_dir))
-            warnings.warn("Directory {0} already exists. Its content will be rewritten.".format(prospective_dir))
         else:
             is_subdir_of_writable_parent = False
             parent_dir, sub_dir = os.path.split(prospective_dir)
