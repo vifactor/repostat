@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 import sys
 import os
-import re
 import json
 from datetime import datetime
 import pygit2 as git
 import readline
 from distutils import version
 import subprocess as cmd
+
+from analysis.gitdata import WholeHistory
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPOSTAT_REPO_PATH = HERE
@@ -25,38 +26,6 @@ def rl_input(prompt, prefill=''):
         readline.set_startup_hook()
 
 
-def map_signature(sig: git.Signature):
-    try:
-        mapped_signature = REPOSTAT_MAILMAP.resolve_signature(sig)
-    except ValueError as e:
-        name = sig.name
-        email = sig.email
-        if not name:
-            name = "Empty Empty"
-        if not email:
-            email = "empty@empty.empty"
-        return git.Signature(name, email, sig.time, sig.offset, 'utf-8')
-    else:
-        return mapped_signature
-
-
-def fetch_contributors(repo):
-    contribution = {}
-
-    submodules_paths = repo.listall_submodules()
-    for p in repo.head.peel().tree.diff_to_tree():
-        file_to_blame = p.delta.new_file.path
-        if file_to_blame not in submodules_paths:
-            blob_blame = repo.blame(file_to_blame)
-            for blame_hunk in blob_blame:
-                contributor = map_signature(blame_hunk.final_committer)
-                contribution[contributor.name] = contribution.get(contributor.name, 0) + blame_hunk.lines_in_hunk
-
-    # this gives only the contributors to the current code tree, not all the commiters to the project
-    contribution = sorted(contribution.items(), key=lambda kv: kv[1], reverse=True)
-    return [contributor for contributor, lines_contributed in contribution]
-
-
 def prepare_changelog(new_version):
     with open(CHANGELOG_FILE_NAME, 'r') as f:
         original_content = f.read()
@@ -66,15 +35,6 @@ def prepare_changelog(new_version):
         f.write("-------------------------\n\n")
         f.write(original_content)
 
-
-# retrieve name of current branch
-git_branch_string = REPOSTAT_REPO.head.shorthand
-
-is_master_branch = (git_branch_string == 'master')
-is_release_branch = re.search(r'v(\d+.\d+).x', git_branch_string) is not None
-if not (is_master_branch or is_release_branch):
-    print("Not the 'master' or a release branch: {}. Do not perform any actions.".format(git_branch_string))
-    sys.exit(0)
 
 current_version_str = '0.0.0'
 try:
@@ -123,10 +83,11 @@ release_data['develop_version'] = new_version_tag
 head_commit = REPOSTAT_REPO.head.peel()
 release_tag_date_yymmdd = datetime.fromtimestamp(head_commit.author.time).strftime('%Y-%m-%d')
 release_data['user_version'] = release_tag_date_yymmdd
-# hash of release tag's commit (first 7 hex symbols like git describe)
-release_data['git_sha1'] = head_commit.hex[:7]
+
 print("Fetching contributors...")
-contributors = fetch_contributors(REPOSTAT_REPO)
+wh = WholeHistory(REPOSTAT_REPO, REPOSTAT_REPO.head.shorthand).as_dataframe()
+contributors = wh[['author_name', 'author_timestamp']].groupby(by='author_name').max()\
+    .sort_values(by='author_timestamp', ascending=False).index.tolist()
 release_data['contributors'] = contributors
 
 with open(RELEASE_DATA_FILE, 'w') as release_json_file:
@@ -142,5 +103,5 @@ REPOSTAT_REPO.index.add(os.path.join("tools", 'release_data.json'))
 REPOSTAT_REPO.index.add(CHANGELOG_FILE_NAME)
 REPOSTAT_REPO.index.write()
 
-print("Now release commit can be created and tagged via:\n")
+print("\nNow release commit can be created and tagged via:\n")
 print(f"git tag -s -a {new_version_tag} -m 'Release {new_version_tag}'")
