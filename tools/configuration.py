@@ -92,7 +92,6 @@ class Configuration(dict):
     def _set_default_configuration(self):
         self.update({
             "max_domains": 10,
-            "max_ext_length": 10,
             "max_authors": 20,
             "max_plot_authors_count": 10,
             "max_authors_of_months": 6,

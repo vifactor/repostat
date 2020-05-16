@@ -12,10 +12,16 @@ def split_email_address(email_address):
     return parts[0], parts[1]
 
 
-def get_file_extension(git_file_path, max_ext_length=5):
-    filename = os.path.basename(git_file_path)
+def get_file_extension(filepath: str):
+    assert filepath
+    filename = os.path.basename(filepath)
     basename_parts = filename.split('.')
-    ext = basename_parts[1] if len(basename_parts) == 2 and basename_parts[0] else ''
-    if len(ext) > max_ext_length:
-        ext = ''
-    return ext
+    if len(basename_parts) == 1:
+        # 'folder/filename'-case
+        return filename
+    elif len(basename_parts) == 2 and not basename_parts[0]:
+        # 'folder/.filename'-case
+        return filename
+    else:
+        # "normal" case
+        return basename_parts[-1]

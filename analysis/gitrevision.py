@@ -1,5 +1,3 @@
-import functools
-
 from tools import get_file_extension
 from .gitdata import RevisionData, FilesData
 
@@ -26,8 +24,8 @@ class GitRevision:
     @property
     def files_extensions_summary(self):
         df = self.files_df[["size_bytes", "lines_count"]]
-        df["extension"] = self.files_df['file'].apply(functools.partial(get_file_extension, max_ext_length=6))
+        df["extension"] = self.files_df['file'].apply(get_file_extension)
         df = df.groupby(by="extension").agg({"size_bytes": ["sum"], "lines_count": ["sum", "count"]})
         df.columns = ["size_bytes", "lines_count", "files_count"]
         df.reset_index()
-        return df
+        return df.sort_values(by="files_count", ascending=False)
