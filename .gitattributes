@@ -5,7 +5,11 @@
 
 # dev files
 make_release.py export-ignore
-requirements.py export-ignore
+requirements.txt export-ignore
+tools/check_report_files.py export-ignore
 
 # travis CI config
 .travis.yml export-ignore
+
+# git actions
+.github export-ignore
