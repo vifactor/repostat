@@ -98,7 +98,7 @@ class RepoStatisticsTest(unittest.TestCase):
 
     @patch.object(WholeHistory, 'fetch', return_value=[
         {'commit_sha': 'fdc28ab', 'author_name': '', 'author_tz_offset': 0,
-         'author_timestamp': to_unix_time(datetime.utcnow())}
+         'author_timestamp': to_unix_time(datetime.utcnow()), 'author_email': 'author1@author1.com'}
     ])
     def test_recent_activity(self, mock_fetch):
         with patch("pygit2.Repository"),\
@@ -109,11 +109,11 @@ class RepoStatisticsTest(unittest.TestCase):
 
     @patch.object(WholeHistory, 'fetch', return_value=[
         {'commit_sha': 'aaaaaaa', 'author_name': 'Author1', 'author_tz_offset': 60,
-         'author_timestamp': to_unix_time(datetime(2020, 1, 17))},
+         'author_timestamp': to_unix_time(datetime(2020, 1, 17)), 'author_email': 'author1@domain.com'},
         {'commit_sha': 'bbbbbbb', 'author_name': 'Author2', 'author_tz_offset': 60,
-         'author_timestamp': to_unix_time(datetime(2019, 11, 15))},
+         'author_timestamp': to_unix_time(datetime(2019, 11, 15)), 'author_email': 'author2@domain.com'},
         {'commit_sha': 'ccccccc', 'author_name': 'Author1', 'author_tz_offset': -120,
-         'author_timestamp': to_unix_time(datetime(2020, 3, 1))},
+         'author_timestamp': to_unix_time(datetime(2020, 3, 1)), 'author_email': 'author1@domain.com'},
     ])
     def test_authors_top(self, mock_fetch):
         with patch("pygit2.Repository"),\
@@ -127,13 +127,3 @@ class RepoStatisticsTest(unittest.TestCase):
             authors_ts = stat.get_authors_ranking_by_month()
             self.assertEqual(1, authors_ts.loc[('2020-03', 'Author1')])
             self.assertEqual(1, authors_ts.loc[('2019-11', 'Author2')])
-
-    @patch.object(WholeHistory, 'fetch', return_value=test_whole_history_records)
-    def test_authors_group_set_after_get_author(self, mock_fetch):
-        with patch("pygit2.Repository"), patch("pygit2.Mailmap"):
-            stat = GitRepository(MagicMock())
-
-            from analysis.gitauthor import GitAuthor
-            self.assertIsNone(GitAuthor.author_groups)
-            author = stat.get_author('Author1')
-            self.assertIsNotNone(author.author_groups)

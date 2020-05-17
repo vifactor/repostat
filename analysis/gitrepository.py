@@ -194,12 +194,6 @@ class GitRepository:
         # sort each group by value
         return ts_agg.apply(lambda x: x.sort_values(ascending=False))
 
-    def get_author(self, name: str):
-        if not GitAuthor.author_groups:
-            df = self.whole_history_df[['author_name', 'author_timestamp', 'insertions', 'deletions']]
-            GitAuthor.author_groups = df.groupby(by='author_name')
-        return GitAuthor(name)
-
     @property
     def authors(self) -> GitAuthors:
         if not hasattr(self, '_authors'):
