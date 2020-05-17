@@ -1,3 +1,11 @@
+2.1.1 (2020-05-17)
+-------------------------
+- Process revision data using pandas
+- Improve file types grouping
+- Change way to list *repostat*'s authors (all authors are not in `release_data.json`)
+- Fix required python version for packaging (3.6+)
+- Minor improvements, e.g. display of pygit2 version
+
 2.1.0 (2020-05-05)
 -------------------------
 - Added contribution pie-chart (instead of column in top authors table)
