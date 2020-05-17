@@ -43,11 +43,6 @@ class GitStatistics:
         else:
             return mapped_signature
 
-    @classmethod
-    def get_fetching_tool_info(cls):
-        # could be bare git-subprocess invokation, PythonGit package, etc.
-        return '{} v.{}'.format(git.__name__, git.LIBGIT2_VERSION)
-
     @Timeit("Fetching tags info")
     def fetch_tags_info(self):
         tags = [refobj for refobj in self.repo.listall_reference_objects() if refobj.name.startswith('refs/tags')]

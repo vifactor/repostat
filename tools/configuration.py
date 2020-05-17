@@ -138,8 +138,3 @@ class Configuration(dict):
         parser.add_argument('output_path', type=str, action=WritableDir, help="Path to an output directory")
 
         return parser.parse_args(argv)
-
-    @staticmethod
-    def get_jinja_version():
-        import jinja2 as j2
-        return '{} v.{}'.format(j2.__name__, j2.__version__)

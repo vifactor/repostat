@@ -10,6 +10,7 @@ from analysis.gitstatistics import GitStatistics
 from analysis.gitrepository import GitRepository
 from tools.configuration import Configuration
 from tools import sort_keys_by_value_of_key
+from tools import packages_info
 
 from . import colormaps
 from .html_page import HtmlPage, JsPlot
@@ -429,9 +430,9 @@ class HTMLReportCreator:
         repostat_version_date = self.configuration.get_release_data_info()['user_version']
         page_data = {
             "version": f"{repostat_version} ({repostat_version_date})",
-            "tools": [GitStatistics.get_fetching_tool_info(),
-                      self.configuration.get_jinja_version()],
-            "contributors": [author for author in self.configuration.get_release_data_info()['contributors']]
+            "tools": [packages_info.get_pygit2_info(),
+                      packages_info.get_jinja_info()],
+            "contributors": self.configuration.get_release_data_info()['contributors']
         }
 
         page = HtmlPage('About', repostat=page_data)
