@@ -103,6 +103,7 @@ class HTMLReportCreator:
             .asfreq(freq=self._time_sampling_interval, fill_value=0)\
             .cumsum()
 
+        most_productive_authors_history.columns = most_productive_authors_history.columns.add_categories(['Others'])
         most_productive_authors_history['Others'] = rest_authors_history.values
         return most_productive_authors_history
 

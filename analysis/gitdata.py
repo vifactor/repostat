@@ -4,6 +4,8 @@ import pandas as pd
 import pygit2 as git
 from concurrent.futures import ThreadPoolExecutor
 
+from tools.timeit import Timeit
+
 
 def map_signature(mailmap, signature: git.Signature):
     # the unmapped email is used on purpose
@@ -32,14 +34,21 @@ class History(abc.ABC):
 
     def as_dataframe(self):
         data = self.fetch()
-        return pd.DataFrame(data)
+        df = pd.DataFrame(data)
+        return self._optimize(df)
 
     @abc.abstractmethod
     def fetch(self):
         pass
 
+    @abc.abstractmethod
+    def _optimize(self, df: pd.DataFrame):
+        return df
+
 
 class WholeHistory(History):
+
+    @Timeit("Fetching whole history data")
     def fetch(self):
         repo_walker = self.repo.walk(self.repo.head.target, git.GIT_SORT_TOPOLOGICAL)
         records = []
@@ -71,8 +80,15 @@ class WholeHistory(History):
                             'deletions': deletions})
         return records
 
+    def _optimize(self, df: pd.DataFrame):
+        df['author_name'] = pd.Categorical(df['author_name'])
+        df['author_email'] = pd.Categorical(df['author_email'])
+        return df
+
 
 class LinearHistory(History):
+
+    @Timeit("Fetching linear history data")
     def fetch(self):
         repo_walker = self.repo.walk(self.repo.head.target, git.GIT_SORT_TOPOLOGICAL)
         repo_walker.simplify_first_parent()
@@ -94,6 +110,9 @@ class LinearHistory(History):
                             'insertions': insertions,
                             'deletions': deletions})
         return records
+
+    def _optimize(self, df: pd.DataFrame):
+        return super()._optimize(df)
 
 
 class RevisionData:
@@ -120,6 +139,7 @@ class RevisionData:
         blame_info = [self._get_data_from_blame_hunk(blame_hunk) + [file_path] for blame_hunk in blob_blame]
         return blame_info
 
+    @Timeit("Fetching blame data")
     def fetch(self):
         submodules_paths = self.repo.listall_submodules()
         diff_to_tree = self.revision_commit.tree.diff_to_tree()
@@ -137,7 +157,11 @@ class RevisionData:
 
     def as_dataframe(self):
         data = self.fetch()
-        return pd.DataFrame(data, columns=["committer_name", "lines_count", "timestamp", "filepath"])
+        df = pd.DataFrame(data, columns=["committer_name", "lines_count", "timestamp", "filepath"])
+        # this saves some memory
+        df["committer_name"] = pd.Categorical(df["committer_name"])
+        df["filepath"] = pd.Categorical(df["filepath"])
+        return df
 
 
 class FilesData:
@@ -148,6 +172,7 @@ class FilesData:
         self.repo = repository
         self.revision_commit = self.repo.revparse_single(revision) if revision else self.repo.head.peel()
 
+    @Timeit("Fetching files data")
     def _fetch(self):
         submodules_paths = self.repo.listall_submodules()
         head_commit_tree = self.revision_commit.tree.diff_to_tree(swap=True)
@@ -164,4 +189,5 @@ class FilesData:
 
     def as_dataframe(self):
         data = self._fetch()
-        return pd.DataFrame(data)
+        df = pd.DataFrame(data)
+        return df
