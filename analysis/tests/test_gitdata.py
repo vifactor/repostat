@@ -3,8 +3,9 @@ import unittest
 import os
 from collections import defaultdict
 from pygit2 import Signature, Repository
+import pygit2
 
-from analysis.gitdata import WholeHistory, LinearHistory, BlameData, FilesData
+from analysis.gitdata import WholeHistory, LinearHistory, BlameData, FilesData, TagsData
 
 from analysis.tests.gitrepository import GitTestRepository
 
@@ -189,3 +190,65 @@ class IncompleteSignaturesTest(unittest.TestCase):
                 BlameData(git_repository)
             except Exception as e:
                 self.fail(str(e))
+
+
+class TagsDataTest(unittest.TestCase):
+
+    def test_tags_fetch(self):
+        test_repo = GitTestRepository()
+
+        # master branch
+        test_repo.commit_builder \
+            .set_author("John Doe", "john@doe.com") \
+            .add_file(content="bzyk") \
+            .commit()
+
+        # create second branch from 'master' (which already had one commit)
+        branch = test_repo.branches.local.create('second_branch', test_repo.head.peel())
+        test_repo.checkout(branch)
+
+        # create commit on new branch
+        test_repo.commit_builder \
+            .set_author("Author Author", "author@author.net") \
+            .add_file(content=["some content"]) \
+            .commit()
+
+        # checkout to master
+        master_branch = test_repo.branches.get('master')
+        test_repo.checkout(master_branch)
+        # create commit
+        test_repo.commit_builder \
+            .set_author("Jack Johns", "jack@johns.com").add_file() \
+            .commit()
+
+        # and merge 'second_branch' into 'master'
+        test_repo.merge(test_repo.branches.get('second_branch').peel().id)
+        # by creating merge commit
+        author = Signature("name", "email")
+        committer = author
+        tree = test_repo.index.write_tree()
+        message = "Merge 'second_branch' into 'master'"
+        v1_oid = test_repo.create_commit('HEAD', author, committer, message, tree,
+                                         [test_repo.head.target,
+                                          test_repo.branches.get('second_branch').peel().oid])
+
+        test_repo.create_tag("v1", str(v1_oid), pygit2.GIT_OBJ_COMMIT,
+                             Signature('John Doe', 'jdoe@example.com', 1589748740, 0),
+                             "v1 tag")
+
+        v2_oid = test_repo.commit_builder \
+            .set_author("Jack Johns", "jack@johns.com").add_file() \
+            .commit()
+        test_repo.create_tag("v2", str(v2_oid), pygit2.GIT_OBJ_COMMIT,
+                             Signature('John Doe', 'jdoe@example.com'),
+                             "v2 tag")
+
+        test_repo.commit_builder \
+            .set_author("Incognito", "j@anonimous.net").add_file() \
+            .commit()
+
+        tags_data = TagsData(test_repo).fetch()
+
+        self.assertEqual(4, len([x for x in tags_data if x['tag_name'] == 'v1']))
+        self.assertEqual(1, len([x for x in tags_data if x['tag_name'] == 'v2']))
+        self.assertEqual(1, len([x for x in tags_data if x['tag_name'] is None]))
