@@ -95,9 +95,15 @@ td {
 	background-color: #ddf;
 }
 
-.nav li a:hover {
+.nav li:not(.active) a:hover {
 	background-color: #fff;
 	border-bottom: 1px solid #fff;
+}
+
+.nav li.active a {
+    color:#fff;
+    font-weight:bold;
+    background-color:#222;
 }
 
 img {

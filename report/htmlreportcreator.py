@@ -127,7 +127,7 @@ class HTMLReportCreator:
 
         # render and save all pages
         for page in pages:
-            rendered_page = page.render(self.j2_env, pages)
+            rendered_page = page.render(self.j2_env, linked_pages=pages)
             page.save(self.path, rendered_page)
 
         if self._do_generate_index_page:
