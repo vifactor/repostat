@@ -28,6 +28,7 @@ class HtmlPage:
 
     def __init__(self, name: str, **kwargs):
         self.name = name
+        self.is_active = False
         self.kwargs = kwargs
         self._plots = []
         self._bootstrapped_plots = []
@@ -49,6 +50,10 @@ class HtmlPage:
 
     def render(self, j2_env, linked_pages):
         print(f"Rendering '{self.name}'-page")
+
+        # linked_pages contain reference to this page as well
+        # the following sets currently rendered page as active to apply appropriate css style in navigation bar
+        self.is_active = True
         # load and render template
         template_rendered = j2_env.get_template(self.template_name).render(
             **self.kwargs,
@@ -56,6 +61,7 @@ class HtmlPage:
             pages=linked_pages,
             assets_path=self.assets_path,
         )
+        self.is_active = False
 
         # also bootstrap all page's plots
         for p in self._plots:
