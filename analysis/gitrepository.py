@@ -26,8 +26,7 @@ class GitRepository:
     @property
     def head(self):
         if not self._head_revision:
-            revision_data = GitRevisionData(self.repo, 'HEAD')
-            self._head_revision = GitRevision(revision_data)
+            self._head_revision = GitRevision(self.repo, 'HEAD')
         return self._head_revision
 
     @property

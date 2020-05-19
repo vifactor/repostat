@@ -24,7 +24,7 @@ class GitRevisionTest(unittest.TestCase):
     @patch.object(BlameData, 'fetch', return_value=test_revision_blame_data_records)
     def test_contribution(self, mock_fetch):
         with patch("pygit2.Mailmap"):
-            revision = GitRevision(BlameData(MagicMock()))
+            revision = GitRevision(MagicMock())
             self.assertDictEqual(revision.authors_contribution.to_dict(),
                                  {'Author1': 4, 'Author3': 4, 'Author2': 2})
 

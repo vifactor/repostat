@@ -1,12 +1,14 @@
+import pygit2 as git
+
 from tools import get_file_extension
 from .gitdata import BlameData, FilesData
 
 
 class GitRevision:
-    # FIXME: change signature of the class
-    def __init__(self, raw_revision_data: BlameData):
-        self.revision_df = raw_revision_data.as_dataframe()
-        self.files_df = FilesData(raw_revision_data.repo, 'HEAD').as_dataframe()
+
+    def __init__(self, repository: git.Repository, revision: str = 'HEAD'):
+        self.revision_df = BlameData(repository, revision).as_dataframe()
+        self.files_df = FilesData(repository, revision).as_dataframe()
 
     @property
     def authors_contribution(self):
