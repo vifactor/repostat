@@ -1,10 +1,10 @@
 from tools import get_file_extension
-from .gitdata import RevisionData, FilesData
+from .gitdata import BlameData, FilesData
 
 
 class GitRevision:
     # FIXME: change signature of the class
-    def __init__(self, raw_revision_data: RevisionData):
+    def __init__(self, raw_revision_data: BlameData):
         self.revision_df = raw_revision_data.as_dataframe()
         self.files_df = FilesData(raw_revision_data.repo, 'HEAD').as_dataframe()
 

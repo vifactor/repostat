@@ -115,7 +115,7 @@ class LinearHistory(History):
         return super()._optimize(df)
 
 
-class RevisionData:
+class BlameData:
     """
     Class to fetch raw data about repository state at certain revision
     """
