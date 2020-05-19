@@ -4,7 +4,7 @@ import os
 from collections import defaultdict
 from pygit2 import Signature, Repository
 
-from analysis.gitdata import WholeHistory, LinearHistory, RevisionData, FilesData
+from analysis.gitdata import WholeHistory, LinearHistory, BlameData, FilesData
 
 from analysis.tests.gitrepository import GitTestRepository
 
@@ -128,7 +128,7 @@ class GitSnapshotTest(unittest.TestCase):
         return recs
 
     def test_blame_records_content(self):
-        snapshot_data = RevisionData(self.test_repo).fetch()
+        snapshot_data = BlameData(self.test_repo).fetch()
         recs = self.records_for_author(snapshot_data)
         self.assertCountEqual(recs["Jack Dau"], [(2, 'jacksfile.txt')])
         self.assertCountEqual(recs["John Snow"], [(3, 'jacksfile.txt'), (1, 'johnsfile.txt')])
@@ -141,7 +141,7 @@ class GitSnapshotTest(unittest.TestCase):
         with open(os.path.join(self.test_repo.location, ".mailmap"), 'w') as mm:
             mm.write(f"{real_author[0]} <{real_author[1]}> "
                      f"{pseudo_author[0]} <{pseudo_author[1]}>")
-        snapshot_data = RevisionData(self.test_repo).fetch()
+        snapshot_data = BlameData(self.test_repo).fetch()
         recs = self.records_for_author(snapshot_data)
         self.assertCountEqual(recs["John Snow"], [(3, 'jacksfile.txt'), (1, 'johnsfile.txt'), (1, 'jd.dat')])
 
@@ -186,6 +186,6 @@ class IncompleteSignaturesTest(unittest.TestCase):
                 # Commit without author's email does not crash data fetch
                 git_repository = Repository(tmp_repo_location)
                 WholeHistory(git_repository)
-                RevisionData(git_repository)
+                BlameData(git_repository)
             except Exception as e:
                 self.fail(str(e))

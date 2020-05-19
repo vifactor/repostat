@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import patch, MagicMock
 
-from analysis.gitdata import RevisionData, FilesData
+from analysis.gitdata import BlameData, FilesData
 from analysis.gitrevision import GitRevision
 
 
@@ -21,10 +21,10 @@ class GitRevisionTest(unittest.TestCase):
         {"file": 'folder/file4.txt', "size_bytes": 16, "lines_count": 4}
     ]
 
-    @patch.object(RevisionData, 'fetch', return_value=test_revision_blame_data_records)
+    @patch.object(BlameData, 'fetch', return_value=test_revision_blame_data_records)
     def test_contribution(self, mock_fetch):
         with patch("pygit2.Mailmap"):
-            revision = GitRevision(RevisionData(MagicMock()))
+            revision = GitRevision(MagicMock())
             self.assertDictEqual(revision.authors_contribution.to_dict(),
                                  {'Author1': 4, 'Author3': 4, 'Author2': 2})
 
