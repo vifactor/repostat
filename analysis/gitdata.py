@@ -209,24 +209,33 @@ class TagsData:
 
         result = []
         tag_ref = None
+        is_symbolic_reference = False
         for commit in self.repo.walk(self.repo.head.target, git.GIT_SORT_TOPOLOGICAL):
             author_name, _ = map_signature(self.mailmap, commit.author)
             if commit.oid in tag_refs:
-                tag_ref = tag_refs[commit.oid]
+                tag_ref: git.Reference = tag_refs[commit.oid]
+                is_symbolic_reference = tag_ref.target.hex == commit.hex
 
             if tag_ref is not None:
-                tag = self.repo[tag_ref.target]
-                tagger_name, _ = map_signature(self.mailmap, tag.tagger)
-                tag_metadata = {
-                    "tag_name": tag.name,
-                    "tagger_name": tagger_name,
-                    "tagger_time": tag.tagger.time,
-                }
+                if not is_symbolic_reference:
+                    tag = self.repo[tag_ref.target]
+                    tagger_name, _ = map_signature(self.mailmap, tag.tagger)
+                    tag_metadata = {
+                        "tag_name": tag.name,
+                        "tagger_name": tagger_name,
+                        "tagger_time": tag.tagger.time,
+                    }
+                else:
+                    tag_metadata = {
+                        "tag_name": tag_ref.shorthand,
+                        "tagger_name": None,
+                        "tagger_time": None,
+                    }
             else:
                 tag_metadata = {
                     "tag_name": None,
                     "tagger_name": None,
-                    "tag_time": None,
+                    "tagger_time": None,
                 }
             tag_metadata["commit_author"] = author_name
             tag_metadata["commit_time"] = commit.author.time

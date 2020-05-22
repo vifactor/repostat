@@ -194,7 +194,7 @@ class IncompleteSignaturesTest(unittest.TestCase):
 
 class TagsDataTest(unittest.TestCase):
 
-    def test_tags_fetch(self):
+    def test_annotated_tags_fetch(self):
         test_repo = GitTestRepository()
 
         # master branch
@@ -252,3 +252,19 @@ class TagsDataTest(unittest.TestCase):
         self.assertEqual(4, len([x for x in tags_data if x['tag_name'] == 'v1']))
         self.assertEqual(1, len([x for x in tags_data if x['tag_name'] == 'v2']))
         self.assertEqual(1, len([x for x in tags_data if x['tag_name'] is None]))
+
+    def test_unannotated_tag(self):
+        test_repo = GitTestRepository()
+
+        oid = test_repo.commit_builder \
+            .set_author("John Doe", "john@doe.com") \
+            .add_file(content="bzyk") \
+            .commit()
+
+        # this creates an unannotated tag (symbolic tag)
+        test_repo.references.create('refs/tags/version1', oid)
+        tags_data = TagsData(test_repo).fetch()
+        self.assertEqual(1, len(tags_data))
+        tag_data = tags_data[0]
+        self.assertIsNone(tag_data['tagger_name'])
+        self.assertIsNone(tag_data['tagger_time'])

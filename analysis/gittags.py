@@ -1,7 +1,7 @@
 import pygit2 as git
 import pandas as pd
-from collections import namedtuple
 from typing import List, Generator
+from numpy import isnan
 
 from .gitdata import TagsData
 
@@ -24,7 +24,7 @@ class GitTag:
     @property
     def contributors(self) -> pd.DataFrame:
         return self.df_ref[['commit_author', 'is_merge']].groupby('commit_author')\
-            .count().rename(columns={'is_merge': 'commits_count'})
+            .count().rename(columns={'is_merge': 'commits_count'}).sort_values(by='commits_count', ascending=False)
 
     @property
     def created(self):
@@ -32,8 +32,12 @@ class GitTag:
         This is tagger time, i.e. when tag as created
         :return: timestamp
         """
-        # all tagger_time's for particular tag should be the same, so aggregate is not important
-        return pd.to_datetime(self.df_ref['tagger_time'].min(), unit='s', utc=True)
+        ts = self.df_ref['tagger_time'].unique()
+        # all tagger_time's for particular tag should be the same
+        assert len(ts) == 1
+        print("TSTSTSTS: ", ts, type(ts)) # FIXME: temporary
+        ts = ts[0]
+        return pd.to_datetime(ts, unit='s', utc=True) if not isnan(ts) else None
 
     @property
     def initiated(self):
@@ -77,4 +81,8 @@ class GitTags:
     @property
     def names(self):
         return self.tags_data.tag_name.unique()
+
+    @property
+    def count(self):
+        return len(self.names)
 

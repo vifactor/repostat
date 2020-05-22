@@ -7,10 +7,9 @@ import pytz
 from tools import split_email_address
 from .gitdata import WholeHistory as GitWholeHistory
 from .gitdata import LinearHistory as GitLinearHistory
-from .gitdata import BlameData as GitRevisionData
 from .gitrevision import GitRevision
-from .gitauthor import GitAuthor
 from .gitauthors import GitAuthors
+from .gittags import GitTags
 
 
 class GitRepository:
@@ -22,12 +21,19 @@ class GitRepository:
         self.whole_history_df = GitWholeHistory(self.repo).as_dataframe()
         self.linear_history_df = GitLinearHistory(self.repo).as_dataframe()
         self._head_revision = None
+        self._tags = None
 
     @property
     def head(self):
         if not self._head_revision:
             self._head_revision = GitRevision(self.repo, 'HEAD')
         return self._head_revision
+
+    @property
+    def tags(self):
+        if not self._tags:
+            self._tags = GitTags(self.repo)
+        return self._tags
 
     @property
     def total_commits_count(self):

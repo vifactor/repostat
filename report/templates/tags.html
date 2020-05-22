@@ -3,14 +3,23 @@
 {% block content %}
 <dl><dt>Total tags</dt><dd>{{project.tags_count}}</dd></dl>
 <table class="tags">
-    <tr><th>Name</th><th>Date</th><th>Commits</th><th>Authors</th></tr>
+    <tr><th>Name</th><th>Date<sup>*</sup></th><th>Commits</th><th>Authors</th></tr>
     {% for tag in project.tags %}
     <tr>
         <td>{{tag.name}}</td>
-        <td>{{tag.date}}</td>
-        <td>{{tag.commits_count}}</td>
-        <td>{{tag.authors}}</td>
+        {% if tag.created %}
+        <td>{{ tag.created.strftime("%Y-%m-%d") }}</td>
+        {% else %}
+        <td> - </td>
+        {% endif %}
+        <td style="text-align:center">{{tag.commits_count}}</td>
+        <td><ul>
+            {% for name, row in tag.contributors.iterrows() %}
+            <li>{{ name }} ({{ row['commits_count'] }})</li>
+            {% endfor %}
+        </ul></td>
     </tr>
     {% endfor %}
 </table>
+<p><sup>*</sup><small>Unannotated tags do not have creation date.</small></p>
 {% endblock %}

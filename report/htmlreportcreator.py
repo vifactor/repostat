@@ -389,17 +389,17 @@ class HTMLReportCreator:
         return files_plot
 
     def make_tags_page(self):
+        if 'max_recent_tags' not in self.configuration:
+            tags = list(self.git_repository_statistics.tags.all())
+        else:
+            tags = [next(self.git_repository_statistics.tags) for _ in range(self.configuration['max_recent_tags'])]
+
         project_data = {
-            'tags_count': len(self.git_repo_statistics.tags),
-            'tags': []
+            'tags': tags,
+            # this is total tags count, generally len(tags) != total_tags_count
+            'tags_count': self.git_repository_statistics.tags.count
         }
 
-        # TODO: fix error occurring when a tag name and project name are the same
-        """
-        fatal: ambiguous argument 'gitstats': both revision and filename
-        Use '--' to separate paths from revisions, like this:
-        'git <command> [<revision>...] -- [<file>...]'
-        """
         tags_sorted_by_date_desc = sort_keys_by_value_of_key(self.git_repo_statistics.tags, 'date', reverse=True)
         for tag in tags_sorted_by_date_desc:
             if 'max_recent_tags' in self.configuration \
@@ -420,7 +420,7 @@ class HTMLReportCreator:
                     'commits_count': self.git_repo_statistics.tags[tag]['commits'],
                     'authors': ', '.join(authorinfo)
                 }
-                project_data['tags'].append(tag_dict)
+                #project_data['tags'].append(tag_dict)
 
         page = HtmlPage(name='Tags', project=project_data)
         return page
