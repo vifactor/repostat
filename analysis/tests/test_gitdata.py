@@ -267,4 +267,4 @@ class TagsDataTest(unittest.TestCase):
         self.assertEqual(1, len(tags_data))
         tag_data = tags_data[0]
         self.assertIsNone(tag_data['tagger_name'])
-        self.assertIsNone(tag_data['tagger_time'])
+        self.assertEqual(-1, tag_data['tagger_time'])

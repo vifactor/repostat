@@ -35,9 +35,8 @@ class GitTag:
         ts = self.df_ref['tagger_time'].unique()
         # all tagger_time's for particular tag should be the same
         assert len(ts) == 1
-        print("TSTSTSTS: ", ts, type(ts)) # FIXME: temporary
         ts = ts[0]
-        return pd.to_datetime(ts, unit='s', utc=True) if not isnan(ts) else None
+        return pd.to_datetime(ts, unit='s', utc=True) if ts != -1 else None
 
     @property
     def initiated(self):

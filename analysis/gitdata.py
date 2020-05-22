@@ -229,13 +229,13 @@ class TagsData:
                     tag_metadata = {
                         "tag_name": tag_ref.shorthand,
                         "tagger_name": None,
-                        "tagger_time": None,
+                        "tagger_time": -1,
                     }
             else:
                 tag_metadata = {
                     "tag_name": None,
                     "tagger_name": None,
-                    "tagger_time": None,
+                    "tagger_time": -1,
                 }
             tag_metadata["commit_author"] = author_name
             tag_metadata["commit_time"] = commit.author.time

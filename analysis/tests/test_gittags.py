@@ -9,7 +9,7 @@ from analysis.gittags import GitTags
 
 class GitTagsTest(unittest.TestCase):
     test_tags_data_records = [
-        {"tag_name": None, "tagger_name": None, "tagger_time": 1230456, "commit_author": "Committer1",
+        {"tag_name": None, "tagger_name": None, "tagger_time": -1, "commit_author": "Committer1",
          "commit_time": 1230000, "is_merge": False},
         {"tag_name": "v2", "tagger_name": "Release Master", "tagger_time": 1234, "commit_author": "Author2",
          "commit_time": 123000, "is_merge": True},
@@ -68,5 +68,17 @@ class GitTagsTest(unittest.TestCase):
 
             v2_tag = next(tags)
             self.assertEqual("Release Master", v2_tag.tagger)
+
+    @patch.object(TagsData, 'fetch', return_value=[
+        {"tag_name": None, "tagger_name": None, "tagger_time": -1, "commit_author": "Committer1",
+         "commit_time": 1230000, "is_merge": False},
+        {"tag_name": None, "tagger_name": None, "tagger_time": -1, "commit_author": "Author2",
+         "commit_time": 123000, "is_merge": True}])
+    def test_repo_with_no_tags(self, mock_fetch):
+        with patch("pygit2.Mailmap"):
+            tags = GitTags(MagicMock()).all()
+            unreleased_tag = next(tags)
+            self.assertIsNone(unreleased_tag.tagger)
+            self.assertIsNone(unreleased_tag.created)
 
 
