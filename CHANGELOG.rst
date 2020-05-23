@@ -1,5 +1,12 @@
+2.1.2 (2020-05-23)
+-------------------------
+- Do not fetch blame data if no "--contribution" option was passed (#177)
+- Process tags data using pandas
+- "Improve" tags visualization
+
 2.1.1 (2020-05-17)
 -------------------------
+- Fetch blame data in many threads
 - Process revision data using pandas
 - Improve file types grouping
 - Change way to list *repostat*'s authors (all authors are not in `release_data.json`)
