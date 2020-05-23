@@ -2,7 +2,7 @@
 
 {% block content %}
 <dl><dt>Total tags</dt><dd>{{project.tags_count}}</dd></dl>
-<table class="tags">
+<table>
     <tr><th>Name</th><th>Date<sup>*</sup></th><th>Commits</th><th>Authors</th></tr>
     {% for tag in project.tags %}
     <tr>
@@ -13,7 +13,7 @@
         <td> - </td>
         {% endif %}
         <td style="text-align:center">{{tag.commits_count}}</td>
-        <td><ul>
+        <td><ul style="columns: 60px 6">
             {% for name, row in tag.contributors.iterrows() %}
             <li>{{ name }} ({{ row['commits_count'] }})</li>
             {% endfor %}
