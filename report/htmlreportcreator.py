@@ -9,7 +9,6 @@ import pandas as pd
 from analysis.gitstatistics import GitStatistics
 from analysis.gitrepository import GitRepository
 from tools.configuration import Configuration
-from tools import sort_keys_by_value_of_key
 from tools import packages_info
 
 from . import colormaps
@@ -399,28 +398,6 @@ class HTMLReportCreator:
             # this is total tags count, generally len(tags) != total_tags_count
             'tags_count': self.git_repository_statistics.tags.count
         }
-
-        tags_sorted_by_date_desc = sort_keys_by_value_of_key(self.git_repo_statistics.tags, 'date', reverse=True)
-        for tag in tags_sorted_by_date_desc:
-            if 'max_recent_tags' in self.configuration \
-                    and self.configuration['max_recent_tags'] <= len(project_data['tags']):
-                break
-            # there are tags containing no commits
-            if 'authors' in self.git_repo_statistics.tags[tag].keys():
-                authordict = self.git_repo_statistics.tags[tag]['authors']
-                authors_by_commits = [
-                    name for name, _ in sorted(authordict.items(), key=lambda kv: kv[1], reverse=True)
-                ]
-                authorinfo = []
-                for i in reversed(authors_by_commits):
-                    authorinfo.append('%s (%d)' % (i, self.git_repo_statistics.tags[tag]['authors'][i]))
-                tag_dict = {
-                    'name': tag,
-                    'date': self.git_repo_statistics.tags[tag]['date'],
-                    'commits_count': self.git_repo_statistics.tags[tag]['commits'],
-                    'authors': ', '.join(authorinfo)
-                }
-                #project_data['tags'].append(tag_dict)
 
         page = HtmlPage(name='Tags', project=project_data)
         return page
