@@ -6,7 +6,7 @@ from pygit2 import Signature, Repository
 import pygit2
 
 from analysis.gitdata import WholeHistory, LinearHistory, BlameData, FilesData, TagsData
-
+from analysis.gitrepository import GitRepository
 from analysis.tests.gitrepository import GitTestRepository
 
 
@@ -85,6 +85,11 @@ class GitHistoryTest(unittest.TestCase):
         self.assertCountEqual(["john@doe.com", "author@author.net"], emails)
 
     # TODO: add test for inserted/deleted lines count
+
+    def test_repository_name(self):
+        _, expected_name = os.path.split(self.test_repo.location)
+        repo = GitRepository(self.test_repo.location)
+        self.assertEqual(expected_name, repo.name)
 
 
 class GitSnapshotTest(unittest.TestCase):

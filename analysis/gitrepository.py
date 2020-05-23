@@ -2,6 +2,7 @@ import pandas as pd
 import pygit2 as git
 import warnings
 from datetime import datetime
+import os
 import pytz
 
 from tools import split_email_address
@@ -18,10 +19,23 @@ class GitRepository:
         :param path: path to a repository
         """
         self.repo = git.Repository(path)
+        self.branch = self.repo.head.shorthand
         self.whole_history_df = GitWholeHistory(self.repo).as_dataframe()
         self.linear_history_df = GitLinearHistory(self.repo).as_dataframe()
         self._head_revision = None
         self._tags = None
+        self._name = None
+
+    @property
+    def name(self):
+        if self._name is None:
+            # remove trailing slash
+            head, _ = os.path.split(self.repo.path)
+            # remove '.git' subfolder
+            head, _ = os.path.split(head)
+            # get the folder name containing '.git'
+            _, self._name = os.path.split(head)
+        return self._name
 
     @property
     def head(self):

@@ -9,7 +9,6 @@ import time
 import webbrowser
 
 from report.htmlreportcreator import HTMLReportCreator
-from analysis import GitStatistics
 from analysis.gitrepository import GitRepository
 from tools.configuration import Configuration
 
@@ -33,8 +32,7 @@ def main():
 
     print('Git path: %s' % config.git_repository_path)
     print('Collecting data...')
-    repo_statistics = GitStatistics(config.git_repository_path,
-                                    config.do_process_tags())
+
     repository_statistics = GitRepository(config.git_repository_path)
 
     output_path = config.statistics_output_path
@@ -42,7 +40,7 @@ def main():
     os.makedirs(output_path, exist_ok=True)
 
     print('Generating HTML report...')
-    HTMLReportCreator(config, repo_statistics, repository_statistics)\
+    HTMLReportCreator(config, repository_statistics)\
         .set_time_sampling(config.get_time_sampling())\
         .generate_index_page(config.do_generate_index_page())\
         .plot_contribution_graph(config.do_calculate_contribution())\

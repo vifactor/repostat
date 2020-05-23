@@ -6,7 +6,6 @@ import json
 from jinja2 import Environment, FileSystemLoader
 import pandas as pd
 
-from analysis.gitstatistics import GitStatistics
 from analysis.gitrepository import GitRepository
 from tools.configuration import Configuration
 from tools import packages_info
@@ -22,11 +21,10 @@ class HTMLReportCreator:
     assets_subdir = "assets"
     templates_subdir = "templates"
 
-    def __init__(self, config: Configuration, repo_stat: GitStatistics, repository: GitRepository):
+    def __init__(self, config: Configuration, repository: GitRepository):
         self.path = None
         self.configuration = config
         self.assets_path = os.path.join(HERE, self.assets_subdir)
-        self.git_repo_statistics = repo_stat
         self.git_repository_statistics = repository
         self.has_tags_page = config.do_process_tags()
         self._time_sampling_interval = "W"
@@ -140,8 +138,8 @@ class HTMLReportCreator:
         last_commit_datetime = datetime.datetime.fromtimestamp(self.git_repository_statistics.last_commit_timestamp)
 
         project_data = {
-            "name": self.git_repo_statistics.repo_name,
-            "branch": self.git_repo_statistics.analysed_branch,
+            "name": self.git_repository_statistics.name,
+            "branch": self.git_repository_statistics.branch,
             "age": (last_commit_datetime - first_commit_datetime).days,
             "active_days_count": self.git_repository_statistics.active_days_count,
             "commits_count": self.git_repository_statistics.total_commits_count,
