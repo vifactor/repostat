@@ -393,7 +393,8 @@ class HTMLReportCreator:
             'total_lines_count': self.git_repository_statistics.total_lines_count,
             'size': self.git_repository_statistics.head.size,
             'file_summary': file_ext_summary,
-            'top_files_by_contributors_count': self.git_repository_statistics.head.get_top_files_by_contributors_count()
+            'top_files_by_contributors_count': self.git_repository_statistics.head.get_top_files_by_contributors_count(),
+            'monoauthor_files_count': self.git_repository_statistics.head.monoauthor_files.count()
         }
 
         page = HtmlPage('Files', project=project_data)

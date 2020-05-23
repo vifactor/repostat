@@ -4,7 +4,12 @@
 <dl>
     <dt>Total number of files</dt><dd>{{project.total_files_count}}</dd>
     <dt>Total codebase</dt><dd>{{project.size}} bytes</dd>
-    <dt>Average file size</dt><dd>{{'%0.2f'|format(project.size|to_ratio(project.total_files_count))}} bytes</dd>
+    <dt>Average file size</dt>
+    <dd>{{ '%0.2f'|format(project.size|to_ratio(project.total_files_count)) }} bytes</dd>
+    <dt>Mono-author files count</dt>
+    <dd>
+        {{ project.monoauthor_files_count }} ({{'%0.2f'| format(project.monoauthor_files_count|to_percentage(project.total_files_count))}}%)
+    </dd>
 </dl>
 
 <h2 id="file_count_by_date"><a href="#file_count_by_date">Files number by date</a></h2>

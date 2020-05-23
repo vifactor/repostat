@@ -28,6 +28,13 @@ class GitRevision:
             .committer_name.nunique().sort_values(ascending=False).head(top_size)
 
     @property
+    def monoauthor_files(self):
+        self._lazy_load_blame_data()
+        committer_per_file = self.blame_data[["committer_name", "filepath"]].groupby(["filepath"])\
+            .committer_name.nunique()
+        return committer_per_file[committer_per_file == 1]
+
+    @property
     def files_count(self):
         return self.files_data["file"].unique().shape[0]
 
