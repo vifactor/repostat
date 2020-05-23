@@ -60,13 +60,15 @@ class GitTestRepository(git.Repository):
             self.author_signature = None
             return commit_oid
 
-    def __init__(self):
-        self.location = tempfile.mkdtemp(prefix="repostat_")
+    def __init__(self, loc=None, clean=True):
+        self.clean = clean
+        self.location = loc if loc is not None else tempfile.mkdtemp(prefix="repostat_")
         git.init_repository(self.location)
         super().__init__(self.location)
         print(f"Repo has been initialized in {self.location}")
         self.commit_builder = GitTestRepository.CommitBuilder(self)
 
     def __del__(self):
-        shutil.rmtree(self.path)
-        print(f"Repo has been removed from {self.location}")
+        if self.clean:
+            shutil.rmtree(self.location)
+            print(f"Repo has been removed from {self.location}")

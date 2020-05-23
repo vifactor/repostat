@@ -6,10 +6,8 @@ import json
 from jinja2 import Environment, FileSystemLoader
 import pandas as pd
 
-from analysis.gitstatistics import GitStatistics
 from analysis.gitrepository import GitRepository
 from tools.configuration import Configuration
-from tools import sort_keys_by_value_of_key
 from tools import packages_info
 
 from . import colormaps
@@ -23,11 +21,10 @@ class HTMLReportCreator:
     assets_subdir = "assets"
     templates_subdir = "templates"
 
-    def __init__(self, config: Configuration, repo_stat: GitStatistics, repository: GitRepository):
+    def __init__(self, config: Configuration, repository: GitRepository):
         self.path = None
         self.configuration = config
         self.assets_path = os.path.join(HERE, self.assets_subdir)
-        self.git_repo_statistics = repo_stat
         self.git_repository_statistics = repository
         self.has_tags_page = config.do_process_tags()
         self._time_sampling_interval = "W"
@@ -141,8 +138,8 @@ class HTMLReportCreator:
         last_commit_datetime = datetime.datetime.fromtimestamp(self.git_repository_statistics.last_commit_timestamp)
 
         project_data = {
-            "name": self.git_repo_statistics.repo_name,
-            "branch": self.git_repo_statistics.analysed_branch,
+            "name": self.git_repository_statistics.name,
+            "branch": self.git_repository_statistics.branch,
             "age": (last_commit_datetime - first_commit_datetime).days,
             "active_days_count": self.git_repository_statistics.active_days_count,
             "commits_count": self.git_repository_statistics.total_commits_count,
@@ -389,38 +386,16 @@ class HTMLReportCreator:
         return files_plot
 
     def make_tags_page(self):
-        project_data = {
-            'tags_count': len(self.git_repo_statistics.tags),
-            'tags': []
-        }
+        if 'max_recent_tags' not in self.configuration:
+            tags = list(self.git_repository_statistics.tags.all())
+        else:
+            tags = [next(self.git_repository_statistics.tags) for _ in range(self.configuration['max_recent_tags'])]
 
-        # TODO: fix error occurring when a tag name and project name are the same
-        """
-        fatal: ambiguous argument 'gitstats': both revision and filename
-        Use '--' to separate paths from revisions, like this:
-        'git <command> [<revision>...] -- [<file>...]'
-        """
-        tags_sorted_by_date_desc = sort_keys_by_value_of_key(self.git_repo_statistics.tags, 'date', reverse=True)
-        for tag in tags_sorted_by_date_desc:
-            if 'max_recent_tags' in self.configuration \
-                    and self.configuration['max_recent_tags'] <= len(project_data['tags']):
-                break
-            # there are tags containing no commits
-            if 'authors' in self.git_repo_statistics.tags[tag].keys():
-                authordict = self.git_repo_statistics.tags[tag]['authors']
-                authors_by_commits = [
-                    name for name, _ in sorted(authordict.items(), key=lambda kv: kv[1], reverse=True)
-                ]
-                authorinfo = []
-                for i in reversed(authors_by_commits):
-                    authorinfo.append('%s (%d)' % (i, self.git_repo_statistics.tags[tag]['authors'][i]))
-                tag_dict = {
-                    'name': tag,
-                    'date': self.git_repo_statistics.tags[tag]['date'],
-                    'commits_count': self.git_repo_statistics.tags[tag]['commits'],
-                    'authors': ', '.join(authorinfo)
-                }
-                project_data['tags'].append(tag_dict)
+        project_data = {
+            'tags': tags,
+            # this is total tags count, generally len(tags) != total_tags_count
+            'tags_count': self.git_repository_statistics.tags.count
+        }
 
         page = HtmlPage(name='Tags', project=project_data)
         return page
