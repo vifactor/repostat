@@ -22,6 +22,11 @@ class GitRevision:
         return self.blame_data[["committer_name", "lines_count"]]\
             .groupby(by="committer_name")["lines_count"].sum()
 
+    def get_top_files_by_contributors_count(self, top_size=10):
+        self._lazy_load_blame_data()
+        return self.blame_data[["committer_name", "filepath"]].groupby(["filepath"])\
+            .committer_name.nunique().sort_values(ascending=False).head(top_size)
+
     @property
     def files_count(self):
         return self.files_data["file"].unique().shape[0]

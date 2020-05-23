@@ -11,16 +11,33 @@
 
 <div id="chart_files" style="border: 1px solid #808080; width: 1014px"><svg style="height: 400px; width: 100%"></svg></div>
 <script src="files.js"></script>
-<h2 id="extensions"><a href="#extensions">File types</a></h2>
-<table class="sortable" id="ext">
-    <tr><th>Extension</th><th>Number (%)</th><th>Lines (%)</th><th>Lines per file</th></tr>
-    {% for index, row in project.file_summary.iterrows() %}
-        <tr>
-            <td>{{ index }}</td>
-            <td>{{ row["files_count"] }} ({{'%0.2f'|format(row["files_count"]|to_percentage(project.total_files_count))}}%)</td>
-            <td>{{ row["lines_count"] }} ({{'%0.2f'|format(row["lines_count"]|to_percentage(project.total_lines_count))}}%)</td>
-            <td>{{'%0.1f'|format(row["lines_count"] | to_ratio(row["files_count"]))}}</td>
-        </tr>
-    {% endfor %}
-</table>
+
+<div class="row">
+    <div class="column">
+    <h2 id="extensions"><a href="#extensions">File types</a></h2>
+    <table class="sortable" id="ext">
+        <tr><th>Extension</th><th>Number (%)</th><th>Lines (%)</th><th>Lines per file</th></tr>
+        {% for index, row in project.file_summary.iterrows() %}
+            <tr>
+                <td>{{ index }}</td>
+                <td>{{ row["files_count"] }} ({{'%0.2f'|format(row["files_count"]|to_percentage(project.total_files_count))}}%)</td>
+                <td>{{ row["lines_count"] }} ({{'%0.2f'|format(row["lines_count"]|to_percentage(project.total_lines_count))}}%)</td>
+                <td>{{'%0.1f'|format(row["lines_count"] | to_ratio(row["files_count"]))}}</td>
+            </tr>
+        {% endfor %}
+    </table>
+    </div>
+    <div class="column">
+        <h2><a href="#extensions">Source files with most of the authors</a></h2>
+        <table>
+            <tr><th>File path</th><th>Authors count</th></tr>
+            {% for filepath, contributors_count in project.top_files_by_contributors_count.items() %}
+                <tr>
+                    <td>{{ filepath }}</td>
+                    <td  style="text-align:center">{{ contributors_count }}</td>
+                </tr>
+            {% endfor %}
+        </table>
+    </div>
+</div>
 {% endblock %}
