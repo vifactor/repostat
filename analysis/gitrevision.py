@@ -34,6 +34,22 @@ class GitRevision:
             .committer_name.nunique()
         return committer_per_file[committer_per_file == 1]
 
+    def get_lost_knowledge_percentage(self, knowledge_loss_period_month=6):
+        """
+        Metrics is introduced in:
+        https://www.feststelltaste.de/identifying-lost-knowledge-in-the-linux-kernel-source-code/
+
+        :param knowledge_loss_period_month: months count after which code knowledge is considered to be "lost"
+        :return: the ratio of known code to unknown code (= code older than `knowledge_loss_period_month` months)
+        """
+        months_ago = pd.Timestamp.utcnow() - pd.DateOffset(months=knowledge_loss_period_month)
+        df = self.blame_data[["lines_count", "timestamp"]].copy()
+        df.timestamp = pd.to_datetime(df.timestamp, unit='s', utc=True)
+        df['knowing'] = df.timestamp >= months_ago
+        total_lines_count = df.lines_count.sum()
+        forgotten_lines_count = df[~df.knowing].lines_count.astype('float').sum()
+        return forgotten_lines_count / total_lines_count
+
     @property
     def files_count(self):
         return self.files_data["file"].unique().shape[0]

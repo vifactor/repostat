@@ -10,6 +10,10 @@
     <dd>
         {{ project.monoauthor_files_count }} ({{'%0.2f'| format(project.monoauthor_files_count|to_percentage(project.total_files_count))}}%)
     </dd>
+    <dt>"Lost knowledge" ratio</dt>
+    <dd>
+        {{ '%0.2f'| format(project.lost_knowledge_ratio * 100) }}%
+    </dd>
 </dl>
 
 <h2 id="file_count_by_date"><a href="#file_count_by_date">Files number by date</a></h2>
