@@ -36,4 +36,11 @@ class GitRevision:
         df = df.groupby(by="extension").agg({"size_bytes": ["sum"], "lines_count": ["sum", "count"]})
         df.columns = ["size_bytes", "lines_count", "files_count"]
         df.reset_index()
-        return df.sort_values(by="files_count", ascending=False)
+
+        # Group together all extensions used only once (probably not really extensions)
+        is_orphan = df["files_count"] <= 1
+        excluded = df[is_orphan]
+        result = df[~is_orphan]
+        df = result.sort_values(by="files_count", ascending=False)
+        #return df.append(excluded.agg({"size_bytes": ["sum"], "lines_count": ["sum", "count"]})
+        return df
