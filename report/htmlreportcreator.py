@@ -337,8 +337,10 @@ class HTMLReportCreator:
             # limit to only top authors
             if sorted_contribution.shape[0] > max_authors_per_plot_count + 1:
                 rest_contributions = sorted_contribution[max_authors_per_plot_count:].sum()
-                sorted_contribution = sorted_contribution[:max_authors_per_plot_count] \
-                    .append(pd.Series(rest_contributions, index=["others"]))
+                sorted_contribution = sorted_contribution[:max_authors_per_plot_count]
+                # at this point index is a CategoricalIndex and without next line cannot accept new category: "others"
+                sorted_contribution.index = sorted_contribution.index.to_list()
+                sorted_contribution = sorted_contribution.append(pd.Series(rest_contributions, index=["others"]))
             sorted_contribution = sorted_contribution.to_dict(OrderedDict)
             # Contribution plot data
             contribution = {
