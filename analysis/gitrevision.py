@@ -1,4 +1,5 @@
 import pygit2 as git
+import pandas as pd
 
 from tools import get_file_extension
 from .gitdata import BlameData, FilesData
@@ -37,10 +38,19 @@ class GitRevision:
         df.columns = ["size_bytes", "lines_count", "files_count"]
         df.reset_index()
 
+        # TODO: move orphans exclusion to htmlreportcreator
         # Group together all extensions used only once (probably not really extensions)
         is_orphan = df["files_count"] <= 1
         excluded = df[is_orphan]
-        result = df[~is_orphan]
-        df = result.sort_values(by="files_count", ascending=False)
-        #return df.append(excluded.agg({"size_bytes": ["sum"], "lines_count": ["sum", "count"]})
+        excluded_summary = excluded.agg({"size_bytes": ["sum"], "lines_count": ["sum", "count"]})
+        orphans_summary_df = pd.DataFrame(data=[{
+            "files_count": excluded_summary['lines_count']['count'],
+            "lines_count": excluded_summary['lines_count']['sum'],
+            "size_bytes": excluded_summary['size_bytes']['sum'].astype('int32')
+        }], index=["'orphans'"])
+
+        df = df[~is_orphan].sort_values(by="files_count", ascending=False)
+        # and we do not sort after we appended "orphans", as we want them to appear at the end
+        # FIXME: do not append if there are no orphans
+        df = df.append(orphans_summary_df, sort=False)
         return df
