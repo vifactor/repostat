@@ -1,4 +1,5 @@
 import time
+from datetime import timedelta
 
 
 class Timeit(object):
@@ -14,6 +15,13 @@ class Timeit(object):
             ts = time.time()
             result = method(*args)
             te = time.time()
-            print('Finished in %2.2f ms' % ((te - ts) * 1000))
+
+            elapsed = (te - ts)
+            if elapsed < 1:
+                print('Elapsed time: %2.2f ms' % (elapsed * 1000))
+            else:
+                formatted = str(timedelta(seconds=elapsed))
+                print('Elapsed time: %s' % formatted)
+
             return result
         return wrapper
