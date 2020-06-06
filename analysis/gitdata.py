@@ -1,8 +1,7 @@
 import abc
-import os
 import pandas as pd
 import pygit2 as git
-from concurrent.futures import ThreadPoolExecutor
+from tqdm.contrib.concurrent import thread_map
 
 from tools.timeit import Timeit
 
@@ -143,16 +142,10 @@ class BlameData:
     def fetch(self):
         submodules_paths = self.repo.listall_submodules()
         diff_to_tree = self.revision_commit.tree.diff_to_tree()
-        files_to_blame = (p.delta.new_file.path for p in diff_to_tree
-                          if not p.delta.is_binary and p.delta.new_file.path not in submodules_paths)
+        files_to_blame = [p.delta.new_file.path for p in diff_to_tree
+                          if not p.delta.is_binary and p.delta.new_file.path not in submodules_paths]
 
-        # this number of workers gets assigned in Python 3.8 if "max_workers"-argument of ThreadPoolExecutor is None
-        # see https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.ThreadPoolExecutor
-        workers_count = min(32, os.cpu_count() + 4)
-        # checks revealed that the task is rather "IO-bound", i.e. using ProcessPoolExecutor is not necessary
-        # while Processes Pool gives comparable performance boost, it make program structure a bit more complicated
-        with ThreadPoolExecutor(max_workers=workers_count) as pool:
-            results = pool.map(self.blame_file, files_to_blame)
+        results = thread_map(self.blame_file, files_to_blame)
         return [rec for val in results for rec in val]
 
     def as_dataframe(self):
