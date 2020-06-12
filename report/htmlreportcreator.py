@@ -256,7 +256,7 @@ class HTMLReportCreator:
             authors_in_month = raw_authors_data.loc[yymm]
             project_data['months'].append({
                 'date': yymm,
-                'top_author': {'name': authors_in_month.index[0], 'commits_count': authors_in_month[0]},
+                'top_author': {'name': authors_in_month.index[0], 'commits_count': authors_in_month.iloc[0]},
                 'next_top_authors': ', '.join(list(authors_in_month.index[1:5])),
                 'all_commits_count': authors_in_month.sum(),
                 'total_authors_count': authors_in_month.size
@@ -270,7 +270,7 @@ class HTMLReportCreator:
             authors_in_year = raw_authors_data.loc[y]
             project_data['years'].append({
                 'date': y,
-                'top_author': {'name': authors_in_year.index[0], 'commits_count': authors_in_year[0]},
+                'top_author': {'name': authors_in_year.index[0], 'commits_count': authors_in_year.iloc[0]},
                 'next_top_authors': ', '.join(list(authors_in_year.index[1:max_top_authors_index])),
                 'all_commits_count': authors_in_year.sum(),
                 'total_authors_count': authors_in_year.size
