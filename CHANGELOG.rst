@@ -1,3 +1,10 @@
+2.1.3 (2020-06-13)
+-------------------------
+- Fix erroneous AoY and AoM commits count (reported in some cases)
+- Fix crash when --contribution option if passed and "Others" category needs to be appended
+- Add console progress bar when blame data is fetched
+- Report execution time of raws data fetching in nicer format
+
 2.1.2 (2020-05-23)
 -------------------------
 - Do not fetch blame data if no "--contribution" option was passed (#177)
