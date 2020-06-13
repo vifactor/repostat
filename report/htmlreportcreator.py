@@ -30,6 +30,7 @@ class HTMLReportCreator:
         self._time_sampling_interval = "W"
         self._do_generate_index_page = False
         self._do_plot_contribution_graph = False
+        self._max_orphaned_extensions_count = 0
 
         templates_dir = os.path.join(HERE, self.templates_subdir)
         self.j2_env = Environment(loader=FileSystemLoader(templates_dir), trim_blocks=True)
@@ -54,6 +55,10 @@ class HTMLReportCreator:
 
     def generate_index_page(self, do_generate: bool = True):
         self._do_generate_index_page = do_generate
+        return self
+
+    def set_max_orphaned_extensions_count(self, count):
+        self._max_orphaned_extensions_count = count
         return self
 
     def _get_recent_activity_data(self):
