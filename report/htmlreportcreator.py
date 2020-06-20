@@ -29,8 +29,7 @@ class HTMLReportCreator:
         self.has_tags_page = config.do_process_tags()
         self._time_sampling_interval = "W"
         self._do_generate_index_page = False
-        # FIXME: rename to "is_blame_data_available"
-        self._do_plot_contribution_graph = False
+        self._is_blame_data_allowed = False
         self._max_orphaned_extensions_count = 0
 
         templates_dir = os.path.join(HERE, self.templates_subdir)
@@ -50,9 +49,8 @@ class HTMLReportCreator:
         self._time_sampling_interval = offset
         return self
 
-    def plot_contribution_graph(self, do_plot=True):
-        self._do_plot_contribution_graph = do_plot
-        return self
+    def allow_blame_data(self):
+        self._is_blame_data_allowed = True
 
     def generate_index_page(self, do_generate: bool = True):
         self._do_generate_index_page = do_generate
@@ -271,10 +269,10 @@ class HTMLReportCreator:
             'authors_top': self.configuration['authors_top'],
             'total_commits_count': self.git_repository_statistics.total_commits_count,
             'total_lines_count': self.git_repository_statistics.total_lines_count,
-            'do_plot_contribution': self._do_plot_contribution_graph,
+            'is_blame_data_available': self._is_blame_data_allowed,
         }
 
-        if self._do_plot_contribution_graph:
+        if self._is_blame_data_allowed:
             project_data.update({
                 'top_knowledge_carriers': self.git_repository_statistics.head.get_top_knowledge_carriers()
                     .head(self.configuration['authors_top'])
@@ -362,7 +360,7 @@ class HTMLReportCreator:
             "data": [{"key": domain, "y": commits_count} for domain, commits_count in email_domains_distribution.items()]
         }
 
-        if self._do_plot_contribution_graph:
+        if self._is_blame_data_allowed:
             # sort by contribution
             sorted_contribution = self.git_repository_statistics.head.authors_contribution.sort_values(ascending=False)
             # limit to only top authors
@@ -400,9 +398,9 @@ class HTMLReportCreator:
             'total_lines_count': self.git_repository_statistics.total_lines_count,
             'size': self.git_repository_statistics.head.size,
             'file_summary': file_ext_summary,
-            'is_blame_data_available': self._do_plot_contribution_graph
+            'is_blame_data_available': self._is_blame_data_allowed
         }
-        if self._do_plot_contribution_graph:
+        if self._is_blame_data_allowed:
             project_data.update({
                 'top_files_by_contributors_count': self.git_repository_statistics.head.get_top_files_by_contributors_count(),
                 'monoauthor_files_count': self.git_repository_statistics.head.monoauthor_files.count(),
