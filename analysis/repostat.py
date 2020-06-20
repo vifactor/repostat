@@ -44,6 +44,7 @@ def main():
         .set_time_sampling(config.get_time_sampling())\
         .generate_index_page(config.do_generate_index_page())\
         .plot_contribution_graph(config.do_calculate_contribution())\
+        .set_max_orphaned_extensions_count(config.get_max_orphaned_extensions_count())\
         .create(output_path)
     exec_time_seconds = get_execution_time()
     print('Report generated in %.2f secs.' % exec_time_seconds)

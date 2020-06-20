@@ -30,6 +30,7 @@ class HTMLReportCreator:
         self._time_sampling_interval = "W"
         self._do_generate_index_page = False
         self._do_plot_contribution_graph = False
+        self._max_orphaned_extensions_count = 0
 
         templates_dir = os.path.join(HERE, self.templates_subdir)
         self.j2_env = Environment(loader=FileSystemLoader(templates_dir), trim_blocks=True)
@@ -55,6 +56,29 @@ class HTMLReportCreator:
     def generate_index_page(self, do_generate: bool = True):
         self._do_generate_index_page = do_generate
         return self
+
+    def set_max_orphaned_extensions_count(self, count):
+        self._max_orphaned_extensions_count = count
+        return self
+
+    def _clamp_orphaned_extensions(self, extensions_df: pd.DataFrame, group_name: str = "~others~"):
+        # Group together all extensions used only once (probably not really extensions)
+        is_orphan = extensions_df["files_count"] <= self._max_orphaned_extensions_count
+        excluded = extensions_df[is_orphan]
+        print(excluded.shape)
+        if excluded.shape[0] > 0:
+            excluded_summary = excluded.agg({"size_bytes": ["sum"], "lines_count": ["sum", "count"]})
+            orphans_summary_df = pd.DataFrame(data=[{
+                "files_count": excluded_summary['lines_count']['count'],
+                "lines_count": excluded_summary['lines_count']['sum'],
+                "size_bytes": excluded_summary['size_bytes']['sum'].astype('int32')
+            }], index=[group_name])
+
+            extensions_df = extensions_df[~is_orphan].sort_values(by="files_count", ascending=False)
+            # and we do not sort after we appended "orphans", as we want them to appear at the end
+            extensions_df = extensions_df.append(orphans_summary_df, sort=False)
+
+        return extensions_df
 
     def _get_recent_activity_data(self):
         recent_weekly_commits = self.git_repository_statistics.\
@@ -358,11 +382,17 @@ class HTMLReportCreator:
         return authors_plot
 
     def make_files_page(self):
+        file_ext_summary = self.git_repository_statistics.head.files_extensions_summary
+        if self._max_orphaned_extensions_count > 0:
+            file_ext_summary = self._clamp_orphaned_extensions(file_ext_summary)
+        else:
+            file_ext_summary = file_ext_summary.sort_values(by="files_count", ascending=False)
+
         project_data = {
             'total_files_count': self.git_repository_statistics.head.files_count,
             'total_lines_count': self.git_repository_statistics.total_lines_count,
             'size': self.git_repository_statistics.head.size,
-            'file_summary': self.git_repository_statistics.head.files_extensions_summary
+            'file_summary': file_ext_summary
         }
 
         page = HtmlPage('Files', project=project_data)

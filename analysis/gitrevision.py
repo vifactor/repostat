@@ -1,4 +1,5 @@
 import pygit2 as git
+import pandas as pd
 
 from tools import get_file_extension
 from .gitdata import BlameData, FilesData
@@ -36,4 +37,5 @@ class GitRevision:
         df = df.groupby(by="extension").agg({"size_bytes": ["sum"], "lines_count": ["sum", "count"]})
         df.columns = ["size_bytes", "lines_count", "files_count"]
         df.reset_index()
-        return df.sort_values(by="files_count", ascending=False)
+
+        return df

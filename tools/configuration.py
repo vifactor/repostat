@@ -95,7 +95,6 @@ class Configuration(dict):
             "max_authors_of_months": 6,
             "authors_top": 5,
             "colormap": "classic",
-            "time_sampling": "W"
         })
 
     def do_open_in_browser(self):
@@ -109,6 +108,9 @@ class Configuration(dict):
 
     def do_calculate_contribution(self):
         return self.args.contribution
+
+    def get_max_orphaned_extensions_count(self):
+        return self["orphaned_extension_count"] if "orphaned_extension_count" in self else 0
 
     def do_process_tags(self):
         return self["max_recent_tags"] > 0 if "max_recent_tags" in self else True

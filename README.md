@@ -100,6 +100,7 @@ Configuration file might contain following fields (all are optional):
     "authors_top": 5,
     "colormap": "classic",
     "max_recent_tags": -1,
+    "orphaned_extension_count": 2,
     "time_sampling": "W"
 }
 ```
@@ -120,6 +121,9 @@ in "Authors"-page (rest of the authors will be grouped as "Others").
 the month" should be displayed
 * `authors_top`: number of authors to show for each month/year in the
 author of month/year list
+* `orphaned_extension_count`: max file extension count to be 
+considered as `orphaned` and displayed in report in the corresponding
+category (default: 0, i.e. all extensions are displayed)
 
 #### Colorscheme configuration
 
