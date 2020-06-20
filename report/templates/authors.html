@@ -85,6 +85,7 @@
     {% endfor %}
 </table>
 
+{% if project.do_plot_contribution %}
 <h2 id="knowledge_carriers"><a href="#knowledge_carriers">Top knowledge carriers</a></h2>
 <table>
     <tr>
@@ -98,6 +99,7 @@
     </tr>
     {% endfor %}
 </table>
+{% endif %}
 
 <h2 id="commits_by_domains"><a href="#commits_by_domains">Commits by Email Domains</a></h2>
 <div id="chart_domains" style="border: 1px solid #808080; width: 507px"><svg style="height: 480px; width: 100%"></svg></div>

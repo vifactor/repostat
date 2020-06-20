@@ -6,6 +6,7 @@
     <dt>Total codebase</dt><dd>{{project.size}} bytes</dd>
     <dt>Average file size</dt>
     <dd>{{ '%0.2f'|format(project.size|to_ratio(project.total_files_count)) }} bytes</dd>
+    {% if project.is_blame_data_available %}
     <dt>Mono-author files count</dt>
     <dd>
         {{ project.monoauthor_files_count }} ({{'%0.2f'| format(project.monoauthor_files_count|to_percentage(project.total_files_count))}}%)
@@ -14,6 +15,7 @@
     <dd>
         {{ '%0.2f'| format(project.lost_knowledge_ratio * 100) }}%
     </dd>
+    {% endif %}
 </dl>
 
 <h2 id="file_count_by_date"><a href="#file_count_by_date">Files number by date</a></h2>
@@ -36,6 +38,7 @@
         {% endfor %}
     </table>
     </div>
+    {% if project.is_blame_data_available %}
     <div class="column">
         <h2><a href="#extensions">Source files with most of the authors</a></h2>
         <table>
@@ -48,5 +51,6 @@
             {% endfor %}
         </table>
     </div>
+    {% endif %}
 </div>
 {% endblock %}

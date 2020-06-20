@@ -29,6 +29,7 @@ class HTMLReportCreator:
         self.has_tags_page = config.do_process_tags()
         self._time_sampling_interval = "W"
         self._do_generate_index_page = False
+        # FIXME: rename to "is_blame_data_available"
         self._do_plot_contribution_graph = False
         self._max_orphaned_extensions_count = 0
 
@@ -271,9 +272,13 @@ class HTMLReportCreator:
             'total_commits_count': self.git_repository_statistics.total_commits_count,
             'total_lines_count': self.git_repository_statistics.total_lines_count,
             'do_plot_contribution': self._do_plot_contribution_graph,
-            'top_knowledge_carriers': self.git_repository_statistics.head.get_top_knowledge_carriers()
-                .head(self.configuration['authors_top'])
         }
+
+        if self._do_plot_contribution_graph:
+            project_data.update({
+                'top_knowledge_carriers': self.git_repository_statistics.head.get_top_knowledge_carriers()
+                    .head(self.configuration['authors_top'])
+            })
 
         raw_authors_data = self.git_repository_statistics.get_authors_ranking_by_month()
         ordered_months = raw_authors_data.index.get_level_values(0).unique().sort_values(ascending=False)
@@ -395,10 +400,14 @@ class HTMLReportCreator:
             'total_lines_count': self.git_repository_statistics.total_lines_count,
             'size': self.git_repository_statistics.head.size,
             'file_summary': file_ext_summary,
-            'top_files_by_contributors_count': self.git_repository_statistics.head.get_top_files_by_contributors_count(),
-            'monoauthor_files_count': self.git_repository_statistics.head.monoauthor_files.count(),
-            'lost_knowledge_ratio': self.git_repository_statistics.head.get_lost_knowledge_percentage()
+            'is_blame_data_available': self._do_plot_contribution_graph
         }
+        if self._do_plot_contribution_graph:
+            project_data.update({
+                'top_files_by_contributors_count': self.git_repository_statistics.head.get_top_files_by_contributors_count(),
+                'monoauthor_files_count': self.git_repository_statistics.head.monoauthor_files.count(),
+                'lost_knowledge_ratio': self.git_repository_statistics.head.get_lost_knowledge_percentage()
+            })
 
         page = HtmlPage('Files', project=project_data)
         page.add_plot(self.make_files_plot())

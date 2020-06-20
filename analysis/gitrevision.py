@@ -42,6 +42,7 @@ class GitRevision:
         :param knowledge_loss_period_month: months count after which code knowledge is considered to be "lost"
         :return: the ratio of known code to unknown code (= code older than `knowledge_loss_period_month` months)
         """
+        self._lazy_load_blame_data()
         months_ago = pd.Timestamp.utcnow() - pd.DateOffset(months=knowledge_loss_period_month)
         df = self.blame_data[["lines_count", "timestamp"]].copy()
         df.timestamp = pd.to_datetime(df.timestamp, unit='s', utc=True)
