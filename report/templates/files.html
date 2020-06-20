@@ -4,23 +4,53 @@
 <dl>
     <dt>Total number of files</dt><dd>{{project.total_files_count}}</dd>
     <dt>Total codebase</dt><dd>{{project.size}} bytes</dd>
-    <dt>Average file size</dt><dd>{{'%0.2f'|format(project.size|to_ratio(project.total_files_count))}} bytes</dd>
+    <dt>Average file size</dt>
+    <dd>{{ '%0.2f'|format(project.size|to_ratio(project.total_files_count)) }} bytes</dd>
+    {% if project.is_blame_data_available %}
+    <dt>Mono-author files count</dt>
+    <dd>
+        {{ project.monoauthor_files_count }} ({{'%0.2f'| format(project.monoauthor_files_count|to_percentage(project.total_files_count))}}%)
+    </dd>
+    <dt>"Lost knowledge" ratio</dt>
+    <dd>
+        {{ '%0.2f'| format(project.lost_knowledge_ratio * 100) }}%
+    </dd>
+    {% endif %}
 </dl>
 
 <h2 id="file_count_by_date"><a href="#file_count_by_date">Files number by date</a></h2>
 
 <div id="chart_files" style="border: 1px solid #808080; width: 1014px"><svg style="height: 400px; width: 100%"></svg></div>
 <script src="files.js"></script>
-<h2 id="extensions"><a href="#extensions">File types</a></h2>
-<table class="sortable" id="ext">
-    <tr><th>Extension</th><th>Number (%)</th><th>Lines (%)</th><th>Lines per file</th></tr>
-    {% for index, row in project.file_summary.iterrows() %}
-        <tr>
-            <td>{{ index }}</td>
-            <td>{{ row["files_count"] }} ({{'%0.2f'|format(row["files_count"]|to_percentage(project.total_files_count))}}%)</td>
-            <td>{{ row["lines_count"] }} ({{'%0.2f'|format(row["lines_count"]|to_percentage(project.total_lines_count))}}%)</td>
-            <td>{{'%0.1f'|format(row["lines_count"] | to_ratio(row["files_count"]))}}</td>
-        </tr>
-    {% endfor %}
-</table>
+
+<div class="row">
+    <div class="column">
+    <h2 id="extensions"><a href="#extensions">File types</a></h2>
+    <table class="sortable" id="ext">
+        <tr><th>Extension</th><th>Number (%)</th><th>Lines (%)</th><th>Lines per file</th></tr>
+        {% for index, row in project.file_summary.iterrows() %}
+            <tr>
+                <td>{{ index }}</td>
+                <td>{{ row["files_count"] }} ({{'%0.2f'|format(row["files_count"]|to_percentage(project.total_files_count))}}%)</td>
+                <td>{{ row["lines_count"] }} ({{'%0.2f'|format(row["lines_count"]|to_percentage(project.total_lines_count))}}%)</td>
+                <td>{{'%0.1f'|format(row["lines_count"] | to_ratio(row["files_count"]))}}</td>
+            </tr>
+        {% endfor %}
+    </table>
+    </div>
+    {% if project.is_blame_data_available %}
+    <div class="column">
+        <h2><a href="#extensions">Source files with most of the authors</a></h2>
+        <table>
+            <tr><th>File path</th><th>Authors count</th></tr>
+            {% for filepath, contributors_count in project.top_files_by_contributors_count.items() %}
+                <tr>
+                    <td>{{ filepath }}</td>
+                    <td  style="text-align:center">{{ contributors_count }}</td>
+                </tr>
+            {% endfor %}
+        </table>
+    </div>
+    {% endif %}
+</div>
 {% endblock %}

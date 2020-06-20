@@ -75,6 +75,10 @@ class Configuration(dict):
         dict.__init__(kwargs)
 
         self.args = self._parse_sys_argv(args_orig)
+        if not self.args.no_blame:
+            print("WARNING: Use explicit `--no-blame` command line argument! In next major version, "
+                  "default behavior will change in favor of fetching blame data by default.")
+
         self.git_repository_path = self.args.git_repo
         self.statistics_output_path = self.args.output_path
 
@@ -107,7 +111,7 @@ class Configuration(dict):
         return self.args.with_index_page
 
     def do_calculate_contribution(self):
-        return self.args.contribution
+        return self.args.contribution and not self.args.no_blame
 
     def get_max_orphaned_extensions_count(self):
         return self["orphaned_extension_count"] if "orphaned_extension_count" in self else 0
@@ -129,8 +133,15 @@ class Configuration(dict):
         parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + release_info['develop_version'])
         parser.add_argument('-c', '--config-file', action=ReadableFile, help="Configuration file path")
         parser.add_argument('--no-browser', action="store_true", help="Do not open report in browser")
-        parser.add_argument('--contribution', action="store_true", help="Add to html report contribution by author."
-                                                                        "Attention: this is slow calculation!")
+        blame_arg_group = parser.add_mutually_exclusive_group()
+        blame_arg_group.add_argument('--no-blame', action='store_true',
+                                     help="Do not fetch blame data (hence, no git-blame-related statistics in report). "
+                                          "Useful for old and large repos where blame data fetch takes too long.")
+        blame_arg_group.add_argument('--contribution', action="store_true",
+                                     help="Legacy option (currently opposite to '-no-blame')."
+                                          "In next version will be deprecated"
+                                          " and blame data will be fetched by default. Use --no-blame to disable blame "
+                                          " data fetching.")
         parser.add_argument('--copy-assets', action="store_true",
                             help="Copy assets (images, css, etc.) into report folder (report becomes relocatable)")
         parser.add_argument('--with-index-page', action="store_true",

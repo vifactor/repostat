@@ -152,3 +152,14 @@ h2 a {
 .moreauthors {
 	font-size: 80%;
 }
+
+/* Create two equal columns that floats next to each other */
+.column {
+    flex: 50%;
+    padding: 10px;
+}
+
+/* Clear floats after the columns */
+.row {
+  display: flex;
+}

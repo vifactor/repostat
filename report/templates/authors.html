@@ -31,7 +31,7 @@
 </ul>
 </div>
 
-{% if project.do_plot_contribution %}
+{% if project.is_blame_data_available %}
 <h2 id="contribution"><a href="#contribution">Contribution<sup>*</sup></a></h2>
 <div id="chart_contribution" style="border: 1px solid #808080; width: 507px"><svg style="height: 480px; width: 100%"></svg></div>
 <p><sup>*</sup><small> Lines from an author left in the HEAD commit</small></p>
@@ -84,6 +84,22 @@
     </tr>
     {% endfor %}
 </table>
+
+{% if project.is_blame_data_available %}
+<h2 id="knowledge_carriers"><a href="#knowledge_carriers">Top knowledge carriers</a></h2>
+<table>
+    <tr>
+        <th>Author</th>
+        <th>Lines count</th>
+    </tr>
+    {% for _, row  in project.top_knowledge_carriers.iterrows() %}
+    <tr>
+        <td>{{row["committer_name"]}}</td>
+        <td>{{row["lines_count"]}}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% endif %}
 
 <h2 id="commits_by_domains"><a href="#commits_by_domains">Commits by Email Domains</a></h2>
 <div id="chart_domains" style="border: 1px solid #808080; width: 507px"><svg style="height: 480px; width: 100%"></svg></div>

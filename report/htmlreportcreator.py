@@ -29,7 +29,7 @@ class HTMLReportCreator:
         self.has_tags_page = config.do_process_tags()
         self._time_sampling_interval = "W"
         self._do_generate_index_page = False
-        self._do_plot_contribution_graph = False
+        self._is_blame_data_allowed = False
         self._max_orphaned_extensions_count = 0
 
         templates_dir = os.path.join(HERE, self.templates_subdir)
@@ -49,9 +49,8 @@ class HTMLReportCreator:
         self._time_sampling_interval = offset
         return self
 
-    def plot_contribution_graph(self, do_plot=True):
-        self._do_plot_contribution_graph = do_plot
-        return self
+    def allow_blame_data(self):
+        self._is_blame_data_allowed = True
 
     def generate_index_page(self, do_generate: bool = True):
         self._do_generate_index_page = do_generate
@@ -270,8 +269,14 @@ class HTMLReportCreator:
             'authors_top': self.configuration['authors_top'],
             'total_commits_count': self.git_repository_statistics.total_commits_count,
             'total_lines_count': self.git_repository_statistics.total_lines_count,
-            'do_plot_contribution': self._do_plot_contribution_graph
+            'is_blame_data_available': self._is_blame_data_allowed,
         }
+
+        if self._is_blame_data_allowed:
+            project_data.update({
+                'top_knowledge_carriers': self.git_repository_statistics.head.get_top_knowledge_carriers()
+                    .head(self.configuration['authors_top'])
+            })
 
         raw_authors_data = self.git_repository_statistics.get_authors_ranking_by_month()
         ordered_months = raw_authors_data.index.get_level_values(0).unique().sort_values(ascending=False)
@@ -297,7 +302,7 @@ class HTMLReportCreator:
                 'top_author': {'name': authors_in_year.index[0], 'commits_count': authors_in_year.iloc[0]},
                 'next_top_authors': ', '.join(list(authors_in_year.index[1:max_top_authors_index])),
                 'all_commits_count': authors_in_year.sum(),
-                'total_authors_count': authors_in_year.size
+                'total_authors_count': authors_in_year.size,
             })
 
         page = HtmlPage('Authors', project=project_data)
@@ -355,7 +360,7 @@ class HTMLReportCreator:
             "data": [{"key": domain, "y": commits_count} for domain, commits_count in email_domains_distribution.items()]
         }
 
-        if self._do_plot_contribution_graph:
+        if self._is_blame_data_allowed:
             # sort by contribution
             sorted_contribution = self.git_repository_statistics.head.authors_contribution.sort_values(ascending=False)
             # limit to only top authors
@@ -392,8 +397,15 @@ class HTMLReportCreator:
             'total_files_count': self.git_repository_statistics.head.files_count,
             'total_lines_count': self.git_repository_statistics.total_lines_count,
             'size': self.git_repository_statistics.head.size,
-            'file_summary': file_ext_summary
+            'file_summary': file_ext_summary,
+            'is_blame_data_available': self._is_blame_data_allowed
         }
+        if self._is_blame_data_allowed:
+            project_data.update({
+                'top_files_by_contributors_count': self.git_repository_statistics.head.get_top_files_by_contributors_count(),
+                'monoauthor_files_count': self.git_repository_statistics.head.monoauthor_files.count(),
+                'lost_knowledge_ratio': self.git_repository_statistics.head.get_lost_knowledge_percentage()
+            })
 
         page = HtmlPage('Files', project=project_data)
         page.add_plot(self.make_files_plot())

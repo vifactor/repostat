@@ -12,108 +12,101 @@
 <div id="chart_commits_year"><svg style="height: 300px; width: 100%"></svg></div>
 </div>
 
-
- <div class="row">
-  <div class="column">
-    <h2 id="hour_weekday_activity"><a href="#hour_weekday_activity">Hour-Weekday activity</a></h2>
-    <table>
-        <tr>
-            <th>Hour</th>
-            {% for i in range(24) %}
-            <th>{{i}}</th>
-            {% endfor %}
-            <th></th>
-            <th></th>
-        </tr>
-        <tr>
-            <th>Commits</th>
-            {% set max_commits_count = project.hourly_activity.values | max %}
-            {% for hour in range(24) %}
-                {% set commits_count = project.hourly_activity.get(hour, 0) %}
-                <td style="background-color: rgb({{ commits_count|to_heatmap(max_commits_count) }})">
-                    {{commits_count}}</td>
-            {% endfor %}
-            <th></th>
-            <th></th>
-        </tr>
-        <tr>
-            <th>%</th>
-            {% set total_commits_count = project.hourly_activity.values | sum %}
-            {% for hour in range(24) %}
-                {% set commits_count = project.hourly_activity.get(hour, 0) %}
-                <td style="background-color: rgb({{ commits_count|to_heatmap(max_commits_count) }})">
-                    {{ '%0.2f'| format(commits_count|to_percentage(total_commits_count)) }}
-                </td>
-            {% endfor %}
-            <th></th>
-            <th>Total</th>
-        </tr>
-
-        <tr>
-            <th>Weekday/Hour</th>
-            {% for i in range(24) %}
-            <th>{{i}}</th>
-            {% endfor %}
-            <th></th>
-            <th style="word-wrap: break-word">by weekday</th>
-        </tr>
-        {% set weekday_max_commits_count = project.weekday_activity.values | max %}
-        {% for weekday in range(0, 7) %}
-        <tr>
-            <th>{{weekday|to_weekday_name}}</th>
-            {% for hour in range(24) %}
-                {% set commits_count = project.weekday_hourly_activity.get(hour, {}).get(weekday, 0) %}
-                <td style="background-color: rgb({{commits_count|to_heatmap(project.weekday_hour_max_commits_count)}})">
-                    {{ commits_count }}</td>
-            {% endfor %}
-            <td></td>
-            {% set commits_count = project.weekday_activity.get(weekday, 0) %}
-            <td style="background-color: rgb({{commits_count|to_heatmap(weekday_max_commits_count)}})">
-                {{commits_count}}</td>
-        </tr>
+<h2 id="hour_weekday_activity"><a href="#hour_weekday_activity">Hour-Weekday activity</a></h2>
+<table>
+    <tr>
+        <th>Hour</th>
+        {% for i in range(24) %}
+        <th>{{i}}</th>
         {% endfor %}
-    </table>
-  </div>
+        <th></th>
+        <th></th>
+    </tr>
+    <tr>
+        <th>Commits</th>
+        {% set max_commits_count = project.hourly_activity.values | max %}
+        {% for hour in range(24) %}
+            {% set commits_count = project.hourly_activity.get(hour, 0) %}
+            <td style="background-color: rgb({{ commits_count|to_heatmap(max_commits_count) }})">
+                {{commits_count}}</td>
+        {% endfor %}
+        <th></th>
+        <th></th>
+    </tr>
+    <tr>
+        <th>%</th>
+        {% set total_commits_count = project.hourly_activity.values | sum %}
+        {% for hour in range(24) %}
+            {% set commits_count = project.hourly_activity.get(hour, 0) %}
+            <td style="background-color: rgb({{ commits_count|to_heatmap(max_commits_count) }})">
+                {{ '%0.2f'| format(commits_count|to_percentage(total_commits_count)) }}
+            </td>
+        {% endfor %}
+        <th></th>
+        <th>Total</th>
+    </tr>
 
-    <h2 id="month_of_year"><a href="#month_of_year">Commits by Month of Year</a></h2>
-     <table>
-        <tr>
-            <th>Month</th>
-            {% for imonth in range(1, 13) %}
-                <th>{{imonth|to_month_name_abr}}</th>
-            {% endfor %}
-        </tr>
-        <tr>
-            <th>Commits</th>
-            {% set max_commits_count = project.month_in_year_activity.values() | max %}
-            {% for imonth in range(1, 13) %}
-                {% set commits_count = project.month_in_year_activity.get(imonth, 0) %}
-                    <td style="background-color: rgb({{commits_count|to_heatmap(max_commits_count)}})">
-                        {{commits_count}}</td>
-            {% endfor %}
-        </tr>
-     </table>
+    <tr>
+        <th>Weekday/Hour</th>
+        {% for i in range(24) %}
+        <th>{{i}}</th>
+        {% endfor %}
+        <th></th>
+        <th style="word-wrap: break-word">by weekday</th>
+    </tr>
+    {% set weekday_max_commits_count = project.weekday_activity.values | max %}
+    {% for weekday in range(0, 7) %}
+    <tr>
+        <th>{{weekday|to_weekday_name}}</th>
+        {% for hour in range(24) %}
+            {% set commits_count = project.weekday_hourly_activity.get(hour, {}).get(weekday, 0) %}
+            <td style="background-color: rgb({{commits_count|to_heatmap(project.weekday_hour_max_commits_count)}})">
+                {{ commits_count }}</td>
+        {% endfor %}
+        <td></td>
+        {% set commits_count = project.weekday_activity.get(weekday, 0) %}
+        <td style="background-color: rgb({{commits_count|to_heatmap(weekday_max_commits_count)}})">
+            {{commits_count}}</td>
+    </tr>
+    {% endfor %}
+</table>
 
-   <div class="column">
-      <h2 id="commits_by_timezone"><a href="#commits_by_timezone">Commits by Timezone</a></h2>
-    <table>
-        <tr>
-            <th>Timezone</th>
-            {% for timezone in project.timezones_activity %}
-            <th>{{timezone}}</th>
-            {% endfor %}
-        </tr>
-        <tr>
-            <th>Commits</th>
-            {% set tz_max_commits_count = project.timezones_activity.values() | max %}
-            {% for commits_count in project.timezones_activity.values() %}
-                <td style="background-color: rgb({{commits_count|to_heatmap(tz_max_commits_count)}})">
+<h2 id="month_of_year"><a href="#month_of_year">Commits by Month of Year</a></h2>
+ <table>
+    <tr>
+        <th>Month</th>
+        {% for imonth in range(1, 13) %}
+            <th>{{imonth|to_month_name_abr}}</th>
+        {% endfor %}
+    </tr>
+    <tr>
+        <th>Commits</th>
+        {% set max_commits_count = project.month_in_year_activity.values() | max %}
+        {% for imonth in range(1, 13) %}
+            {% set commits_count = project.month_in_year_activity.get(imonth, 0) %}
+                <td style="background-color: rgb({{commits_count|to_heatmap(max_commits_count)}})">
                     {{commits_count}}</td>
-            {% endfor %}
-        </tr>
-    </table>
-  </div>
-</div>
+        {% endfor %}
+    </tr>
+ </table>
+
+<h2 id="commits_by_timezone"><a href="#commits_by_timezone">Commits by Timezone</a></h2>
+<table>
+    <tr>
+        <th>Timezone</th>
+        {% for timezone in project.timezones_activity %}
+        <th>{{timezone}}</th>
+        {% endfor %}
+    </tr>
+    <tr>
+        <th>Commits</th>
+        {% set tz_max_commits_count = project.timezones_activity.values() | max %}
+        {% for commits_count in project.timezones_activity.values() %}
+            <td style="background-color: rgb({{commits_count|to_heatmap(tz_max_commits_count)}})">
+                {{commits_count}}</td>
+        {% endfor %}
+    </tr>
+</table>
 
 <h2 id="review_time"><a href="#review_time">"Review duration"<sup>*</sup></a></h2>
 <div id="review_time_chart" style="border: 1px solid #808080; width: 1014px"><svg style="height: 200px; width: 100%"></svg></div>
