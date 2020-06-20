@@ -85,6 +85,20 @@
     {% endfor %}
 </table>
 
+<h2 id="knowledge_carriers"><a href="#knowledge_carriers">Top knowledge carriers</a></h2>
+<table>
+    <tr>
+        <th>Author</th>
+        <th>Lines count</th>
+    </tr>
+    {% for _, row  in project.top_knowledge_carriers.iterrows() %}
+    <tr>
+        <td>{{row["committer_name"]}}</td>
+        <td>{{row["lines_count"]}}</td>
+    </tr>
+    {% endfor %}
+</table>
+
 <h2 id="commits_by_domains"><a href="#commits_by_domains">Commits by Email Domains</a></h2>
 <div id="chart_domains" style="border: 1px solid #808080; width: 507px"><svg style="height: 480px; width: 100%"></svg></div>
 <script src="authors.js"></script>

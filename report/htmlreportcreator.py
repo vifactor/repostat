@@ -270,7 +270,9 @@ class HTMLReportCreator:
             'authors_top': self.configuration['authors_top'],
             'total_commits_count': self.git_repository_statistics.total_commits_count,
             'total_lines_count': self.git_repository_statistics.total_lines_count,
-            'do_plot_contribution': self._do_plot_contribution_graph
+            'do_plot_contribution': self._do_plot_contribution_graph,
+            'top_knowledge_carriers': self.git_repository_statistics.head.get_top_knowledge_carriers()
+                .head(self.configuration['authors_top'])
         }
 
         raw_authors_data = self.git_repository_statistics.get_authors_ranking_by_month()
@@ -297,7 +299,7 @@ class HTMLReportCreator:
                 'top_author': {'name': authors_in_year.index[0], 'commits_count': authors_in_year.iloc[0]},
                 'next_top_authors': ', '.join(list(authors_in_year.index[1:max_top_authors_index])),
                 'all_commits_count': authors_in_year.sum(),
-                'total_authors_count': authors_in_year.size
+                'total_authors_count': authors_in_year.size,
             })
 
         page = HtmlPage('Authors', project=project_data)
