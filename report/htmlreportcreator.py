@@ -156,7 +156,6 @@ class HTMLReportCreator:
             copyfile(os.path.join(path, "general.html"), os.path.join(path, "index.html"))
 
     def make_general_page(self):
-        date_format_str = '%Y-%m-%d %H:%M'
         first_commit_datetime = datetime.datetime.fromtimestamp(self.git_repository_statistics.first_commit_timestamp)
         last_commit_datetime = datetime.datetime.fromtimestamp(self.git_repository_statistics.last_commit_timestamp)
 
@@ -172,12 +171,12 @@ class HTMLReportCreator:
             "total_lines_count": self.git_repository_statistics.total_lines_count,
             "added_lines_count": self.git_repository_statistics.total_lines_added,
             "removed_lines_count": self.git_repository_statistics.total_lines_removed,
-            "first_commit_date": first_commit_datetime.strftime(date_format_str),
-            "last_commit_date": last_commit_datetime.strftime(date_format_str),
+            "first_commit_date": first_commit_datetime,
+            "last_commit_date": last_commit_datetime,
         }
 
         generation_data = {
-            "datetime": datetime.datetime.today().strftime(date_format_str)
+            "datetime": datetime.datetime.today().strftime('%Y-%m-%d %H:%M')
         }
 
         page = HtmlPage(name="General",
