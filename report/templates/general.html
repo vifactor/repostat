@@ -6,8 +6,8 @@
         <dd>{{project.name}}</dd>
     <dt>Branch analysed</dt>
         <dd>{{project.branch}}</dd>
-    <dt>Report Period</dt>
-        <dd>from {{project.first_commit_date}} to {{project.last_commit_date}}</dd>
+    <dt>Lifespan</dt>
+        <dd>from {{project.first_commit_date.strftime('%Y-%m-%d')}} to {{project.last_commit_date.strftime('%Y-%m-%d')}}</dd>
     <dt>Project age</dt>
         <dd>{{project.age}} days, {{project.active_days_count}} active days
             ({{'%0.2f'|format(project.active_days_count|to_percentage(project.age))}}%)</dd>
