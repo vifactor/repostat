@@ -3,9 +3,9 @@
 {% block content %}
 <dl>
     <dt>Total number of files</dt><dd>{{project.total_files_count}}</dd>
-    <dt>Total codebase</dt><dd>{{project.size}} bytes</dd>
+    <dt>Total codebase</dt><dd>{{ project.size|filesizeformat }}</dd>
     <dt>Average file size</dt>
-    <dd>{{ '%0.2f'|format(project.size|to_ratio(project.total_files_count)) }} bytes</dd>
+    <dd>{{ '%0.2f'|format(project.size|to_ratio(project.total_files_count))|filesizeformat }}</dd>
     {% if project.is_blame_data_available %}
     <dt>Mono-author files count</dt>
     <dd>
