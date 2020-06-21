@@ -175,6 +175,7 @@ class FilesData:
             if filepath not in submodules_paths:
                 records.append({
                     "file": filepath,
+                    "is_binary": p.delta.is_binary,
                     "size_bytes": p.delta.new_file.size,
                     "lines_count": p.line_stats[1]
                 })

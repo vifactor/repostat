@@ -85,9 +85,9 @@ class GitRevision:
 
     @property
     def files_extensions_summary(self):
-        df = self.files_data[["size_bytes", "lines_count"]]
+        df = self.files_data[["is_binary", "size_bytes", "lines_count"]].copy()
         df["extension"] = self.files_data['file'].apply(get_file_extension)
-        df = df.groupby(by="extension").agg({"size_bytes": ["sum"], "lines_count": ["sum", "count"]})
+        df = df.groupby(by=["is_binary", "extension"]).agg({"size_bytes": ["sum"], "lines_count": ["sum", "count"]})
         df.columns = ["size_bytes", "lines_count", "files_count"]
         df.reset_index()
 

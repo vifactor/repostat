@@ -27,13 +27,20 @@
     <div class="column">
     <h2 id="extensions"><a href="#extensions">File types</a></h2>
     <table class="sortable" id="ext">
-        <tr><th>Extension</th><th>Number (%)</th><th>Lines (%)</th><th>Lines per file</th></tr>
+        <tr><th>Extension</th><th>Count (%)</th><th>Byte Size (%)</th><th>Lines count (%)</th><th>Lines per file</th></tr>
         {% for index, row in project.file_summary.iterrows() %}
             <tr>
-                <td>{{ index }}</td>
+                {% set is_binary, ext = index %}
+                <td>{{ ext }}</td>
                 <td>{{ row["files_count"] }} ({{'%0.2f'|format(row["files_count"]|to_percentage(project.total_files_count))}}%)</td>
+                <td>{{ row["size_bytes"] }} ({{'%0.2f'|format(row["size_bytes"]|to_percentage(project.size))}}%)</td>
+                {% if not is_binary %}
                 <td>{{ row["lines_count"] }} ({{'%0.2f'|format(row["lines_count"]|to_percentage(project.total_lines_count))}}%)</td>
                 <td>{{'%0.1f'|format(row["lines_count"] | to_ratio(row["files_count"]))}}</td>
+                {% else %}
+                <td>binary</td>
+                <td>-</td>
+                {% endif %}
             </tr>
         {% endfor %}
     </table>

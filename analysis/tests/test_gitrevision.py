@@ -15,10 +15,10 @@ class GitRevisionTest(unittest.TestCase):
     ]
 
     test_revision_files_data_records = [
-        {"file": 'file1.txt', "size_bytes": 1, "lines_count": 1},
-        {"file": 'file2.dat', "size_bytes": 4, "lines_count": 2},
-        {"file": 'folder/file3.log', "size_bytes": 8, "lines_count": 3},
-        {"file": 'folder/file4.txt', "size_bytes": 16, "lines_count": 4}
+        {"file": 'file1.txt', "is_binary": False, "size_bytes": 1, "lines_count": 1},
+        {"file": 'file2.dat', "is_binary": False, "size_bytes": 4, "lines_count": 2},
+        {"file": 'folder/file3.log', "is_binary": False, "size_bytes": 8, "lines_count": 3},
+        {"file": 'folder/file4.txt', "is_binary": False, "size_bytes": 16, "lines_count": 4}
     ]
 
     @patch.object(BlameData, 'fetch', return_value=test_revision_blame_data_records)
@@ -39,6 +39,6 @@ class GitRevisionTest(unittest.TestCase):
         with patch("pygit2.Mailmap"):
             revision = GitRevision(MagicMock())
             self.assertDictEqual(revision.files_extensions_summary["lines_count"].to_dict(),
-                                 {'dat': 2, 'log': 3, 'txt': 5})
+                                 {(False, 'dat'): 2, (False, 'log'): 3, (False, 'txt'): 5})
             self.assertDictEqual(revision.files_extensions_summary["files_count"].to_dict(),
-                                 {'dat': 1, 'log': 1, 'txt': 2})
+                                 {(False, 'dat'): 1, (False, 'log'): 1, (False, 'txt'): 2})

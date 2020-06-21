@@ -71,7 +71,7 @@ class HTMLReportCreator:
                 "files_count": excluded_summary['lines_count']['count'],
                 "lines_count": excluded_summary['lines_count']['sum'],
                 "size_bytes": excluded_summary['size_bytes']['sum'].astype('int32')
-            }], index=[group_name])
+            }], index=[(False, group_name)]) # index is a tuple (is_binary, extension)
 
             extensions_df = extensions_df[~is_orphan].sort_values(by="files_count", ascending=False)
             # and we do not sort after we appended "orphans", as we want them to appear at the end
