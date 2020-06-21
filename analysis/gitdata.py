@@ -1,6 +1,8 @@
 import abc
 import pandas as pd
 import pygit2 as git
+
+from tqdm import tqdm
 from tqdm.contrib.concurrent import thread_map
 
 from tools.timeit import Timeit
@@ -44,14 +46,20 @@ class History(abc.ABC):
     def _optimize(self, df: pd.DataFrame):
         return df
 
+    @property
+    def commits_walker(self):
+        return self.repo.walk(self.repo.head.target, git.GIT_SORT_TOPOLOGICAL)
+
+    def get_commits_count(self):
+        return sum(1 for _ in self.commits_walker)
+
 
 class WholeHistory(History):
 
     @Timeit("Fetching whole history data")
     def fetch(self):
-        repo_walker = self.repo.walk(self.repo.head.target, git.GIT_SORT_TOPOLOGICAL)
         records = []
-        for commit in repo_walker:
+        for commit in tqdm(self.commits_walker, total=self.get_commits_count()):
             author_name, author_email = map_signature(self.mailmap, commit.author)
 
             is_merge_commit = False
@@ -89,10 +97,8 @@ class LinearHistory(History):
 
     @Timeit("Fetching linear history data")
     def fetch(self):
-        repo_walker = self.repo.walk(self.repo.head.target, git.GIT_SORT_TOPOLOGICAL)
-        repo_walker.simplify_first_parent()
         records = []
-        for commit in repo_walker:
+        for commit in tqdm(self.commits_walker, total=self.get_commits_count()):
 
             insertions, deletions = 0, 0
             if len(commit.parents) == 0:  # initial commit
@@ -112,6 +118,12 @@ class LinearHistory(History):
 
     def _optimize(self, df: pd.DataFrame):
         return super()._optimize(df)
+
+    @property
+    def commits_walker(self):
+        walker = super(LinearHistory, self).commits_walker
+        walker.simplify_first_parent()
+        return walker
 
 
 class BlameData:
