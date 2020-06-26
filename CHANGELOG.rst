@@ -1,3 +1,11 @@
+2.2.0 (2020-06-26)
+-------------------------
+- Group together orphaned extensions using "orphaned_extension_count"-config
+- Add new metrics: "Top knowledge carriers", "lost knowledge", etc
+- Do not display lines count for binary files in extension distribution table
+- Add console progress bar when fetching history data
+- Minor formatting changes
+
 2.1.3 (2020-06-13)
 -------------------------
 - Fix erroneous AoY and AoM commits count (reported in some cases)
