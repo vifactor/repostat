@@ -1,0 +1,16 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+pygit2 = ">=1.0.3"
+pytz = ">=2018.5"
+pandas = "~=0.25.3"
+tqdm = "~=4.45.0"
+Jinja2 = ">=2.10.1"
+
+[dev-packages]
+
+[requires]
+python_version = "3.8"
