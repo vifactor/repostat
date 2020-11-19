@@ -1,8 +1,11 @@
 # [repostat](https://github.com/vifactor/repostat)
 [![Build Status](https://travis-ci.org/vifactor/repostat.svg?branch=master)](https://travis-ci.org/vifactor/repostat)
+[![Generic badge](https://img.shields.io/badge/python-3.6--3.8-blue.svg)](https://shields.io/)
 
 Python3-compatible Git repository analyser and HTML-report generator 
 with [nvd3](http://nvd3.org/) -driven interactive metrics visualisations.
+
+**May not work with Python 3.9+!** See https://github.com/vifactor/repostat/issues/198
 
 Initially, a fork of [gitstats](https://github.com/hoxu/gitstats) tool.
 
