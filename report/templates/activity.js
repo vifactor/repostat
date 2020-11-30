@@ -35,6 +35,21 @@ nv.addGraph(function() {
 	return chart;
 });
 
+const commits_by_year_month = {{commits_by_year_month}}
+nv.addGraph(function() {
+    var chart = nv.models.lineChart();
+	chart.yAxis.options(commits_by_year_month.yAxis);
+	chart.xAxis.options(commits_by_year_month.xAxis);
+	chart.xAxis
+		.tickFormat(function(x) {
+			const month = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+			return month[x];
+	});
+
+    d3.select('#chart_commits_year_month svg').datum(commits_by_year_month.data).call(chart);
+    return chart;
+});
+
 nv.addGraph(function() {
   var chart = nv.models.discreteBarChart()
       .x(function(d) { return d.label })    //Specify the data accessors.

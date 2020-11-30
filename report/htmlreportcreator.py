@@ -3,6 +3,7 @@ import datetime
 import calendar
 import collections
 import json
+import math
 from jinja2 import Environment, FileSystemLoader
 import pandas as pd
 
@@ -208,9 +209,9 @@ class HTMLReportCreator:
 
         # Commits by current year's months
         current_year = datetime.date.today().year
-        current_year_monthly_activity = self.git_repository_statistics.history('m')
-        current_year_monthly_activity = current_year_monthly_activity \
-            .loc[current_year_monthly_activity.index.year == current_year]
+        all_monthly_activity = self.git_repository_statistics.history('m')
+        current_year_monthly_activity = all_monthly_activity \
+            .loc[all_monthly_activity.index.year == current_year]
 
         current_year_monthly_activity = pd.Series(current_year_monthly_activity.values,
                                                   index=current_year_monthly_activity.index.month).to_dict()
@@ -240,6 +241,31 @@ class HTMLReportCreator:
             ]
         }
 
+        # Commits by year/month
+
+        # Fade out the oldest years
+        alpha_step = 1.0 / len(yearly_activity.index)
+        series_index = 1
+
+        values = []
+        for x in yearly_activity.index:
+            year_activity = all_monthly_activity.loc[all_monthly_activity.index.year == int(x.year)]
+            series = pd.Series(year_activity.values, index=year_activity.index.month)
+            alpha = math.pow(alpha_step * series_index, 1.3)
+            series_index = series_index + 1
+            values.append({
+                    'key': str(x.year),
+                    'color': 'rgba(148, 00, 211, %f)' % alpha if series_index <= len(yearly_activity.index) else '#0000D3',
+                    'values': [{'x': int(key) - 1, 'y': int(value)} for key, value in zip(series.index, series.values)]
+            })
+
+        by_year_month = {
+            "yAxis": {"axisLabel": "Commits by month"},
+            "xAxis": {"rotateLabels": -90, "ticks": 12},
+            "data": values
+        }
+
+        # Review duration
         review_duration = [
             {
                 "label": label,
@@ -251,6 +277,7 @@ class HTMLReportCreator:
         activity_plot = JsPlot('activity.js',
                                commits_by_month=json.dumps(by_month),
                                commits_by_year=json.dumps(by_year),
+                               commits_by_year_month=json.dumps(by_year_month),
                                recent_activity=json.dumps(recent_activity),
                                review_duration=json.dumps(review_duration),
                                )
