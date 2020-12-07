@@ -441,15 +441,17 @@ class HTMLReportCreator:
         hst = self.git_repository_statistics.linear_history(self._time_sampling_interval).copy()
         hst["epoch"] = (hst.index - pd.Timestamp("1970-01-01 00:00:00+00:00")) // pd.Timedelta('1s') * 1000
 
-        files_count_ts = hst[["epoch", 'files_count']].rename(columns={"epoch": "x", 'files_count': "y"})\
-            .to_dict('records')
-        lines_count_ts = hst[["epoch", 'lines_count']].rename(columns={"epoch": "x", 'lines_count': "y"})\
-            .to_dict('records')
+        files_count_ts = hst[["epoch", 'files_count']].rename(columns={"epoch": "x", 'files_count': "y"})
+        lines_count_ts = hst[["epoch", 'lines_count']].rename(columns={"epoch": "x", 'lines_count': "y"})
+        maxFiles = int(files_count_ts.max()["y"])
+        maxLines = int(lines_count_ts.max()["y"])
         graph_data = {
             "data": [
-                {"key": "Files", "color": "#9400d3", "type": "line", "yAxis": 1, "values": files_count_ts},
-                {"key": "Lines", "color": "#d30094", "type": "line", "yAxis": 2, "values": lines_count_ts},
-            ]
+                {"key": "Files", "color": "#9400d3", "type": "line", "yAxis": 1, "values": files_count_ts.to_dict('records')},
+                {"key": "Lines", "color": "#d30094", "type": "line", "yAxis": 2, "values": lines_count_ts.to_dict('records')},
+            ],
+            "maxFiles": maxFiles,
+            "maxLines": maxLines
         }
 
         files_plot = JsPlot('files.js', json_data=json.dumps(graph_data))

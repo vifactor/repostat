@@ -40,6 +40,7 @@ nv.addGraph(function() {
     var chart = nv.models.lineChart();
 	chart.yAxis.options(commits_by_year_month.yAxis);
 	chart.xAxis.options(commits_by_year_month.xAxis);
+	chart.forceY([0]);
 	chart.xAxis
 		.tickFormat(function(x) {
 			const month = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
