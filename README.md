@@ -1,7 +1,4 @@
 # [repostat](https://github.com/vifactor/repostat)
-[![Build Status](https://travis-ci.org/vifactor/repostat.svg?branch=master)](https://travis-ci.org/vifactor/repostat)
-[![Generic badge](https://img.shields.io/badge/python-3.6--3.8-blue.svg)](https://shields.io/)
-
 Python3-compatible Git repository analyser and HTML-report generator 
 with [nvd3](http://nvd3.org/) -driven interactive metrics visualisations.
 
@@ -41,7 +38,7 @@ Versions prior to v2.0.0 have additional system-dependencies, e.g.
 ### OS-specific requirements
 
 #### Linux installation
-![Repostat for Ubuntu 18.04](https://github.com/vifactor/repostat/workflows/Repostat%20for%20Ubuntu%2018.04/badge.svg)
+![Repostat for Ubuntu 20.04](https://github.com/vifactor/repostat/workflows/Repostat%20for%20Ubuntu%2020.04/badge.svg)
 
 `python3-pip` must be in the system and then installation via `pip`
 works fine.
