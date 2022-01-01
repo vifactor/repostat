@@ -189,7 +189,7 @@ class GitRepository:
         # then sort each group
         res = ts_agg.apply(lambda x: x.sort_values(ascending=False))
 
-        return res
+        return res[res > 0]
 
     def get_authors_ranking_by_month(self):
         """
@@ -207,11 +207,12 @@ class GitRepository:
                           .dt.strftime('%Y-%m')})
 
         # https://stackoverflow.com/questions/27842613/pandas-groupby-sort-within-groups
-        ts_agg = df.groupby([df.timestamp, df.author_name]).size()\
-            .groupby(level=0, group_keys=False)
+        ts_agg = df.groupby([df.timestamp, df.author_name]).size()
+        ts_agg = ts_agg.groupby(level=0, group_keys=False)
 
         # sort each group by value
-        return ts_agg.apply(lambda x: x.sort_values(ascending=False))
+        res = ts_agg.apply(lambda x: x.sort_values(ascending=False))
+        return res[res > 0]
 
     @property
     def authors(self) -> GitAuthors:
