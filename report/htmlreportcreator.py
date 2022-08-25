@@ -376,7 +376,10 @@ class HTMLReportCreator:
         if self.configuration['max_domains'] < email_domains_distribution.shape[0]:
             top_domains = email_domains_distribution[:self.configuration['max_domains']]
             other_domains = email_domains_distribution[self.configuration['max_domains']:].sum()
-            email_domains_distribution = top_domains.append(pd.Series(other_domains, index=["Others"]))
+            email_domains_distribution = top_domains.append(pd.Series(data=other_domains,
+                                                                      index=["Others"],
+                                                                      dtype=int)
+                                                            )
 
         from collections import OrderedDict
         email_domains_distribution = email_domains_distribution.to_dict(OrderedDict)
