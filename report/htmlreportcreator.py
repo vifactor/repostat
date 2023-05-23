@@ -75,9 +75,7 @@ class HTMLReportCreator:
             }], index=[(False, group_name)]) # index is a tuple (is_binary, extension)
 
             extensions_df = extensions_df[~is_orphan].sort_values(by="files_count", ascending=False)
-            # and we do not sort after we appended "orphans", as we want them to appear at the end
-            extensions_df = extensions_df.append(orphans_summary_df, sort=False)
-
+            extensions_df = pd.concat([extensions_df, orphans_summary_df])
         return extensions_df
 
     def _get_recent_activity_data(self):
@@ -374,13 +372,9 @@ class HTMLReportCreator:
         email_domains_distribution = self.git_repository_statistics.domains_distribution\
             .sort_values(ascending=False)
         if self.configuration['max_domains'] < email_domains_distribution.shape[0]:
-            top_domains = email_domains_distribution[:self.configuration['max_domains']]
             other_domains = email_domains_distribution[self.configuration['max_domains']:].sum()
-            email_domains_distribution = top_domains.append(pd.Series(data=other_domains,
-                                                                      index=["Others"],
-                                                                      dtype=int)
-                                                            )
-
+            email_domains_distribution = email_domains_distribution[:self.configuration['max_domains']]
+            email_domains_distribution.loc["Others"] = other_domains
         from collections import OrderedDict
         email_domains_distribution = email_domains_distribution.to_dict(OrderedDict)
 
@@ -396,9 +390,7 @@ class HTMLReportCreator:
             if sorted_contribution.shape[0] > max_authors_per_plot_count + 1:
                 rest_contributions = sorted_contribution[max_authors_per_plot_count:].sum()
                 sorted_contribution = sorted_contribution[:max_authors_per_plot_count]
-                # at this point index is a CategoricalIndex and without next line cannot accept new category: "others"
-                sorted_contribution.index = sorted_contribution.index.to_list()
-                sorted_contribution = sorted_contribution.append(pd.Series(rest_contributions, index=["others"]))
+                sorted_contribution.loc["Others"] = rest_contributions
             sorted_contribution = sorted_contribution.to_dict(OrderedDict)
             # Contribution plot data
             contribution = {
