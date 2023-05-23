@@ -12,7 +12,7 @@ class GitAuthors(object):
         authors_grouped = self.raw_authors_data[['author_name', 'author_datetime',
                                                  'insertions', 'deletions', 'is_merge_commit']].groupby(
             [self.raw_authors_data['author_name']])
-        self.authors_summary = authors_grouped.sum()
+        self.authors_summary = authors_grouped.sum(numeric_only=True)
         self.authors_summary['first_commit_date'] = authors_grouped['author_datetime'].min()
         self.authors_summary['latest_commit_date'] = authors_grouped['author_datetime'].max()
         self.authors_summary['active_days_count'] = authors_grouped['author_datetime'] \
@@ -55,7 +55,7 @@ class GitAuthors(object):
         wh_grouped = wh[['author_name', 'insertions', 'deletions']].groupby(
             [wh['author_name'], pd.Grouper(freq=sampling)])
 
-        modifications_over_time = wh_grouped.sum()\
+        modifications_over_time = wh_grouped.sum(numeric_only=True)\
             .reset_index()
 
         commits_over_time = wh_grouped.count().rename(columns={'author_name': 'commits_count'})\
