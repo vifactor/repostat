@@ -8,9 +8,6 @@ on:
     branches: [ master ]
   pull_request:
     branches: [ master, v2.0.x ]
-  schedule:
-    # run every 6 days at 00:27
-    - cron: '27 0 */6 * *'
 
 jobs:
   ubuntu_build:
