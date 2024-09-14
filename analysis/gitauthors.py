@@ -9,9 +9,14 @@ class GitAuthors(object):
                                              'deletions']].copy()
         self.raw_authors_data['author_datetime'] = pd.to_datetime(git_history['author_timestamp'], unit='s', utc=True)
 
+        # Convert is_merge_commit to int32 so it can be summed
+        self.raw_authors_data['is_merge_commit'] = self.raw_authors_data['is_merge_commit'].astype('int32')
+
         authors_grouped = self.raw_authors_data[['author_name', 'author_datetime',
                                                  'insertions', 'deletions', 'is_merge_commit']].groupby(
             [self.raw_authors_data['author_name']])
+
+
         self.authors_summary = authors_grouped.sum(numeric_only=True)
         self.authors_summary['first_commit_date'] = authors_grouped['author_datetime'].min()
         self.authors_summary['latest_commit_date'] = authors_grouped['author_datetime'].max()
@@ -24,7 +29,6 @@ class GitAuthors(object):
         self.authors_summary['contributed_days_count'].replace(0, 1, inplace=True)
         self.authors_summary['commits_count'] = authors_grouped['author_name'].count()
         self.authors_summary.rename(columns={'is_merge_commit': 'merge_commits_count'}, inplace=True)
-        self.authors_summary['merge_commits_count'] = self.authors_summary['merge_commits_count'].astype('int32')
         self.authors_summary.reset_index(inplace=True)
 
     def count(self):
