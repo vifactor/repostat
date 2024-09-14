@@ -4,13 +4,13 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-pygit2 = ">=1.0.3"
+pygit2 = ">=1.6.1"
 pytz = ">=2018.5"
-pandas = "~=0.25.3"
+pandas = ">=1.3.3"
 tqdm = "~=4.45.0"
 Jinja2 = ">=2.10.1"
 
 [dev-packages]
 
 [requires]
-python_version = "3.8"
+python_version = "3.6"
