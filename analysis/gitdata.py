@@ -76,7 +76,7 @@ class WholeHistory(History):
             else:
                 is_merge_commit = True
 
-            records.append({'commit_sha': commit.hex[:7],
+            records.append({'commit_sha': str(commit.id)[:7],
                             'is_merge_commit': is_merge_commit,
                             'author_name': author_name,
                             'author_email': author_email,
@@ -109,7 +109,7 @@ class LinearHistory(History):
                 st = self.repo.diff(parent_commit, commit).stats
                 insertions, deletions = st.insertions, st.deletions
 
-            records.append({'commit_sha': commit.hex[:7],
+            records.append({'commit_sha': str(commit.id)[:7],
                             'committer_timestamp': commit.committer.time,
                             'files_count': len(commit.tree.diff_to_tree()),
                             'insertions': insertions,
@@ -220,7 +220,7 @@ class TagsData:
             author_name, _ = map_signature(self.mailmap, commit.author)
             if commit.oid in tag_refs:
                 tag_ref: git.Reference = tag_refs[commit.oid]
-                is_symbolic_reference = tag_ref.target.hex == commit.hex
+                is_symbolic_reference = tag_ref.target.id == commit.id
 
             if tag_ref is not None:
                 if not is_symbolic_reference:
